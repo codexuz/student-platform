@@ -1,0 +1,178 @@
+"use client";
+
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { authAPI, setUserStore, storage } from "@/lib/api";
+
+interface User {
+  id: string; // UUID
+  username: string;
+  phone: string;
+  roles: string[];
+  permissions?: string[];
+  sessionId?: string;
+  first_name?: string;
+  last_name?: string;
+}
+
+interface AuthContextType {
+  user: User | null;
+  token: string | null;
+  loading: boolean;
+  login: (
+    username: string,
+    password: string,
+  ) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
+  updateUser: (userData: User) => void;
+  isAuthenticated: boolean;
+}
+
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Public routes that don't require authentication
+  const publicRoutes = [
+    "/auth/login",
+    "/auth/register",
+    "/auth/forgot-password",
+  ];
+
+  const checkAuth = async () => {
+    try {
+      console.log("AuthContext - checkAuth started");
+      const storedToken = await storage.getItem("userToken");
+      const storedUser = await storage.getItem("userData");
+      console.log(
+        "AuthContext - storedToken:",
+        !!storedToken,
+        "storedUser:",
+        !!storedUser,
+      );
+
+      if (storedToken && storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        console.log("AuthContext - parsed user:", parsedUser);
+        setToken(storedToken);
+        setUser(parsedUser);
+
+        // Verify token is still valid
+        const isValid = await authAPI.checkAuthStatus();
+        console.log("AuthContext - token valid:", isValid);
+        if (!isValid) {
+          await logout();
+        }
+      } else if (!publicRoutes.includes(pathname)) {
+        console.log(
+          "AuthContext - no stored credentials, redirecting to login",
+        );
+        router.push("/auth/login");
+      }
+    } catch (error) {
+      console.error("Auth check error:", error);
+      if (!publicRoutes.includes(pathname)) {
+        router.push("/auth/login");
+      }
+    } finally {
+      setLoading(false);
+      console.log("AuthContext - checkAuth completed");
+    }
+  };
+
+  useEffect(() => {
+    checkAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const login = async (username: string, password: string) => {
+    try {
+      const response = await authAPI.login(username, password);
+
+      if (response && response.access_token) {
+        setToken(response.access_token);
+        setUser(response.user);
+        router.push("/");
+        return { success: true };
+      }
+
+      return { success: false, error: "Invalid credentials" };
+    } catch (error) {
+      console.error("Login error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Login failed",
+      };
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await authAPI.logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      setToken(null);
+      setUser(null);
+      router.push("/auth/login");
+    }
+  };
+
+  const updateUser = (userData: User) => {
+    setUser(userData);
+  };
+
+  const updateToken = (newToken: string) => {
+    setToken(newToken);
+  };
+
+  const clearUser = () => {
+    setUser(null);
+    setToken(null);
+  };
+
+  // Set user store for API calls
+  useEffect(() => {
+    console.log("AuthContext - Setting userStore, user:", user);
+    if (user) {
+      setUserStore({
+        getUserProfile: user,
+        setToken: updateToken,
+        setUser: updateUser,
+        clearUser: clearUser,
+      });
+      console.log("AuthContext - userStore set successfully");
+    }
+  }, [user]);
+
+  const value = {
+    user,
+    token,
+    loading,
+    login,
+    logout,
+    updateUser,
+    isAuthenticated: !!token && !!user,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within AuthProvider");
+  }
+  return context;
+}

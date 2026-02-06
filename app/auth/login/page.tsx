@@ -12,8 +12,10 @@ import {
 import { useState } from "react";
 import { toaster } from "@/components/ui/toaster";
 import { ColorModeButton } from "@/components/ui/color-mode";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function LoginPage() {
+  const { login } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -57,22 +59,28 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // TODO: Implement actual login logic
-      console.log("Login attempt:", { username, password });
+      const result = await login(username, password);
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      toaster.create({
-        title: "Success",
-        description: "You have been logged in successfully",
-        type: "success",
-        duration: 3000,
-      });
-    } catch {
+      if (result.success) {
+        toaster.create({
+          title: "Success",
+          description: "You have been logged in successfully",
+          type: "success",
+          duration: 3000,
+        });
+        // Navigation is handled by the login function in AuthContext
+      } else {
+        toaster.create({
+          title: "Login Failed",
+          description: result.error || "Invalid username or password",
+          type: "error",
+          duration: 3000,
+        });
+      }
+    } catch (error) {
       toaster.create({
         title: "Login Failed",
-        description: "Invalid username or password",
+        description: "An unexpected error occurred. Please try again.",
         type: "error",
         duration: 3000,
       });
