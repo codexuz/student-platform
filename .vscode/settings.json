@@ -1,0 +1,13 @@
+{
+    "chat.mcp.serverSampling": {
+        "student-platform/.vscode/mcp.json: chakra-ui": {
+            "allowedModels": [
+                "copilot/claude-sonnet-4.5",
+                "copilot/claude-opus-4.5",
+                "copilot/claude-opus-4.6",
+                "copilot/claude-sonnet-4",
+                "copilot/gemini-3-pro-preview"
+            ]
+        }
+    }
+}
