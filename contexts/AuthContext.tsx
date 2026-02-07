@@ -52,42 +52,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      console.log("AuthContext - checkAuth started");
       const storedToken = await storage.getItem("userToken");
       const storedUser = await storage.getItem("userData");
-      console.log(
-        "AuthContext - storedToken:",
-        !!storedToken,
-        "storedUser:",
-        !!storedUser,
-      );
+   
 
       if (storedToken && storedUser) {
         const parsedUser = JSON.parse(storedUser);
-        console.log("AuthContext - parsed user:", parsedUser);
         setToken(storedToken);
         setUser(parsedUser);
 
         // Verify token is still valid
         const isValid = await authAPI.checkAuthStatus();
-        console.log("AuthContext - token valid:", isValid);
         if (!isValid) {
           await logout();
         }
       } else if (!publicRoutes.includes(pathname)) {
-        console.log(
-          "AuthContext - no stored credentials, redirecting to login",
-        );
         router.push("/auth/login");
       }
     } catch (error) {
-      console.error("Auth check error:", error);
       if (!publicRoutes.includes(pathname)) {
         router.push("/auth/login");
       }
     } finally {
       setLoading(false);
-      console.log("AuthContext - checkAuth completed");
     }
   };
 
@@ -109,7 +96,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       return { success: false, error: "Invalid credentials" };
     } catch (error) {
-      console.error("Login error:", error);
       return {
         success: false,
         error: error instanceof Error ? error.message : "Login failed",
@@ -121,7 +107,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await authAPI.logout();
     } catch (error) {
-      console.error("Logout error:", error);
     } finally {
       setToken(null);
       setUser(null);
@@ -144,7 +129,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Set user store for API calls
   useEffect(() => {
-    console.log("AuthContext - Setting userStore, user:", user);
     if (user) {
       setUserStore({
         getUserProfile: user,
@@ -152,7 +136,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser: updateUser,
         clearUser: clearUser,
       });
-      console.log("AuthContext - userStore set successfully");
     }
   }, [user]);
 

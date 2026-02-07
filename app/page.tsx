@@ -66,34 +66,24 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      console.log("Dashboard useEffect - user:", user);
-
       if (!user?.id) {
-        console.log("No user id available, skipping fetch");
         setLoading(false);
         return;
       }
 
       try {
-        console.log("Starting to fetch dashboard data for user id:", user.id);
         setLoading(true);
 
         // Small delay to ensure userStore is set in AuthContext
         await new Promise((resolve) => setTimeout(resolve, 100));
 
-        console.log("Calling progressAPI.getCurrentUserRank...");
         const rankData = await progressAPI.getCurrentUserRank(user.id);
-        console.log("Rank data:", rankData);
 
-        console.log("Calling progressAPI.getOverallSectionsProgress...");
         const sectionStats = await progressAPI.getOverallSectionsProgress();
-        console.log("Section stats:", sectionStats);
 
         setProgressData(rankData);
         setStatsData(sectionStats);
-        console.log("Data fetched successfully!");
       } catch (error) {
-        console.error("Failed to fetch dashboard data:", error);
       } finally {
         setLoading(false);
       }

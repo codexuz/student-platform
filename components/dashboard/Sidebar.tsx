@@ -90,14 +90,14 @@ export default function Sidebar() {
                   py={2.5}
                   rounded="lg"
                   cursor="pointer"
-                  bg={isActive ? "green.500" : "transparent"}
+                  bg={isActive ? "#0f172a" : "transparent"}
                   color={isActive ? "white" : "gray.700"}
                   _dark={{
                     color: isActive ? "white" : "gray.300",
                   }}
                   _hover={{
-                    bg: isActive ? "green.600" : "gray.100",
-                    _dark: { bg: isActive ? "green.600" : "gray.700" },
+                    bg: isActive ? "#1e293b" : "gray.100",
+                    _dark: { bg: isActive ? "#1e293b" : "gray.700" },
                   }}
                   transition="all 0.2s"
                 >
@@ -131,14 +131,14 @@ export default function Sidebar() {
                   py={2.5}
                   rounded="lg"
                   cursor="pointer"
-                  bg={isActive ? "green.500" : "transparent"}
+                  bg={isActive ? "#0f172a" : "transparent"}
                   color={isActive ? "white" : "gray.700"}
                   _dark={{
                     color: isActive ? "white" : "gray.300",
                   }}
                   _hover={{
-                    bg: isActive ? "green.600" : "gray.100",
-                    _dark: { bg: isActive ? "green.600" : "gray.700" },
+                    bg: isActive ? "#1e293b" : "gray.100",
+                    _dark: { bg: isActive ? "#1e293b" : "gray.700" },
                   }}
                   transition="all 0.2s"
                 >
