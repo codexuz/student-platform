@@ -13,21 +13,17 @@ import {
   Badge,
   Spinner,
   SimpleGrid,
+  Tabs,
   Image,
 } from "@chakra-ui/react";
-import {
-  LuFilm,
-  LuEye,
-  LuClock,
-  LuBell,
-} from "react-icons/lu";
+import { LuFilm, LuEye, LuClock, LuBell, LuBookOpen } from "react-icons/lu";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
-import { moviesAPI } from "@/lib/api";
+import { moviesAPI, articlesAPI } from "@/lib/api";
 
 interface Movie {
   id: string;
@@ -41,13 +37,27 @@ interface Movie {
   release_year?: number;
 }
 
+interface Article {
+  id: string;
+  title: string;
+  content?: string;
+  summary?: string;
+  author?: string;
+  image?: string;
+  views?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export default function ResourcesPage() {
   const { user } = useAuth();
   const userName = user?.first_name || user?.username || "Student";
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [movies, setMovies] = useState<Movie[]>([]);
+  const [articles, setArticles] = useState<Article[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"movies" | "articles">("movies");
 
   useEffect(() => {
     const fetchResources = async () => {
@@ -60,8 +70,11 @@ export default function ResourcesPage() {
         setLoading(true);
         setError(null);
 
-        // Fetch movies
-        const moviesResponse = await moviesAPI.getMovies();
+        // Fetch movies and articles in parallel
+        const [moviesResponse, articlesResponse] = await Promise.all([
+          moviesAPI.getMovies(),
+          articlesAPI.getArticles(100),
+        ]);
 
         // Handle movies response
         if (Array.isArray(moviesResponse)) {
@@ -77,10 +90,26 @@ export default function ResourcesPage() {
         } else {
           setMovies([]);
         }
+
+        // Handle articles response
+        if (Array.isArray(articlesResponse)) {
+          setArticles(articlesResponse);
+        } else if (articlesResponse?.data) {
+          setArticles(
+            Array.isArray(articlesResponse.data)
+              ? articlesResponse.data
+              : [articlesResponse.data],
+          );
+        } else if (articlesResponse?.articles) {
+          setArticles(articlesResponse.articles);
+        } else {
+          setArticles([]);
+        }
       } catch (err) {
         console.error("Failed to fetch resources:", err);
         setError("Failed to load resources. Please try again later.");
         setMovies([]);
+        setArticles([]);
       } finally {
         setLoading(false);
       }
@@ -93,6 +122,10 @@ export default function ResourcesPage() {
     router.push(`/resources/movie/${movieId}`);
   };
 
+  const handleArticleClick = (articleId: string) => {
+    router.push(`/resources/article/${articleId}`);
+  };
+
   return (
     <ProtectedRoute>
       <Flex minH="100vh" bg="gray.50" _dark={{ bg: "gray.900" }}>
@@ -102,7 +135,12 @@ export default function ResourcesPage() {
         </Box>
 
         {/* Main Content */}
-        <Box flex="1" display="flex" flexDirection="column">
+        <Box
+          flex="1"
+          display="flex"
+          flexDirection="column"
+          ml={{ base: 0, lg: "240px" }}
+        >
           {/* Header Bar */}
           <Flex
             h={{ base: "14", md: "16" }}
@@ -113,7 +151,7 @@ export default function ResourcesPage() {
             _dark={{ bg: "gray.800" }}
             borderBottomWidth="1px"
           >
-            <Heading size={{ base: "sm", md: "md" }}>Movies</Heading>
+            <Heading size={{ base: "sm", md: "md" }}>Resources</Heading>
             <HStack gap={{ base: 2, md: 4 }}>
               <Icon fontSize={{ base: "lg", md: "xl" }} color="gray.600">
                 <LuBell />
@@ -160,45 +198,74 @@ export default function ResourcesPage() {
               <VStack align="stretch" gap={6} mb={8}>
                 <Box>
                   <Heading size="2xl" mb={2}>
-                    Movies
+                    Resources
                   </Heading>
                   <Text color="gray.600" _dark={{ color: "gray.400" }}>
-                    Explore educational movies
+                    Explore educational movies and articles
                   </Text>
                 </Box>
               </VStack>
 
-              {/* Movies Grid */}
-              {loading ? (
-                <Flex justify="center" align="center" minH="400px">
-                  <VStack gap={4}>
-                    <Spinner size="xl" color="blue.500" />
-                    <Text color="gray.600" _dark={{ color: "gray.400" }}>
-                      Loading movies...
-                    </Text>
-                  </VStack>
-                </Flex>
-              ) : error ? (
-                <Flex justify="center" align="center" minH="400px">
-                  <VStack gap={4}>
-                    <Icon fontSize="4xl" color="red.500">
-                      <LuFilm />
-                    </Icon>
-                    <Text color="red.500">{error}</Text>
-                  </VStack>
-                </Flex>
-              ) : movies.length === 0 ? (
-                <Flex justify="center" align="center" minH="400px">
-                  <VStack gap={4}>
-                    <Icon fontSize="4xl" color="gray.400">
-                      <LuFilm />
-                    </Icon>
-                    <Text color="gray.600" _dark={{ color: "gray.400" }}>
-                      No movies available
-                    </Text>
-                  </VStack>
-                </Flex>
-              ) : (
+              {/* Tabs */}
+              <Tabs.Root
+                value={activeTab}
+                onValueChange={(e) =>
+                  setActiveTab(e.value as "movies" | "articles")
+                }
+                variant="enclosed"
+                mb={6}
+              >
+                <Tabs.List>
+                  <Tabs.Trigger value="movies">
+                    <HStack>
+                      <Icon fontSize="lg">
+                        <LuFilm />
+                      </Icon>
+                      <Text>Movies ({movies.length})</Text>
+                    </HStack>
+                  </Tabs.Trigger>
+                  <Tabs.Trigger value="articles">
+                    <HStack>
+                      <Icon fontSize="lg">
+                        <LuBookOpen />
+                      </Icon>
+                      <Text>Articles ({articles.length})</Text>
+                    </HStack>
+                  </Tabs.Trigger>
+                </Tabs.List>
+
+                <Box mt={6}>
+                  <Tabs.Content value="movies">
+                    {loading ? (
+                      <Flex justify="center" align="center" minH="400px">
+                        <VStack gap={4}>
+                          <Spinner size="xl" color="blue.500" />
+                          <Text color="gray.600" _dark={{ color: "gray.400" }}>
+                            Loading movies...
+                          </Text>
+                        </VStack>
+                      </Flex>
+                    ) : error ? (
+                      <Flex justify="center" align="center" minH="400px">
+                        <VStack gap={4}>
+                          <Icon fontSize="4xl" color="red.500">
+                            <LuFilm />
+                          </Icon>
+                          <Text color="red.500">{error}</Text>
+                        </VStack>
+                      </Flex>
+                    ) : movies.length === 0 ? (
+                      <Flex justify="center" align="center" minH="400px">
+                        <VStack gap={4}>
+                          <Icon fontSize="4xl" color="gray.400">
+                            <LuFilm />
+                          </Icon>
+                          <Text color="gray.600" _dark={{ color: "gray.400" }}>
+                            No movies available
+                          </Text>
+                        </VStack>
+                      </Flex>
+                    ) : (
                       <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={6}>
                         {movies.map((movie) => (
                           <Card.Root
@@ -297,6 +364,133 @@ export default function ResourcesPage() {
                         ))}
                       </SimpleGrid>
                     )}
+                  </Tabs.Content>
+
+                  <Tabs.Content value="articles">
+                    {loading ? (
+                      <Flex justify="center" align="center" minH="400px">
+                        <VStack gap={4}>
+                          <Spinner size="xl" color="blue.500" />
+                          <Text color="gray.600" _dark={{ color: "gray.400" }}>
+                            Loading articles...
+                          </Text>
+                        </VStack>
+                      </Flex>
+                    ) : error ? (
+                      <Flex justify="center" align="center" minH="400px">
+                        <VStack gap={4}>
+                          <Icon fontSize="4xl" color="red.500">
+                            <LuBookOpen />
+                          </Icon>
+                          <Text color="red.500">{error}</Text>
+                        </VStack>
+                      </Flex>
+                    ) : articles.length === 0 ? (
+                      <Flex justify="center" align="center" minH="400px">
+                        <VStack gap={4}>
+                          <Icon fontSize="4xl" color="gray.400">
+                            <LuBookOpen />
+                          </Icon>
+                          <Text color="gray.600" _dark={{ color: "gray.400" }}>
+                            No articles available
+                          </Text>
+                        </VStack>
+                      </Flex>
+                    ) : (
+                      <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={6}>
+                        {articles.map((article) => (
+                          <Card.Root
+                            key={article.id}
+                            overflow="hidden"
+                            cursor="pointer"
+                            _hover={{
+                              transform: "translateY(-4px)",
+                              shadow: "xl",
+                            }}
+                            transition="all 0.2s"
+                            onClick={() => handleArticleClick(article.id)}
+                          >
+                            {/* Thumbnail */}
+                            <Box
+                              position="relative"
+                              aspectRatio="16/9"
+                              h="180px"
+                              bg="gray.200"
+                              _dark={{ bg: "gray.700" }}
+                            >
+                              {article.image ? (
+                                <Image
+                                  src={article.image}
+                                  alt={article.title}
+                                  objectFit="cover"
+                                  w="full"
+                                  h="full"
+                                />
+                              ) : (
+                                <Flex
+                                  align="center"
+                                  justify="center"
+                                  h="full"
+                                  bg="gray.100"
+                                  _dark={{ bg: "gray.800" }}
+                                >
+                                  <Icon fontSize="4xl" color="gray.400">
+                                    <LuBookOpen />
+                                  </Icon>
+                                </Flex>
+                              )}
+                            </Box>
+
+                            <Card.Body>
+                              <VStack align="stretch" gap={2}>
+                                <Heading size="md" lineClamp={2}>
+                                  {article.title}
+                                </Heading>
+                                {article.summary && (
+                                  <Text
+                                    fontSize="sm"
+                                    color="gray.600"
+                                    _dark={{ color: "gray.400" }}
+                                    lineClamp={3}
+                                  >
+                                    {article.summary}
+                                  </Text>
+                                )}
+                                <HStack
+                                  justify="space-between"
+                                  fontSize="sm"
+                                  flexWrap="wrap"
+                                >
+                                  {article.author && (
+                                    <Text color="gray.500" fontWeight="medium">
+                                      By {article.author}
+                                    </Text>
+                                  )}
+                                  {article.views !== undefined && (
+                                    <HStack color="gray.500">
+                                      <Icon>
+                                        <LuEye />
+                                      </Icon>
+                                      <Text>{article.views} views</Text>
+                                    </HStack>
+                                  )}
+                                </HStack>
+                                {article.created_at && (
+                                  <Text fontSize="xs" color="gray.500">
+                                    {new Date(
+                                      article.created_at,
+                                    ).toLocaleDateString()}
+                                  </Text>
+                                )}
+                              </VStack>
+                            </Card.Body>
+                          </Card.Root>
+                        ))}
+                      </SimpleGrid>
+                    )}
+                  </Tabs.Content>
+                </Box>
+              </Tabs.Root>
             </Container>
           </Box>
         </Box>

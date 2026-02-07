@@ -117,7 +117,12 @@ export default function MyCoursesPage() {
         </Box>
 
         {/* Main Content */}
-        <Box flex="1" overflowY="auto" pb={{ base: "16", lg: "0" }}>
+        <Box
+          flex="1"
+          overflowY="auto"
+          pb={{ base: "16", lg: "0" }}
+          ml={{ base: 0, lg: "240px" }}
+        >
           {/* Header */}
           <Flex
             h={{ base: "14", md: "16" }}
@@ -227,7 +232,6 @@ export default function MyCoursesPage() {
               {/* Courses Grid */}
               {!loading && !error && courses.length > 0 && (
                 <>
-
                   <SimpleGrid
                     columns={{ base: 1, md: 2, xl: 3 }}
                     gap={{ base: 4, md: 6 }}

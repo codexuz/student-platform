@@ -100,7 +100,12 @@ export default function MovieDetailPage() {
         </Box>
 
         {/* Main Content */}
-        <Box flex="1" display="flex" flexDirection="column">
+        <Box
+          flex="1"
+          display="flex"
+          flexDirection="column"
+          ml={{ base: 0, lg: "240px" }}
+        >
           {/* Header Bar */}
           <Flex
             h={{ base: "14", md: "16" }}

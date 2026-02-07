@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Icon, Text, VStack } from "@chakra-ui/react";
-import { Home, BookOpen, Video, BookMarked, Target } from "lucide-react";
+import { Home, BookOpen, ClipboardCheck, BookMarked, Target } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -9,7 +9,7 @@ const menuItems = [
   { icon: Home, label: "Home", href: "/" },
   { icon: Target, label: "Practice", href: "/practice" },
   { icon: BookOpen, label: "Courses", href: "/courses" },
-  { icon: Video, label: "Videos", href: "/recordings" },
+  { icon: ClipboardCheck, label: "My Mock Tests", href: "/mock-tests" },
   { icon: BookMarked, label: "Resources", href: "/resources" },
 ];
 

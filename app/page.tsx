@@ -147,7 +147,12 @@ export default function DashboardPage() {
         </Box>
 
         {/* Main Content */}
-        <Box flex="1" overflowY="auto" pb={{ base: "16", lg: "0" }}>
+        <Box
+          flex="1"
+          overflowY="auto"
+          pb={{ base: "16", lg: "0" }}
+          ml={{ base: 0, lg: "240px" }}
+        >
           <Flex
             h={{ base: "14", md: "16" }}
             px={{ base: 4, md: 8 }}

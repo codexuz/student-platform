@@ -4,7 +4,7 @@ import { Box, Text, VStack, HStack, Icon, Heading } from "@chakra-ui/react";
 import {
   Home,
   BookOpen,
-  Video,
+  ClipboardCheck,
   Bookmark,
   Settings,
   HelpCircle,
@@ -28,9 +28,9 @@ const menuItems = [
     section: "MAIN",
   },
   {
-    icon: Video,
-    label: "Recording",
-    href: "/recordings",
+    icon: ClipboardCheck,
+    label: "My Mock Tests",
+    href: "/mock-tests",
     section: "MAIN",
   },
   {
@@ -57,8 +57,12 @@ export default function Sidebar() {
       bg="white"
       _dark={{ bg: "gray.800" }}
       borderRightWidth="1px"
+      position="fixed"
+      top={0}
+      left={0}
       h="100vh"
       overflowY="auto"
+      zIndex={10}
     >
       <Flex h="16" px={6} alignItems="center" borderBottomWidth="1px">
         <HStack gap={2}>
