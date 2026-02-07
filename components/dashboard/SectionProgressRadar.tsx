@@ -31,7 +31,7 @@ export default function SectionProgressRadar({ data }: SectionProgressRadarProps
   });
 
   return (
-    <Card.Root>
+    <Card.Root  borderRadius="2xl">
       <Card.Body p={{ base: 4, md: 6 }}>
         <HStack
           justifyContent="space-between"

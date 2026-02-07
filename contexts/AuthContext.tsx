@@ -19,6 +19,7 @@ interface User {
   sessionId?: string;
   first_name?: string;
   last_name?: string;
+  avatar_url?: string;
 }
 
 interface AuthContextType {
@@ -54,7 +55,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const storedToken = await storage.getItem("userToken");
       const storedUser = await storage.getItem("userData");
-   
 
       if (storedToken && storedUser) {
         const parsedUser = JSON.parse(storedUser);

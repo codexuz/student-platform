@@ -13,6 +13,7 @@ import {
   Card,
   Badge,
   Spinner,
+  Image,
 } from "@chakra-ui/react";
 import { LuBell, LuFlame, LuCoins, LuTrophy, LuTarget } from "react-icons/lu";
 import { useState, useEffect } from "react";
@@ -168,19 +169,33 @@ export default function DashboardPage() {
                 <LuBell />
               </Icon>
               <HStack gap={2} display={{ base: "none", sm: "flex" }}>
-                <Box
-                  w={{ base: 8, md: 10 }}
-                  h={{ base: 8, md: 10 }}
-                  rounded="full"
-                  bg="gray.300"
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                >
-                  <Text fontWeight="medium" fontSize={{ base: "sm", md: "md" }}>
-                    AA
-                  </Text>
-                </Box>
+                {user?.avatar_url ? (
+                  <Image
+                    src={user.avatar_url}
+                    alt={userName}
+                    w={{ base: 8, md: 10 }}
+                    h={{ base: 8, md: 10 }}
+                    rounded="full"
+                    objectFit="cover"
+                  />
+                ) : (
+                  <Box
+                    w={{ base: 8, md: 10 }}
+                    h={{ base: 8, md: 10 }}
+                    rounded="full"
+                    bg="brand.300"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    <Text
+                      fontWeight="medium"
+                      fontSize={{ base: "sm", md: "md" }}
+                    >
+                      {userName.charAt(0).toUpperCase()}
+                    </Text>
+                  </Box>
+                )}
                 <Text
                   fontWeight="medium"
                   display={{ base: "none", md: "block" }}
@@ -222,7 +237,7 @@ export default function DashboardPage() {
                 gap={{ base: 3, md: 4 }}
               >
                 {/* Overall Progress */}
-                <Card.Root>
+                <Card.Root borderRadius="2xl" overflow="hidden">
                   <Card.Body p={{ base: 4, md: 6 }}>
                     <VStack gap={2} alignItems="flex-start">
                       <HStack justify="space-between" w="full">
@@ -250,7 +265,7 @@ export default function DashboardPage() {
                 </Card.Root>
 
                 {/* Coins */}
-                <Card.Root>
+                <Card.Root borderRadius="2xl" overflow="hidden">
                   <Card.Body p={{ base: 4, md: 6 }}>
                     <VStack gap={2} alignItems="flex-start">
                       <HStack justify="space-between" w="full">
@@ -278,7 +293,7 @@ export default function DashboardPage() {
                 </Card.Root>
 
                 {/* Points */}
-                <Card.Root>
+                <Card.Root borderRadius="2xl" overflow="hidden">
                   <Card.Body p={{ base: 4, md: 6 }}>
                     <VStack gap={2} alignItems="flex-start">
                       <HStack justify="space-between" w="full">
@@ -306,7 +321,7 @@ export default function DashboardPage() {
                 </Card.Root>
 
                 {/* Streak */}
-                <Card.Root>
+                <Card.Root borderRadius="2xl" overflow="hidden">
                   <Card.Body p={{ base: 4, md: 6 }}>
                     <VStack gap={2} alignItems="flex-start">
                       <HStack justify="space-between" w="full">
@@ -334,7 +349,7 @@ export default function DashboardPage() {
                 </Card.Root>
 
                 {/* Ranking */}
-                <Card.Root>
+                <Card.Root borderRadius="2xl" overflow="hidden">
                   <Card.Body p={{ base: 4, md: 6 }}>
                     <VStack gap={2} alignItems="flex-start">
                       <HStack justify="space-between" w="full">
@@ -364,7 +379,7 @@ export default function DashboardPage() {
 
               {/* Section Progress Radar Chart */}
               {loading ? (
-                <Card.Root>
+                <Card.Root borderRadius="2xl" overflow="hidden">
                   <Card.Body p={{ base: 4, md: 6 }}>
                     <Flex justifyContent="center" alignItems="center" h="400px">
                       <Spinner size="xl" color="brand.500" />

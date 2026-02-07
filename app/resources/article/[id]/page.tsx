@@ -191,7 +191,7 @@ export default function ArticleDetailPage() {
                   w={{ base: 8, md: 10 }}
                   h={{ base: 8, md: 10 }}
                   rounded="full"
-                  bg="gray.300"
+                  bg="brand.300"
                   display="flex"
                   alignItems="center"
                   justifyContent="center"

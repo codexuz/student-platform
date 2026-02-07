@@ -157,24 +157,38 @@ export default function ResourcesPage() {
                 <LuBell />
               </Icon>
               <HStack gap={2} display={{ base: "none", sm: "flex" }}>
-                <Box
-                  w={{ base: 8, md: 10 }}
-                  h={{ base: 8, md: 10 }}
-                  rounded="full"
-                  bg="gray.300"
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                >
-                  <Text fontWeight="medium" fontSize={{ base: "sm", md: "md" }}>
-                    {userName
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .toUpperCase()
-                      .slice(0, 2)}
-                  </Text>
-                </Box>
+                {user?.avatar_url ? (
+                  <Image
+                    src={user.avatar_url}
+                    alt={userName}
+                    w={{ base: 8, md: 10 }}
+                    h={{ base: 8, md: 10 }}
+                    rounded="full"
+                    objectFit="cover"
+                  />
+                ) : (
+                  <Box
+                    w={{ base: 8, md: 10 }}
+                    h={{ base: 8, md: 10 }}
+                    rounded="full"
+                    bg="brand.300"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    <Text
+                      fontWeight="medium"
+                      fontSize={{ base: "sm", md: "md" }}
+                    >
+                      {userName
+                        .split(" ")
+                        .map((n: string) => n[0])
+                        .join("")
+                        .toUpperCase()
+                        .slice(0, 2)}
+                    </Text>
+                  </Box>
+                )}
                 <Text
                   fontWeight="medium"
                   display={{ base: "none", md: "block" }}
