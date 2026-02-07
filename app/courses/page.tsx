@@ -183,7 +183,7 @@ export default function MyCoursesPage() {
                   direction="column"
                   gap={4}
                 >
-                  <Spinner size="xl" color="green.500" />
+                  <Spinner size="xl" color="brand.500" />
                   <Text color="gray.500">Loading your courses...</Text>
                 </Flex>
               )}
