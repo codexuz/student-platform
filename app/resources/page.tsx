@@ -16,12 +16,13 @@ import {
   Tabs,
   Image,
 } from "@chakra-ui/react";
-import { LuFilm, LuEye, LuClock, LuBell, LuBookOpen } from "react-icons/lu";
+import { LuFilm, LuEye, LuClock, LuBookOpen } from "react-icons/lu";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import { useAuth } from "@/contexts/AuthContext";
 import { moviesAPI, articlesAPI } from "@/lib/api";
 
@@ -153,49 +154,7 @@ export default function ResourcesPage() {
           >
             <Heading size={{ base: "sm", md: "md" }}>Resources</Heading>
             <HStack gap={{ base: 2, md: 4 }}>
-              <Icon fontSize={{ base: "lg", md: "xl" }} color="gray.600">
-                <LuBell />
-              </Icon>
-              <HStack gap={2} display={{ base: "none", sm: "flex" }}>
-                {user?.avatar_url ? (
-                  <Image
-                    src={user.avatar_url}
-                    alt={userName}
-                    w={{ base: 8, md: 10 }}
-                    h={{ base: 8, md: 10 }}
-                    rounded="full"
-                    objectFit="cover"
-                  />
-                ) : (
-                  <Box
-                    w={{ base: 8, md: 10 }}
-                    h={{ base: 8, md: 10 }}
-                    rounded="full"
-                    bg="brand.300"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <Text
-                      fontWeight="medium"
-                      fontSize={{ base: "sm", md: "md" }}
-                    >
-                      {userName
-                        .split(" ")
-                        .map((n: string) => n[0])
-                        .join("")
-                        .toUpperCase()
-                        .slice(0, 2)}
-                    </Text>
-                  </Box>
-                )}
-                <Text
-                  fontWeight="medium"
-                  display={{ base: "none", md: "block" }}
-                >
-                  {userName}
-                </Text>
-              </HStack>
+              <NotificationsDrawer />
             </HStack>
           </Flex>
 

@@ -15,11 +15,13 @@ import {
   SimpleGrid,
   Image,
 } from "@chakra-ui/react";
-import { LuBell, LuBookOpen, LuPlay } from "react-icons/lu";
+import { LuBookOpen, LuPlay } from "react-icons/lu";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import { useAuth } from "@/contexts/AuthContext";
 import { progressAPI } from "@/lib/api";
 import { ProgressBar } from "@/components/ui/progress";
@@ -34,6 +36,7 @@ interface Course {
 
 export default function MyCoursesPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const userName = user?.first_name || user?.username || "Student";
   const [loading, setLoading] = useState(true);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -136,44 +139,7 @@ export default function MyCoursesPage() {
           >
             <Heading size={{ base: "sm", md: "md" }}>My Courses</Heading>
             <HStack gap={{ base: 2, md: 4 }}>
-              <Icon fontSize={{ base: "lg", md: "xl" }} color="gray.600">
-                <LuBell />
-              </Icon>
-              <HStack gap={2} display={{ base: "none", sm: "flex" }}>
-                {user?.avatar_url ? (
-                  <Image
-                    src={user.avatar_url}
-                    alt={userName}
-                    w={{ base: 8, md: 10 }}
-                    h={{ base: 8, md: 10 }}
-                    rounded="full"
-                    objectFit="cover"
-                  />
-                ) : (
-                  <Box
-                    w={{ base: 8, md: 10 }}
-                    h={{ base: 8, md: 10 }}
-                    rounded="full"
-                    bg="brand.300"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <Text
-                      fontWeight="medium"
-                      fontSize={{ base: "sm", md: "md" }}
-                    >
-                      {userName.charAt(0).toUpperCase()}
-                    </Text>
-                  </Box>
-                )}
-                <Text
-                  fontWeight="medium"
-                  display={{ base: "none", md: "block" }}
-                >
-                  {userName}
-                </Text>
-              </HStack>
+              <NotificationsDrawer />
             </HStack>
           </Flex>
 

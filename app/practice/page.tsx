@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Heading,
@@ -14,109 +14,47 @@ import {
   Icon,
   Flex,
   Image,
+  Spinner,
+  ButtonGroup,
+  IconButton,
+  Pagination,
+  NativeSelect,
+  EmptyState,
 } from "@chakra-ui/react";
 import {
   Headphones,
   BookOpen,
   PenTool,
   MessageSquare,
+  ClipboardList,
 } from "lucide-react";
-import { LuBell } from "react-icons/lu";
+import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 
-import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
+import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import { useAuth } from "@/contexts/AuthContext";
+import { ieltsAPI } from "@/lib/api";
 
-type QuestionType =
-  | "Completion"
-  | "Labelling"
-  | "Matching"
-  | "Multiple Choice"
-  | "Map";
+const PAGE_SIZE = 9;
 
-interface PracticeQuestion {
-  id: string;
-  title: string;
-  completed: number;
-  total: number;
-  types: QuestionType[];
-  category: "listening" | "reading" | "writing";
+interface PracticeItem {
+  id?: string;
+  _id?: string;
+  title?: string;
+  name?: string;
+  completed?: number;
+  total?: number;
+  types?: string[];
+  part?: string;
 }
 
 const categories = [
+  { id: "full-tests", label: "Full Tests", icon: ClipboardList },
   { id: "listening", label: "Listening", icon: Headphones },
   { id: "reading", label: "Reading", icon: BookOpen },
   { id: "writing", label: "Writing", icon: PenTool },
-];
-
-// Mock data - replace with API call
-const mockQuestions: PracticeQuestion[] = [
-  {
-    id: "1",
-    title: "Levels of Management",
-    completed: 0,
-    total: 1,
-    types: ["Completion"],
-    category: "listening",
-  },
-  {
-    id: "2",
-    title: "University Campus",
-    completed: 0,
-    total: 3,
-    types: ["Completion", "Labelling", "Matching"],
-    category: "listening",
-  },
-  {
-    id: "3",
-    title: "Sustainable Urban Agriculture",
-    completed: 0,
-    total: 3,
-    types: ["Labelling", "Completion"],
-    category: "reading",
-  },
-  {
-    id: "4",
-    title: "Residential Water Wells",
-    completed: 0,
-    total: 3,
-    types: ["Completion", "Labelling"],
-    category: "reading",
-  },
-  {
-    id: "5",
-    title: "Track Selection",
-    completed: 0,
-    total: 3,
-    types: ["Multiple Choice", "Map"],
-    category: "reading",
-  },
-  {
-    id: "6",
-    title: "City Market",
-    completed: 0,
-    total: 3,
-    types: ["Completion", "Labelling", "Matching"],
-    category: "reading",
-  },
-  {
-    id: "7",
-    title: "Ancient Civilizations",
-    completed: 1,
-    total: 4,
-    types: ["Multiple Choice", "Matching"],
-    category: "reading",
-  },
-  {
-    id: "8",
-    title: "Climate Change Effects",
-    completed: 2,
-    total: 3,
-    types: ["Completion", "Matching"],
-    category: "writing",
-  },
 ];
 
 export default function PracticePage() {
@@ -128,33 +66,83 @@ export default function PracticePage() {
 }
 
 function PracticeContent() {
-  const [activeCategory, setActiveCategory] = useState<string>("listening");
-  const [questions] = useState<PracticeQuestion[]>(mockQuestions);
-  const [loading] = useState(false);
-  const router = useRouter();
+  const [activeCategory, setActiveCategory] = useState<string>("full-tests");
+  const [items, setItems] = useState<PracticeItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [readingPart, setReadingPart] = useState<string>("");
+  const [testCategory, setTestCategory] = useState<string>("");
   const { user } = useAuth();
   const userName = user?.first_name
     ? `${user.first_name}`.trim()
     : user?.username || "User";
 
-  // TODO: Replace with actual API call
-  // useEffect(() => {
-  //   const fetchQuestions = async () => {
-  //     try {
-  //       const data = await practiceAPI.getQuestions();
-  //       setQuestions(data);
-  //     } catch (error) {
-  //       console.error("Error fetching questions:", error);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-  //   fetchQuestions();
-  // }, []);
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      let response;
+      const params = { page, limit: PAGE_SIZE, mode: "mock" as const };
 
-  const filteredQuestions = questions.filter(
-    (q) => q.category === activeCategory,
-  );
+      switch (activeCategory) {
+        case "full-tests":
+          response = await ieltsAPI.getTests({
+            ...params,
+            ...(testCategory && { category: testCategory }),
+          });
+          break;
+        case "listening":
+          response = await ieltsAPI.getListeningTests(params);
+          break;
+        case "reading":
+          response = await ieltsAPI.getReadingParts({
+            page,
+            limit: PAGE_SIZE,
+            ...(readingPart && { part: readingPart }),
+          });
+          break;
+        case "writing":
+          response = await ieltsAPI.getWritingTests(params);
+          break;
+      }
+
+      if (response) {
+        setItems(response.data || response.results || response || []);
+        setTotalCount(
+          response.total || response.count || response.totalCount || 0,
+        );
+      }
+    } catch (error) {
+      console.error(`Error fetching ${activeCategory} tests:`, error);
+      setItems([]);
+      setTotalCount(0);
+    } finally {
+      setLoading(false);
+    }
+  }, [activeCategory, page, readingPart, testCategory]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleCategoryChange = (category: string) => {
+    setActiveCategory(category);
+    setPage(1);
+    if (category !== "reading") setReadingPart("");
+    if (category !== "full-tests") setTestCategory("");
+  };
+
+  const handleTestCategoryChange = (
+    e: React.ChangeEvent<HTMLSelectElement>,
+  ) => {
+    setTestCategory(e.target.value);
+    setPage(1);
+  };
+
+  const handleReadingPartChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setReadingPart(e.target.value);
+    setPage(1);
+  };
 
   return (
     <Box minH="100vh" bg="gray.50" _dark={{ bg: "gray.900" }}>
@@ -172,43 +160,7 @@ function PracticeContent() {
         >
           <Heading size={{ base: "sm", md: "md" }}>Practice</Heading>
           <HStack gap={{ base: 2, md: 4 }}>
-            <Icon fontSize={{ base: "lg", md: "xl" }} color="gray.600">
-              <LuBell />
-            </Icon>
-            <HStack gap={2} display={{ base: "none", sm: "flex" }}>
-              {user?.avatar_url ? (
-                <Image
-                  src={user.avatar_url}
-                  alt={userName}
-                  w={{ base: 8, md: 10 }}
-                  h={{ base: 8, md: 10 }}
-                  rounded="full"
-                  objectFit="cover"
-                />
-              ) : (
-                <Box
-                  w={{ base: 8, md: 10 }}
-                  h={{ base: 8, md: 10 }}
-                  rounded="full"
-                  bg="brand.300"
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                >
-                  <Text fontWeight="medium" fontSize={{ base: "sm", md: "md" }}>
-                    {userName
-                      .split(" ")
-                      .map((n: string) => n[0])
-                      .join("")
-                      .toUpperCase()
-                      .slice(0, 2)}
-                  </Text>
-                </Box>
-              )}
-              <Text fontWeight="medium" display={{ base: "none", md: "block" }}>
-                {userName}
-              </Text>
-            </HStack>
+            <NotificationsDrawer />
           </HStack>
         </Flex>
 
@@ -233,7 +185,7 @@ function PracticeContent() {
               return (
                 <Button
                   key={category.id}
-                  onClick={() => setActiveCategory(category.id)}
+                  onClick={() => handleCategoryChange(category.id)}
                   variant="ghost"
                   colorPalette={isActive ? "brand" : "gray"}
                   size="lg"
@@ -257,91 +209,175 @@ function PracticeContent() {
             })}
           </HStack>
 
+          {/* Full Tests Category Filter */}
+          {activeCategory === "full-tests" && (
+            <Box mb={4}>
+              <NativeSelect.Root size="sm" width="200px">
+                <NativeSelect.Field
+                  value={testCategory}
+                  onChange={handleTestCategoryChange}
+                >
+                  <option value="">All Categories</option>
+                  <option value="authentic">Authentic</option>
+                  <option value="pre-test">Pre-test</option>
+                  <option value="cambridge books">Cambridge Books</option>
+                </NativeSelect.Field>
+                <NativeSelect.Indicator />
+              </NativeSelect.Root>
+            </Box>
+          )}
+
+          {/* Reading Part Filter */}
+          {activeCategory === "reading" && (
+            <Box mb={4}>
+              <NativeSelect.Root size="sm" width="200px">
+                <NativeSelect.Field
+                  value={readingPart}
+                  onChange={handleReadingPartChange}
+                >
+                  <option value="">All Parts</option>
+                  <option value="PART_1">Part 1</option>
+                  <option value="PART_2">Part 2</option>
+                  <option value="PART_3">Part 3</option>
+                </NativeSelect.Field>
+                <NativeSelect.Indicator />
+              </NativeSelect.Root>
+            </Box>
+          )}
+
           {/* Practice Questions Header */}
           <Flex justify="space-between" align="start" mb={4}>
             <Box>
               <Heading size="xl" mb={3}>
-                Practice Questions
+                Practice Tests
               </Heading>
-              <Text color="gray.600" _dark={{ color: "gray.400" }} maxW="3xl">
-                Mockmee AI recommends the question types you need to work on the
-                most. By comparing your test data to that of other users with
-                similar learning profiles, the AI predicts what question types
-                you are most likely to struggle with.
-              </Text>
             </Box>
-            <Button
-              variant="outline"
-              colorPalette="gray"
-              display={{ base: "none", md: "flex" }}
-            >
-              <MessageSquare size={18} />
-              <Text ml={2}>Question Log</Text>
-            </Button>
           </Flex>
 
           {/* Questions Grid */}
           {loading ? (
-            <Text>Loading...</Text>
+            <Flex justify="center" py={12}>
+              <Spinner size="xl" color="brand.500" />
+            </Flex>
+          ) : items.length === 0 ? (
+            <EmptyState.Root>
+              <EmptyState.Content>
+                <EmptyState.Indicator />
+                <EmptyState.Title>No {activeCategory} tests found</EmptyState.Title>
+                <EmptyState.Description>
+                  There are no tests available in this category at the moment.
+                </EmptyState.Description>
+              </EmptyState.Content>
+            </EmptyState.Root>
           ) : (
-            <Grid
-              templateColumns={{
-                base: "1fr",
-                md: "repeat(2, 1fr)",
-                lg: "repeat(3, 1fr)",
-              }}
-              gap={6}
-              mt={8}
-            >
-              {filteredQuestions.map((question) => (
-                <Card.Root
-                  key={question.id}
-                  cursor="pointer"
-                  transition="all 0.2s"
-                  borderRadius="2xl"
-                  overflow="hidden"
-                  _hover={{
-                    transform: "translateY(-4px)",
-                    shadow: "lg",
-                  }}
-                  //   onClick={() => router.push(`/practice/${question.id}`)}
-                >
-                  <Card.Body>
-                    <VStack align="stretch" gap={4}>
-                      <Flex justify="space-between" align="start">
-                        <Heading size="md" flex="1">
-                          {question.title}
-                        </Heading>
-                        <Badge
-                          colorPalette="gray"
-                          fontSize="sm"
-                          px={2}
-                          py={1}
-                          borderRadius="md"
-                        >
-                          {question.completed}/{question.total}
-                        </Badge>
-                      </Flex>
+            <>
+              <Grid
+                templateColumns={{
+                  base: "1fr",
+                  md: "repeat(2, 1fr)",
+                  lg: "repeat(4, 1fr)",
+                }}
+                gap={6}
+                mt={8}
+              >
+                {items.map((item) => (
+                  <Card.Root
+                    key={item.id || item._id}
+                    cursor="pointer"
+                    transition="all 0.2s"
+                    borderRadius="2xl"
+                    overflow="hidden"
+                    _hover={{
+                      transform: "translateY(-4px)",
+                      shadow: "lg",
+                    }}
+                  >
+                    <Card.Body>
+                      <VStack align="stretch" gap={4}>
+                        <Flex justify="space-between" align="start">
+                          <Heading size="md" flex="1">
+                            {item.title || item.name}
+                          </Heading>
+                          {item.total != null && (
+                            <Badge
+                              colorPalette="gray"
+                              fontSize="sm"
+                              px={2}
+                              py={1}
+                              borderRadius="md"
+                            >
+                              {item.completed || 0}/{item.total}
+                            </Badge>
+                          )}
+                        </Flex>
 
-                      <HStack gap={2} flexWrap="wrap">
-                        {question.types.map((type, idx) => (
-                          <Badge
-                            key={idx}
-                            colorPalette="gray"
-                            variant="subtle"
-                            fontSize="xs"
-                            px={2}
-                            py={1}
+                        <HStack gap={2} flexWrap="wrap">
+                          {activeCategory === "reading" && item.part && (
+                            <Badge
+                              colorPalette="blue"
+                              variant="subtle"
+                              fontSize="xs"
+                              px={2}
+                              py={1}
+                            >
+                              {item.part.replace("_", " ")}
+                            </Badge>
+                          )}
+                          {item.types?.map((type: string, idx: number) => (
+                            <Badge
+                              key={idx}
+                              colorPalette="gray"
+                              variant="subtle"
+                              fontSize="xs"
+                              px={2}
+                              py={1}
+                            >
+                              {type}
+                            </Badge>
+                          ))}
+                        </HStack>
+                      </VStack>
+                    </Card.Body>
+                  </Card.Root>
+                ))}
+              </Grid>
+
+              {/* Pagination */}
+              {totalCount > PAGE_SIZE && (
+                <Flex justify="center" mt={8}>
+                  <Pagination.Root
+                    count={totalCount}
+                    pageSize={PAGE_SIZE}
+                    page={page}
+                    onPageChange={(e) => setPage(e.page)}
+                  >
+                    <ButtonGroup variant="ghost" size="sm">
+                      <Pagination.PrevTrigger asChild>
+                        <IconButton>
+                          <LuChevronLeft />
+                        </IconButton>
+                      </Pagination.PrevTrigger>
+
+                      <Pagination.Items
+                        render={(page) => (
+                          <IconButton
+                            variant={{ base: "ghost", _selected: "outline" }}
                           >
-                            {type}
-                          </Badge>
-                        ))}
-                      </HStack>
-                    </VStack>
-                  </Card.Body>
-                </Card.Root>
-              ))}
-            </Grid>
+                            {page.value}
+                          </IconButton>
+                        )}
+                      />
+
+                      <Pagination.NextTrigger asChild>
+                        <IconButton>
+                          <LuChevronRight />
+                        </IconButton>
+                      </Pagination.NextTrigger>
+                    </ButtonGroup>
+                  </Pagination.Root>
+                </Flex>
+              )}
+            </>
           )}
         </Box>
       </Box>

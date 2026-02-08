@@ -15,9 +15,10 @@ import {
   Spinner,
   Image,
 } from "@chakra-ui/react";
-import { LuBell, LuFlame, LuCoins, LuTrophy, LuTarget } from "react-icons/lu";
+import { LuFlame, LuCoins, LuTrophy, LuTarget } from "react-icons/lu";
 import { useState, useEffect } from "react";
 import Sidebar from "@/components/dashboard/Sidebar";
+import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import SectionProgressRadar from "@/components/dashboard/SectionProgressRadar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -165,44 +166,7 @@ export default function DashboardPage() {
           >
             <Heading size={{ base: "sm", md: "md" }}>Dashboard</Heading>
             <HStack gap={{ base: 2, md: 4 }}>
-              <Icon fontSize={{ base: "lg", md: "xl" }} color="gray.600">
-                <LuBell />
-              </Icon>
-              <HStack gap={2} display={{ base: "none", sm: "flex" }}>
-                {user?.avatar_url ? (
-                  <Image
-                    src={user.avatar_url}
-                    alt={userName}
-                    w={{ base: 8, md: 10 }}
-                    h={{ base: 8, md: 10 }}
-                    rounded="full"
-                    objectFit="cover"
-                  />
-                ) : (
-                  <Box
-                    w={{ base: 8, md: 10 }}
-                    h={{ base: 8, md: 10 }}
-                    rounded="full"
-                    bg="brand.300"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <Text
-                      fontWeight="medium"
-                      fontSize={{ base: "sm", md: "md" }}
-                    >
-                      {userName.charAt(0).toUpperCase()}
-                    </Text>
-                  </Box>
-                )}
-                <Text
-                  fontWeight="medium"
-                  display={{ base: "none", md: "block" }}
-                >
-                  {userName}
-                </Text>
-              </HStack>
+              <NotificationsDrawer />
             </HStack>
           </Flex>
 
