@@ -10,18 +10,11 @@ import {
   HStack,
   VStack,
   Card,
-  Badge,
   Spinner,
   SimpleGrid,
-  Image,
   IconButton,
 } from "@chakra-ui/react";
-import {
-  LuBookOpen,
-  LuPlay,
-  LuChartNoAxesColumn as LuBarChart3,
-  LuMoveVertical,
-} from "react-icons/lu";
+import { LuBookOpen, LuChartNoAxesColumn as LuBarChart3 } from "react-icons/lu";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/dashboard/Sidebar";
@@ -29,53 +22,37 @@ import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import { useAuth } from "@/contexts/AuthContext";
-import { progressAPI } from "@/lib/api";
-import { ProgressBar } from "@/components/ui/progress";
+import { ieltsCourseAPI } from "@/lib/api";
 
 interface Course {
-  course_id: string;
-  course_name: string;
-  completed: number;
-  total: number;
-  percentage: number;
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function MyCoursesPage() {
-  const { user } = useAuth();
   const router = useRouter();
-  const userName = user?.first_name || user?.username || "Student";
   const [loading, setLoading] = useState(true);
   const [courses, setCourses] = useState<Course[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCourses = async () => {
-      if (!user?.id) {
-        setLoading(false);
-        return;
-      }
-
       try {
         setLoading(true);
         setError(null);
 
-        // Small delay to ensure userStore is set
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        const response = await ieltsCourseAPI.getCourses();
 
-        const response = await progressAPI.getCourseProgress(user.id);
-
-        // Handle different response formats
-        if (Array.isArray(response)) {
-          setCourses(response);
-        } else if (response?.courses) {
-          setCourses(response.courses);
-        } else if (response?.data) {
+        if (response?.data) {
           setCourses(
             Array.isArray(response.data) ? response.data : [response.data],
           );
-        } else if (response?.course_id) {
-          // Single course object
-          setCourses([response]);
+        } else if (Array.isArray(response)) {
+          setCourses(response);
         } else {
           setCourses([]);
         }
@@ -89,29 +66,7 @@ export default function MyCoursesPage() {
     };
 
     fetchCourses();
-  }, [user]);
-
-  const getStatusColor = (percentage: number) => {
-    if (percentage === 100) return "green";
-    if (percentage > 0) return "orange";
-    return "gray";
-  };
-
-  const getStatusLabel = (percentage: number) => {
-    if (percentage === 100) return "Completed";
-    if (percentage > 0) return "In Progress";
-    return "Not Started";
-  };
-
-  const getCourseIcon = (name: string) => {
-    const initial = name?.charAt(0)?.toUpperCase() || "C";
-    return initial;
-  };
-
-  const getCourseColor = (index: number) => {
-    const colors = ["blue", "purple", "teal", "orange", "pink", "cyan"];
-    return colors[index % colors.length];
-  };
+  }, []);
 
   return (
     <ProtectedRoute>
@@ -159,7 +114,7 @@ export default function MyCoursesPage() {
               {/* Page Title */}
               <Box>
                 <Heading size={{ base: "lg", md: "xl" }} mb={2}>
-                  My Courses
+                  Courses
                 </Heading>
                 <Text color="gray.600" _dark={{ color: "gray.400" }}>
                   Track your progress and continue learning
@@ -225,7 +180,7 @@ export default function MyCoursesPage() {
                   >
                     {courses.map((course, index) => (
                       <Card.Root
-                        key={course.course_id}
+                        key={course.id}
                         overflow="hidden"
                         transition="all 0.2s"
                         _hover={{
@@ -235,6 +190,7 @@ export default function MyCoursesPage() {
                         cursor="pointer"
                         borderRadius="xl"
                         maxW="320px"
+                        onClick={() => router.push(`/courses/${course.id}`)}
                       >
                         {/* Course Gradient Header */}
                         <Box
@@ -263,8 +219,19 @@ export default function MyCoursesPage() {
                               color="gray.900"
                               _dark={{ color: "gray.100" }}
                             >
-                              {course.course_name}
+                              {course.title}
                             </Heading>
+
+                            {course.description && (
+                              <Text
+                                fontSize="sm"
+                                color="gray.600"
+                                _dark={{ color: "gray.400" }}
+                                lineClamp={2}
+                              >
+                                {course.description}
+                              </Text>
+                            )}
 
                             {/* Date and Icons Footer */}
                             <Flex
@@ -277,11 +244,14 @@ export default function MyCoursesPage() {
                                 color="gray.500"
                                 _dark={{ color: "gray.400" }}
                               >
-                                {new Date().toLocaleDateString("en-US", {
-                                  month: "long",
-                                  day: "numeric",
-                                  year: "numeric",
-                                })}
+                                {new Date(course.createdAt).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    month: "long",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  },
+                                )}
                               </Text>
                               <HStack gap={1}>
                                 <IconButton
