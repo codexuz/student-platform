@@ -82,7 +82,7 @@ function PracticeContent() {
     setLoading(true);
     try {
       let response;
-      const params = { page, limit: PAGE_SIZE, mode: "mock" as const };
+      const params = { page, limit: PAGE_SIZE, mode: "practice" as const };
 
       switch (activeCategory) {
         case "full-tests":

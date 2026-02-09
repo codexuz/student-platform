@@ -35,16 +35,16 @@ const menuItems = [
   },
   {
     icon: BookOpen,
-    label: "My courses",
+    label: "Courses",
     href: "/courses",
     section: "MAIN",
   },
-  {
-    icon: ClipboardCheck,
-    label: "My Mock Tests",
-    href: "/mock-tests",
-    section: "MAIN",
-  },
+  // {
+  //   icon: ClipboardCheck,
+  //   label: "My Mock Tests",
+  //   href: "/mock-tests",
+  //   section: "MAIN",
+  // },
   {
     icon: Bookmark,
     label: "Resources",

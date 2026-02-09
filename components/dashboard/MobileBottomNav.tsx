@@ -9,7 +9,7 @@ const menuItems = [
   { icon: Home, label: "Home", href: "/" },
   { icon: Target, label: "Practice", href: "/practice" },
   { icon: BookOpen, label: "Courses", href: "/courses" },
-  { icon: ClipboardCheck, label: "My Mock Tests", href: "/mock-tests" },
+  // { icon: ClipboardCheck, label: "My Mock Tests", href: "/mock-tests" },
   { icon: BookMarked, label: "Resources", href: "/resources" },
 ];
 

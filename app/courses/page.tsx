@@ -14,8 +14,14 @@ import {
   Spinner,
   SimpleGrid,
   Image,
+  IconButton,
 } from "@chakra-ui/react";
-import { LuBookOpen, LuPlay } from "react-icons/lu";
+import {
+  LuBookOpen,
+  LuPlay,
+  LuChartNoAxesColumn as LuBarChart3,
+  LuMoveVertical,
+} from "react-icons/lu";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/dashboard/Sidebar";
@@ -214,8 +220,8 @@ export default function MyCoursesPage() {
               {!loading && !error && courses.length > 0 && (
                 <>
                   <SimpleGrid
-                    columns={{ base: 1, md: 2, xl: 3 }}
-                    gap={{ base: 4, md: 6 }}
+                    columns={{ base: 1, md: 2, lg: 3, xl: 4 }}
+                    gap={{ base: 4, md: 5 }}
                   >
                     {courses.map((course, index) => (
                       <Card.Root
@@ -223,119 +229,72 @@ export default function MyCoursesPage() {
                         overflow="hidden"
                         transition="all 0.2s"
                         _hover={{
-                          transform: "translateY(-4px)",
-                          shadow: "lg",
+                          transform: "translateY(-2px)",
+                          shadow: "md",
                         }}
                         cursor="pointer"
+                        borderRadius="xl"
+                        maxW="320px"
                       >
-                        {/* Course Thumbnail/Header */}
+                        {/* Course Gradient Header */}
                         <Box
-                          h="120px"
-                          bg={`${getCourseColor(index)}.500`}
+                          h="140px"
+                          bgGradient="to-br"
+                          gradientFrom="blue.400"
+                          gradientTo="blue.600"
                           position="relative"
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="center"
-                        >
-                          <Text
-                            fontSize="4xl"
-                            fontWeight="bold"
-                            color="white"
-                            opacity={0.9}
-                          >
-                            {getCourseIcon(course.course_name)}
-                          </Text>
-                          <Badge
-                            position="absolute"
-                            top={3}
-                            right={3}
-                            colorPalette={getStatusColor(course.percentage)}
-                            variant="solid"
-                          >
-                            {getStatusLabel(course.percentage)}
-                          </Badge>
-                        </Box>
+                          borderTopRadius="xl"
+                        />
 
-                        <Card.Body>
+                        <Card.Body p={4}>
                           <VStack gap={3} alignItems="stretch">
+                            {/* Mini Course Badge with Icon */}
+                            <HStack justify="space-between" alignItems="center">
+                              <Icon fontSize="md" color="gray.400">
+                                <LuBookOpen />
+                              </Icon>
+                            </HStack>
+
                             {/* Course Title */}
-                            <Heading size="md" lineClamp={2}>
+                            <Heading
+                              size="md"
+                              lineClamp={2}
+                              fontWeight="semibold"
+                              color="gray.900"
+                              _dark={{ color: "gray.100" }}
+                            >
                               {course.course_name}
                             </Heading>
 
-                            {/* Course Meta Info */}
-                            <HStack gap={4} fontSize="sm" color="gray.500">
+                            {/* Date and Icons Footer */}
+                            <Flex
+                              justify="space-between"
+                              alignItems="center"
+                              pt={2}
+                            >
+                              <Text
+                                fontSize="sm"
+                                color="gray.500"
+                                _dark={{ color: "gray.400" }}
+                              >
+                                {new Date().toLocaleDateString("en-US", {
+                                  month: "long",
+                                  day: "numeric",
+                                  year: "numeric",
+                                })}
+                              </Text>
                               <HStack gap={1}>
-                                <Icon>
-                                  <LuPlay />
-                                </Icon>
-                                <Text>
-                                  {course.completed}/{course.total} lessons
-                                </Text>
-                              </HStack>
-                            </HStack>
-
-                            {/* Progress Bar */}
-                            <Box>
-                              <Flex justify="space-between" mb={1}>
-                                <Text fontSize="sm" color="gray.600">
-                                  Progress
-                                </Text>
-                                <Text
-                                  fontSize="sm"
-                                  fontWeight="semibold"
-                                  color={
-                                    course.percentage === 100
-                                      ? "green.500"
-                                      : "gray.700"
-                                  }
+                                <IconButton
+                                  variant="ghost"
+                                  size="sm"
+                                  aria-label="View stats"
                                 >
-                                  {Math.round(course.percentage || 0)}%
-                                </Text>
-                              </Flex>
-                              <ProgressBar
-                                value={course.percentage || 0}
-                                colorPalette={
-                                  course.percentage === 100 ? "green" : "blue"
-                                }
-                                size="sm"
-                              />
-                            </Box>
+                                  <LuBarChart3 />
+                                </IconButton>
+                              </HStack>
+                            </Flex>
                           </VStack>
                         </Card.Body>
-
-                        {/* Continue Button */}
-                        <Card.Footer borderTopWidth="1px" pt={3}>
-                          <Box
-                            as="button"
-                            w="full"
-                            py={2}
-                            px={4}
-                            bg={
-                              course.percentage === 100
-                                ? "green.500"
-                                : "blue.500"
-                            }
-                            color="white"
-                            rounded="md"
-                            fontWeight="medium"
-                            fontSize="sm"
-                            textAlign="center"
-                            _hover={{
-                              bg:
-                                course.percentage === 100
-                                  ? "green.600"
-                                  : "blue.600",
-                            }}
-                            transition="all 0.2s"
-                          >
-                            {course.percentage === 100
-                              ? "Review Course"
-                              : course.percentage > 0
-                                ? "Continue Learning"
-                                : "Start Course"}
-                          </Box>
-                        </Card.Footer>
                       </Card.Root>
                     ))}
                   </SimpleGrid>
