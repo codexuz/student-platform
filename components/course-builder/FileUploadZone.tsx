@@ -6,8 +6,8 @@ import { useRef, useState, useCallback } from "react";
 import { uploadAPI } from "@/lib/teacher-api";
 
 interface Props {
-  /** "image" or "video" — used for accept filter and labels */
-  type: "image" | "video";
+  /** "image", "video", or "document" — used for accept filter and labels */
+  type: "image" | "video" | "document";
   /** Called with the uploaded file URL on success */
   onUploaded: (url: string) => void;
 }
@@ -19,9 +19,15 @@ export default function FileUploadZone({ type, onUploaded }: Props) {
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState("");
 
-  const accept = type === "image" ? "image/*" : "video/*";
-  const label = type === "image" ? "image" : "video";
-  const maxSize = type === "image" ? 10 : 400; // MB
+  const accept =
+    type === "image"
+      ? "image/*"
+      : type === "document"
+        ? ".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip,.rar,.7z,.mp3,.wav,.ogg,.flac,audio/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain,application/zip,application/x-rar-compressed"
+        : "video/*";
+  const label =
+    type === "image" ? "image" : type === "document" ? "file" : "video";
+  const maxSize = type === "image" ? 10 : type === "document" ? 100 : 400; // MB
 
   const handleFile = useCallback(
     async (file: File) => {
@@ -29,7 +35,9 @@ export default function FileUploadZone({ type, onUploaded }: Props) {
       const isValid =
         type === "image"
           ? file.type.startsWith("image/")
-          : file.type.startsWith("video/");
+          : type === "document"
+            ? true // Accept any file type for documents
+            : file.type.startsWith("video/");
       if (!isValid) {
         setError(`Please select a valid ${label} file`);
         return;

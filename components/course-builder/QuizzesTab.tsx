@@ -23,13 +23,20 @@ import type {
   QuizChoice,
   AcceptedAnswer,
   QuestionType,
+  Section,
+  Lesson,
 } from "./types";
 
 interface Props {
   courseId: string;
+  sections: Section[];
 }
 
-export default function QuizzesTab({ courseId }: Props) {
+export default function QuizzesTab({ courseId, sections }: Props) {
+  const allLessons: (Lesson & { sectionTitle: string })[] = sections.flatMap(
+    (s) => (s.lessons || []).map((l) => ({ ...l, sectionTitle: s.title })),
+  );
+
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -188,6 +195,15 @@ export default function QuizzesTab({ courseId }: Props) {
                     : "No time limit"}{" "}
                   · {q.is_published ? "✅ Published" : "📝 Draft"} · Attempts:{" "}
                   {q.attempts_allowed === 0 ? "∞" : q.attempts_allowed}
+                  {q.lesson_id &&
+                    (() => {
+                      const lesson = allLessons.find(
+                        (l) => l.id === q.lesson_id,
+                      );
+                      return lesson
+                        ? ` · 📖 ${lesson.sectionTitle} → ${lesson.title}`
+                        : "";
+                    })()}
                 </Text>
               </Box>
             ))}
@@ -198,6 +214,7 @@ export default function QuizzesTab({ courseId }: Props) {
           <QuizFormModal
             courseId={courseId}
             item={editQuiz}
+            lessons={allLessons}
             onClose={() => {
               setShowCreate(false);
               setEditQuiz(null);
@@ -218,15 +235,18 @@ export default function QuizzesTab({ courseId }: Props) {
 function QuizFormModal({
   courseId,
   item,
+  lessons,
   onClose,
   onDone,
 }: {
   courseId: string;
   item: Quiz | null;
+  lessons: (Lesson & { sectionTitle: string })[];
   onClose: () => void;
   onDone: () => void;
 }) {
   const [title, setTitle] = useState(item?.title || "");
+  const [lessonId, setLessonId] = useState(item?.lesson_id || "");
   const [timeLimit, setTimeLimit] = useState(
     item?.time_limit_seconds?.toString() || "",
   );
@@ -239,6 +259,7 @@ function QuizFormModal({
     try {
       const body: Record<string, unknown> = {
         course_id: courseId,
+        lesson_id: lessonId || undefined,
         title,
         time_limit_seconds: timeLimit ? parseInt(timeLimit) : undefined,
         attempts_allowed: Number(attempts),
@@ -268,6 +289,26 @@ function QuizFormModal({
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Quiz title"
           />
+        </FormField>
+        <FormField label="Lesson (optional)">
+          <select
+            style={{
+              width: "100%",
+              padding: "8px 12px",
+              borderWidth: "1px",
+              borderRadius: "6px",
+              fontSize: "0.875rem",
+            }}
+            value={lessonId}
+            onChange={(e) => setLessonId(e.target.value)}
+          >
+            <option value="">— No lesson —</option>
+            {lessons.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.sectionTitle} → {l.title}
+              </option>
+            ))}
+          </select>
         </FormField>
         <HStack gap={3}>
           <FormField label="Time Limit (sec)">

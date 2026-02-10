@@ -24,6 +24,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import LessonQuiz from "@/components/LessonQuiz";
 import { ieltsCourseAPI } from "@/lib/api";
 
 // ── Types ──────────────────────────────────────────────
@@ -232,16 +233,6 @@ export default function CourseDetailPage() {
             <Text fontSize="sm" display={{ base: "none", md: "block" }}>
               Your Progress: 0 of {totalLessons} (0%)
             </Text>
-            <IconButton
-              aria-label="Close"
-              variant="ghost"
-              color="white"
-              size="sm"
-              _hover={{ bg: "whiteAlpha.200" }}
-              onClick={() => router.push("/courses")}
-            >
-              <LuX />
-            </IconButton>
           </HStack>
         </Flex>
 
@@ -537,6 +528,11 @@ export default function CourseDetailPage() {
                           </Text>
                         </Flex>
                       )}
+
+                      {/* Quizzes for this lesson */}
+                      <Box mb={10}>
+                        <LessonQuiz lessonId={activeLesson.id} />
+                      </Box>
                     </Box>
                   </Box>
                 )}
@@ -611,6 +607,46 @@ function ContentBlockView({ block }: { block: ContentBlock }) {
           }}
           dangerouslySetInnerHTML={{ __html: block.content }}
         />
+      );
+    case "document":
+      return (
+        <a
+          href={block.content}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ textDecoration: "none" }}
+        >
+          <Box
+            display="flex"
+            alignItems="center"
+            gap={3}
+            p={4}
+            border="1px solid"
+            borderColor="gray.200"
+            _dark={{ borderColor: "gray.600" }}
+            borderRadius="lg"
+            _hover={{ bg: "gray.50", _dark: { bg: "whiteAlpha.50" } }}
+            transition="all 0.15s"
+            cursor="pointer"
+          >
+            <Text fontSize="2xl">📄</Text>
+            <Box flex={1} minW={0}>
+              <Text
+                fontSize="sm"
+                fontWeight="600"
+                color="gray.700"
+                _dark={{ color: "gray.200" }}
+              >
+                {decodeURIComponent(
+                  block.content.split("/").pop() || "Document",
+                )}
+              </Text>
+              <Text fontSize="xs" color="gray.400">
+                Click to download
+              </Text>
+            </Box>
+          </Box>
+        </a>
       );
     case "image":
       return (

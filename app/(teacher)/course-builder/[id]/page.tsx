@@ -270,7 +270,7 @@ export default function CourseEditorPage() {
             </Text>
           </VStack>
         ) : activeTab === "quizzes" ? (
-          <QuizzesTab courseId={courseId} />
+          <QuizzesTab courseId={courseId} sections={sections} />
         ) : activeTab === "settings" && course ? (
           <SettingsTab
             course={course}

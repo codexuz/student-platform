@@ -24,27 +24,36 @@ interface Props {
   onSave: (lessonId: string, data: Record<string, unknown>) => void;
 }
 
-let nextBlockId = 1;
+let nextBlockId = Date.now();
 function genBlockId() {
   return nextBlockId++;
 }
 
 function parseBlocks(content?: ContentBlock[]): ContentBlock[] {
   if (Array.isArray(content) && content.length) {
-    return content.map((b) => ({
-      ...b,
-      id: b.id ?? genBlockId(),
-    }));
+    // Always assign unique IDs to avoid duplicate key issues
+    const seen = new Set<number | string>();
+    return content.map((b) => {
+      let id = b.id;
+      if (id == null || seen.has(id)) {
+        id = genBlockId();
+      }
+      seen.add(id);
+      return { ...b, id };
+    });
   }
   return [];
 }
 
 export default function ContentEditor({ lesson, onSave }: Props) {
-  const initialState = useMemo(() => ({
-    title: lesson.title || "",
-    blocks: parseBlocks(lesson.content),
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [lesson.id, lesson.title, lesson.content]);
+  const initialState = useMemo(
+    () => ({
+      title: lesson.title || "",
+      blocks: parseBlocks(lesson.content),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }),
+    [lesson.id, lesson.title, lesson.content],
+  );
 
   const [title, setTitle] = useState(initialState.title);
   const [blocks, setBlocks] = useState<ContentBlock[]>(initialState.blocks);
@@ -117,7 +126,9 @@ export default function ContentEditor({ lesson, onSave }: Props) {
 
   // Expose method via ref on window for palette
   useEffect(() => {
-    const win = window as Window & { __addBlockFromPalette?: (type: BlockType) => void };
+    const win = window as Window & {
+      __addBlockFromPalette?: (type: BlockType) => void;
+    };
     win.__addBlockFromPalette = addBlockFromPalette;
     return () => {
       delete win.__addBlockFromPalette;

@@ -27,7 +27,13 @@ export interface Lesson {
   duration_seconds?: number;
 }
 
-export type BlockType = "paragraph" | "heading" | "video" | "image" | "embed";
+export type BlockType =
+  | "paragraph"
+  | "heading"
+  | "video"
+  | "image"
+  | "embed"
+  | "document";
 
 export interface ContentBlock {
   id: number | string;
@@ -38,6 +44,7 @@ export interface ContentBlock {
 export interface Quiz {
   id: string;
   course_id: string;
+  lesson_id?: string;
   title: string;
   time_limit_seconds?: number;
   attempts_allowed: number;

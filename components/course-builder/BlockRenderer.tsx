@@ -45,6 +45,27 @@ function toYouTubeEmbed(url: string): string | null {
   return null;
 }
 
+function getFileTypeLabel(url: string): string {
+  const ext = url.split(".").pop()?.toLowerCase() || "";
+  const labels: Record<string, string> = {
+    pdf: "PDF Document",
+    doc: "Word Document",
+    docx: "Word Document",
+    xls: "Excel Spreadsheet",
+    xlsx: "Excel Spreadsheet",
+    csv: "CSV File",
+    txt: "Text File",
+    zip: "ZIP Archive",
+    rar: "RAR Archive",
+    "7z": "7z Archive",
+    mp3: "Audio File",
+    wav: "Audio File",
+    ogg: "Audio File",
+    flac: "Audio File",
+  };
+  return labels[ext] || "File";
+}
+
 interface Props {
   block: ContentBlock;
   onChange: (content: string) => void;
@@ -270,6 +291,76 @@ export default function BlockRenderer({
           </Box>
         ) : (
           <FileUploadZone type="image" onUploaded={(url) => onUrlChange(url)} />
+        )}
+      </Box>
+    );
+  }
+
+  if (block.type === "document") {
+    return (
+      <Box
+        ref={setNodeRef}
+        style={style}
+        position="relative"
+        mb={1}
+        rounded="md"
+        _hover={{ bg: "blackAlpha.50", _dark: { bg: "whiteAlpha.50" } }}
+        role="group"
+      >
+        {dragHandle}
+        {block.content ? (
+          <Box px={4} py={3}>
+            <a
+              href={block.content}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: "none" }}
+            >
+              <Box
+                display="flex"
+                alignItems="center"
+                gap={3}
+                p={4}
+                border="1px solid"
+                borderColor="gray.200"
+                _dark={{ borderColor: "gray.600" }}
+                rounded="lg"
+                _hover={{ bg: "gray.50", _dark: { bg: "gray.700" } }}
+                transition="all 0.15s"
+              >
+                <Text fontSize="2xl">📄</Text>
+                <Box flex={1} minW={0}>
+                  <Text
+                    fontSize="sm"
+                    fontWeight="600"
+                    color="gray.700"
+                    _dark={{ color: "gray.200" }}
+                    truncate
+                  >
+                    {decodeURIComponent(
+                      block.content.split("/").pop() || "Document",
+                    )}
+                  </Text>
+                  <Text fontSize="xs" color="gray.400">
+                    {getFileTypeLabel(block.content)}
+                  </Text>
+                </Box>
+              </Box>
+            </a>
+            <Input
+              mt={2}
+              w="full"
+              size="sm"
+              value={block.content}
+              onChange={(e) => onUrlChange(e.target.value)}
+              placeholder="File URL"
+            />
+          </Box>
+        ) : (
+          <FileUploadZone
+            type="document"
+            onUploaded={(url) => onUrlChange(url)}
+          />
         )}
       </Box>
     );
