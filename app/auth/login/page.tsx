@@ -14,7 +14,6 @@ import {
 import { useState } from "react";
 import { LuGraduationCap, LuUserCog } from "react-icons/lu";
 import { toaster } from "@/components/ui/toaster";
-import { ColorModeButton } from "@/components/ui/color-mode";
 import { useAuth } from "@/contexts/AuthContext";
 
 type UserRole = "student" | "teacher";
@@ -106,9 +105,6 @@ export default function LoginPage() {
       p={4}
       position="relative"
     >
-      <Box position="absolute" top={4} right={4}>
-        <ColorModeButton />
-      </Box>
       <Box
         w="full"
         maxW="md"

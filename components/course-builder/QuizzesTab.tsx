@@ -6,6 +6,8 @@ import {
   Heading,
   HStack,
   Input,
+  Popover,
+  Portal,
   Text,
   Textarea,
   VStack,
@@ -33,6 +35,7 @@ export default function QuizzesTab({ courseId }: Props) {
   const [showCreate, setShowCreate] = useState(false);
   const [editQuiz, setEditQuiz] = useState<Quiz | null>(null);
   const [viewQuiz, setViewQuiz] = useState<Quiz | null>(null);
+  const [deletePopoverId, setDeletePopoverId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -45,10 +48,13 @@ export default function QuizzesTab({ courseId }: Props) {
     setLoading(false);
   }, [courseId]);
 
-  useState(() => { load(); return true; });
+  useState(() => {
+    load();
+    return true;
+  });
 
   const deleteQuiz = async (id: string) => {
-    if (!confirm("Delete this quiz?")) return;
+    setDeletePopoverId(null);
     try {
       await ieltsQuizzesAPI.delete(id);
       toaster.success({ title: "Quiz deleted!" });
@@ -130,13 +136,50 @@ export default function QuizzesTab({ courseId }: Props) {
                     >
                       Edit
                     </Button>
-                    <Button
-                      colorPalette="red"
-                      size="xs"
-                      onClick={() => deleteQuiz(q.id)}
+                    <Popover.Root
+                      open={deletePopoverId === q.id}
+                      onOpenChange={(e) =>
+                        setDeletePopoverId(e.open ? q.id : null)
+                      }
                     >
-                      Delete
-                    </Button>
+                      <Popover.Trigger asChild>
+                        <Button colorPalette="red" size="xs">
+                          Delete
+                        </Button>
+                      </Popover.Trigger>
+                      <Portal>
+                        <Popover.Positioner>
+                          <Popover.Content w="240px">
+                            <Popover.Arrow />
+                            <Popover.Body>
+                              <Text fontSize="sm" fontWeight="600" mb={1}>
+                                Delete quiz?
+                              </Text>
+                              <Text fontSize="xs" color="gray.500" mb={3}>
+                                This will permanently delete the quiz and all
+                                its questions.
+                              </Text>
+                              <HStack justify="flex-end" gap={2}>
+                                <Button
+                                  size="xs"
+                                  variant="outline"
+                                  onClick={() => setDeletePopoverId(null)}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  size="xs"
+                                  colorPalette="red"
+                                  onClick={() => deleteQuiz(q.id)}
+                                >
+                                  Delete
+                                </Button>
+                              </HStack>
+                            </Popover.Body>
+                          </Popover.Content>
+                        </Popover.Positioner>
+                      </Portal>
+                    </Popover.Root>
                   </HStack>
                 </HStack>
                 <Text fontSize="sm" color="gray.500">
@@ -285,6 +328,7 @@ function QuizDetail({ quiz, onBack }: { quiz: Quiz; onBack: () => void }) {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editQ, setEditQ] = useState<QuizQuestion | null>(null);
+  const [deleteQPopoverId, setDeleteQPopoverId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -302,10 +346,13 @@ function QuizDetail({ quiz, onBack }: { quiz: Quiz; onBack: () => void }) {
     setLoading(false);
   }, [quiz.id]);
 
-  useState(() => { load(); return true; });
+  useState(() => {
+    load();
+    return true;
+  });
 
   const deleteQ = async (id: string) => {
-    if (!confirm("Delete this question?")) return;
+    setDeleteQPopoverId(null);
     try {
       await ieltsQuizQuestionsAPI.delete(id);
       toaster.success({ title: "Deleted!" });
@@ -408,13 +455,49 @@ function QuizDetail({ quiz, onBack }: { quiz: Quiz; onBack: () => void }) {
                     >
                       Edit
                     </Button>
-                    <Button
-                      colorPalette="red"
-                      size="xs"
-                      onClick={() => deleteQ(q.id)}
+                    <Popover.Root
+                      open={deleteQPopoverId === q.id}
+                      onOpenChange={(e) =>
+                        setDeleteQPopoverId(e.open ? q.id : null)
+                      }
                     >
-                      Del
-                    </Button>
+                      <Popover.Trigger asChild>
+                        <Button colorPalette="red" size="xs">
+                          Del
+                        </Button>
+                      </Popover.Trigger>
+                      <Portal>
+                        <Popover.Positioner>
+                          <Popover.Content w="220px">
+                            <Popover.Arrow />
+                            <Popover.Body>
+                              <Text fontSize="sm" fontWeight="600" mb={1}>
+                                Delete question?
+                              </Text>
+                              <Text fontSize="xs" color="gray.500" mb={3}>
+                                This action cannot be undone.
+                              </Text>
+                              <HStack justify="flex-end" gap={2}>
+                                <Button
+                                  size="xs"
+                                  variant="outline"
+                                  onClick={() => setDeleteQPopoverId(null)}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  size="xs"
+                                  colorPalette="red"
+                                  onClick={() => deleteQ(q.id)}
+                                >
+                                  Delete
+                                </Button>
+                              </HStack>
+                            </Popover.Body>
+                          </Popover.Content>
+                        </Popover.Positioner>
+                      </Portal>
+                    </Popover.Root>
                   </HStack>
                 </HStack>
               </Box>

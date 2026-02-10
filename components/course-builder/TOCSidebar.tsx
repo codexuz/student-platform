@@ -1,6 +1,15 @@
 "use client";
 
-import { Box, Text, Icon, VStack } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  HStack,
+  Popover,
+  Portal,
+  Text,
+  Icon,
+  VStack,
+} from "@chakra-ui/react";
 import { FileText, Trash2, GripVertical, Plus } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import {
@@ -43,6 +52,7 @@ function SortableLesson({
   onClick: () => void;
   onDelete: () => void;
 }) {
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const {
     attributes,
     listeners,
@@ -97,7 +107,9 @@ function SortableLesson({
         flexShrink={0}
         onClick={(e) => e.stopPropagation()}
       >
-        <Icon><GripVertical size={12} /></Icon>
+        <Icon>
+          <GripVertical size={12} />
+        </Icon>
       </Box>
 
       <Icon color={isActive ? "blue.500" : "gray.400"} flexShrink={0}>
@@ -113,25 +125,70 @@ function SortableLesson({
       </Text>
 
       {/* Delete button */}
-      <Box
-        as="button"
-        w={5}
-        h={5}
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-        rounded="sm"
-        color="gray.400"
-        _hover={{ color: "red.500" }}
-        transition="all 0.15s"
-        flexShrink={0}
-        onClick={(e) => {
-          e.stopPropagation();
-          onDelete();
-        }}
+      <Popover.Root
+        open={deleteOpen}
+        onOpenChange={(e) => setDeleteOpen(e.open)}
       >
-        <Icon color="inherit"><Trash2 size={12} /></Icon>
-      </Box>
+        <Popover.Trigger asChild>
+          <Box
+            as="button"
+            w={5}
+            h={5}
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            rounded="sm"
+            color="gray.400"
+            _hover={{ color: "red.500" }}
+            transition="all 0.15s"
+            flexShrink={0}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+          >
+            <Icon color="inherit">
+              <Trash2 size={12} />
+            </Icon>
+          </Box>
+        </Popover.Trigger>
+        <Portal>
+          <Popover.Positioner>
+            <Popover.Content
+              w="210px"
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+            >
+              <Popover.Arrow />
+              <Popover.Body>
+                <Text fontSize="sm" fontWeight="600" mb={1}>
+                  Delete this page?
+                </Text>
+                <Text fontSize="xs" color="gray.500" mb={3}>
+                  This action cannot be undone.
+                </Text>
+                <HStack justify="flex-end" gap={2}>
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    onClick={() => setDeleteOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="xs"
+                    colorPalette="red"
+                    onClick={() => {
+                      setDeleteOpen(false);
+                      onDelete();
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </HStack>
+              </Popover.Body>
+            </Popover.Content>
+          </Popover.Positioner>
+        </Portal>
+      </Popover.Root>
     </Box>
   );
 }
@@ -265,21 +322,55 @@ export default function TOCSidebar({
                 title={sec.title}
                 onRename={(v) => onRenameSection(sec.id, v)}
               />
-              <Box
-                as="button"
-                w={5}
-                h={5}
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                rounded="sm"
-                color="gray.400"
-                _hover={{ color: "red.500" }}
-                transition="opacity 0.15s"
-                onClick={() => onDeleteSection(sec.id)}
-              >
-                <Icon color="red.500"><Trash2 size={12} /></Icon>
-              </Box>
+              <Popover.Root>
+                <Popover.Trigger asChild>
+                  <Box
+                    as="button"
+                    w={5}
+                    h={5}
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    rounded="sm"
+                    color="gray.400"
+                    _hover={{ color: "red.500" }}
+                    transition="opacity 0.15s"
+                  >
+                    <Icon color="red.500">
+                      <Trash2 size={12} />
+                    </Icon>
+                  </Box>
+                </Popover.Trigger>
+                <Portal>
+                  <Popover.Positioner>
+                    <Popover.Content w="230px">
+                      <Popover.Arrow />
+                      <Popover.Body>
+                        <Text fontSize="sm" fontWeight="600" mb={1}>
+                          Delete section?
+                        </Text>
+                        <Text fontSize="xs" color="gray.500" mb={3}>
+                          This will delete the section and all its lessons.
+                        </Text>
+                        <HStack justify="flex-end" gap={2}>
+                          <Popover.CloseTrigger asChild>
+                            <Button size="xs" variant="outline">
+                              Cancel
+                            </Button>
+                          </Popover.CloseTrigger>
+                          <Button
+                            size="xs"
+                            colorPalette="red"
+                            onClick={() => onDeleteSection(sec.id)}
+                          >
+                            Delete
+                          </Button>
+                        </HStack>
+                      </Popover.Body>
+                    </Popover.Content>
+                  </Popover.Positioner>
+                </Portal>
+              </Popover.Root>
             </Box>
 
             {/* Lessons (sortable) */}
@@ -325,7 +416,9 @@ export default function TOCSidebar({
                 transition="all 0.15s"
                 onClick={() => onAddLesson(sec.id)}
               >
-                <Icon><Plus size={12} /></Icon>
+                <Icon>
+                  <Plus size={12} />
+                </Icon>
               </Box>
             </Box>
           </Box>
@@ -354,7 +447,10 @@ export default function TOCSidebar({
           }}
           onClick={onAddSection}
         >
-          <Icon><Plus size={14} /></Icon> Add Section
+          <Icon>
+            <Plus size={14} />
+          </Icon>{" "}
+          Add Section
         </Box>
       </Box>
     </Box>

@@ -1,7 +1,17 @@
 "use client";
 
-import { Box, Icon, Input, Text } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  CloseButton,
+  Dialog,
+  Icon,
+  Input,
+  Portal,
+  Text,
+} from "@chakra-ui/react";
 import { GripVertical, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import Image from "next/image";
@@ -57,6 +67,9 @@ export default function BlockRenderer({
     isDragging,
   } = useSortable({ id: block.id });
 
+  const [embedModalOpen, setEmbedModalOpen] = useState(false);
+  const [embedUrlInput, setEmbedUrlInput] = useState("");
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -90,7 +103,9 @@ export default function BlockRenderer({
         shadow="sm"
         _hover={{ color: "gray.600", bg: "gray.100" }}
       >
-        <Icon><GripVertical size={14} /></Icon>
+        <Icon>
+          <GripVertical size={14} />
+        </Icon>
       </Box>
       <Box
         as="button"
@@ -108,7 +123,9 @@ export default function BlockRenderer({
         _hover={{ color: "red.500", bg: "red.50" }}
         onClick={onRemove}
       >
-        <Icon><Trash2 size={14} /></Icon>
+        <Icon>
+          <Trash2 size={14} />
+        </Icon>
       </Box>
     </Box>
   );
@@ -233,7 +250,13 @@ export default function BlockRenderer({
               alt=""
               width={720}
               height={400}
-              style={{ width: "100%", height: "auto", borderRadius: "8px", maxHeight: "400px", objectFit: "cover" }}
+              style={{
+                width: "100%",
+                height: "auto",
+                borderRadius: "8px",
+                maxHeight: "400px",
+                objectFit: "cover",
+              }}
               unoptimized
             />
             <Input
@@ -306,38 +329,89 @@ export default function BlockRenderer({
             />
           </Box>
         ) : (
-          <Box
-            mx={4}
-            my={3}
-            bg="gray.50"
-            _dark={{ bg: "gray.700" }}
-            border="2px dashed"
-            borderColor="gray.300"
-            rounded="md"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            flexDirection="column"
-            gap={2}
-            minH="120px"
-            color="gray.400"
-            cursor="pointer"
-            _hover={{
-              borderColor: "blue.400",
-              color: "blue.500",
-              bg: "blue.50",
-              _dark: { bg: "blue.900" },
-            }}
-            onClick={() => {
-              const url = prompt("Enter YouTube URL:");
-              if (url) onUrlChange(url);
-            }}
-          >
-            <Text fontSize="2xl">&lt;/&gt;</Text>
-            <Text fontWeight="600" fontSize="sm">
-              Paste a YouTube URL
-            </Text>
-          </Box>
+          <>
+            <Box
+              mx={4}
+              my={3}
+              bg="gray.50"
+              _dark={{ bg: "gray.700" }}
+              border="2px dashed"
+              borderColor="gray.300"
+              rounded="md"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              flexDirection="column"
+              gap={2}
+              minH="120px"
+              color="gray.400"
+              cursor="pointer"
+              _hover={{
+                borderColor: "blue.400",
+                color: "blue.500",
+                bg: "blue.50",
+                _dark: { bg: "blue.900" },
+              }}
+              onClick={() => {
+                setEmbedUrlInput("");
+                setEmbedModalOpen(true);
+              }}
+            >
+              <Text fontSize="2xl">&lt;/&gt;</Text>
+              <Text fontWeight="600" fontSize="sm">
+                Paste a YouTube URL
+              </Text>
+            </Box>
+
+            <Dialog.Root
+              lazyMount
+              open={embedModalOpen}
+              onOpenChange={(e) => setEmbedModalOpen(e.open)}
+            >
+              <Portal>
+                <Dialog.Backdrop />
+                <Dialog.Positioner>
+                  <Dialog.Content>
+                    <Dialog.Header>
+                      <Dialog.Title>Enter YouTube URL</Dialog.Title>
+                    </Dialog.Header>
+                    <Dialog.Body>
+                      <Input
+                        placeholder="https://www.youtube.com/watch?v=..."
+                        value={embedUrlInput}
+                        onChange={(e) => setEmbedUrlInput(e.target.value)}
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && embedUrlInput.trim()) {
+                            onUrlChange(embedUrlInput.trim());
+                            setEmbedModalOpen(false);
+                          }
+                        }}
+                      />
+                    </Dialog.Body>
+                    <Dialog.Footer>
+                      <Dialog.ActionTrigger asChild>
+                        <Button variant="outline">Cancel</Button>
+                      </Dialog.ActionTrigger>
+                      <Button
+                        colorPalette="blue"
+                        disabled={!embedUrlInput.trim()}
+                        onClick={() => {
+                          onUrlChange(embedUrlInput.trim());
+                          setEmbedModalOpen(false);
+                        }}
+                      >
+                        Embed
+                      </Button>
+                    </Dialog.Footer>
+                    <Dialog.CloseTrigger asChild>
+                      <CloseButton size="sm" />
+                    </Dialog.CloseTrigger>
+                  </Dialog.Content>
+                </Dialog.Positioner>
+              </Portal>
+            </Dialog.Root>
+          </>
         )}
       </Box>
     );

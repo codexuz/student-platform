@@ -120,7 +120,6 @@ export default function CourseEditorPage() {
   };
 
   const deleteSection = async (id: string) => {
-    if (!confirm("Delete this section and all its lessons?")) return;
     try {
       await ieltsCourseSectionsAPI.delete(id);
       toaster.success({ title: "Section deleted!" });
@@ -151,7 +150,6 @@ export default function CourseEditorPage() {
   };
 
   const deleteLesson = async (id: string) => {
-    if (!confirm("Delete this page?")) return;
     try {
       await ieltsLessonsAPI.delete(id);
       toaster.success({ title: "Page deleted!" });
@@ -274,7 +272,10 @@ export default function CourseEditorPage() {
         ) : activeTab === "quizzes" ? (
           <QuizzesTab courseId={courseId} />
         ) : activeTab === "settings" && course ? (
-          <SettingsTab course={course} onUpdate={(updated) => setCourse(updated)} />
+          <SettingsTab
+            course={course}
+            onUpdate={(updated) => setCourse(updated)}
+          />
         ) : (
           <Box flex={1} display="flex" overflow="hidden">
             {/* TOC sidebar */}

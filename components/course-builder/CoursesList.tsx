@@ -11,6 +11,8 @@ import {
   Icon,
   SimpleGrid,
   Spinner,
+  Popover,
+  Portal,
 } from "@chakra-ui/react";
 import { Plus, Trash2, BarChart3 } from "lucide-react";
 import { useState, useCallback } from "react";
@@ -30,6 +32,7 @@ export default function CoursesList({ onOpenCourse }: CoursesListProps) {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [deletePopoverId, setDeletePopoverId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -61,9 +64,8 @@ export default function CoursesList({ onOpenCourse }: CoursesListProps) {
     );
   });
 
-  const deleteCourse = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    if (!confirm("Delete this course and all its contents?")) return;
+  const deleteCourse = async (id: string) => {
+    setDeletePopoverId(null);
     try {
       await ieltsCourseBuilderAPI.delete(id);
       toaster.success({ title: "Course deleted!" });
@@ -167,7 +169,11 @@ export default function CoursesList({ onOpenCourse }: CoursesListProps) {
               {/* Thumbnail */}
               <Box
                 h="160px"
-                bg={c.thumbnail_url ? undefined : "linear-gradient(to bottom right, #3b82f6, #1d4ed8)"}
+                bg={
+                  c.thumbnail_url
+                    ? undefined
+                    : "linear-gradient(to bottom right, #3b82f6, #1d4ed8)"
+                }
                 position="relative"
                 overflow="hidden"
                 {...(c.thumbnail_url
@@ -242,20 +248,66 @@ export default function CoursesList({ onOpenCourse }: CoursesListProps) {
                     >
                       <BarChart3 size={14} />
                     </Box>
-                    <Box
-                      as="button"
-                      w={8}
-                      h={8}
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                      rounded="md"
-                      color="gray.400"
-                      _hover={{ bg: "red.50", color: "red.500" }}
-                      onClick={(e: React.MouseEvent) => deleteCourse(e, c.id)}
+                    <Popover.Root
+                      open={deletePopoverId === c.id}
+                      onOpenChange={(e) =>
+                        setDeletePopoverId(e.open ? c.id : null)
+                      }
                     >
-                      <Trash2 size={14} />
-                    </Box>
+                      <Popover.Trigger asChild>
+                        <Box
+                          as="button"
+                          w={8}
+                          h={8}
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                          rounded="md"
+                          color="gray.400"
+                          _hover={{ bg: "red.50", color: "red.500" }}
+                          onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                        >
+                          <Trash2 size={14} />
+                        </Box>
+                      </Popover.Trigger>
+                      <Portal>
+                        <Popover.Positioner>
+                          <Popover.Content
+                            w="260px"
+                            onClick={(e: React.MouseEvent) =>
+                              e.stopPropagation()
+                            }
+                          >
+                            <Popover.Arrow />
+                            <Popover.Body>
+                              <Text fontSize="sm" fontWeight="600" mb={1}>
+                                Delete course?
+                              </Text>
+                              <Text fontSize="xs" color="gray.500" mb={3}>
+                                This will permanently delete the course and all
+                                its contents.
+                              </Text>
+                              <HStack justify="flex-end" gap={2}>
+                                <Button
+                                  size="xs"
+                                  variant="outline"
+                                  onClick={() => setDeletePopoverId(null)}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  size="xs"
+                                  colorPalette="red"
+                                  onClick={() => deleteCourse(c.id)}
+                                >
+                                  Delete
+                                </Button>
+                              </HStack>
+                            </Popover.Body>
+                          </Popover.Content>
+                        </Popover.Positioner>
+                      </Portal>
+                    </Popover.Root>
                   </HStack>
                 </HStack>
               </Box>
