@@ -1,0 +1,3135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IELTS Course Builder</title>
+    <script
+      src="https://unpkg.com/react@18/umd/react.production.min.js"
+      crossorigin
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
+      crossorigin
+    ></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --primary: #2563eb;
+        --primary-light: #60a5fa;
+        --primary-dark: #1d4ed8;
+        --primary-bg: #eff6ff;
+        --success: #10b981;
+        --success-bg: #d1fae5;
+        --warning: #f59e0b;
+        --warning-bg: #fef3c7;
+        --danger: #ef4444;
+        --danger-bg: #fee2e2;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+        --radius: 8px;
+        --radius-lg: 12px;
+        --radius-xl: 16px;
+        --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+        --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+        --shadow-card:
+          0 2px 8px rgba(0, 0, 0, 0.06), 0 0 1px rgba(0, 0, 0, 0.1);
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family:
+          "Inter",
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background: #f8fafc;
+        color: var(--gray-800);
+        line-height: 1.6;
+      }
+
+      /* ── COURSES LIST VIEW ── */
+      .courses-view {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 32px 40px;
+      }
+      .courses-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 28px;
+      }
+      .courses-header h1 {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--gray-900);
+      }
+      .courses-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+        gap: 16px;
+      }
+      .search-box {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border: 1.5px solid var(--gray-200);
+        border-radius: var(--radius);
+        background: #fff;
+        width: 260px;
+      }
+      .search-box input {
+        border: none;
+        outline: none;
+        font-size: 14px;
+        font-family: inherit;
+        color: var(--gray-700);
+        width: 100%;
+        background: transparent;
+      }
+      .search-box svg {
+        color: var(--gray-400);
+        flex-shrink: 0;
+      }
+      .sort-select {
+        padding: 8px 14px;
+        border: 1.5px solid var(--gray-200);
+        border-radius: var(--radius);
+        font-size: 14px;
+        font-family: inherit;
+        color: var(--gray-700);
+        background: #fff;
+        cursor: pointer;
+        appearance: none;
+        padding-right: 32px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+      }
+
+      .courses-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 24px;
+      }
+      .course-card {
+        background: #fff;
+        border-radius: var(--radius-xl);
+        overflow: hidden;
+        box-shadow: var(--shadow-card);
+        transition: all 0.2s;
+        cursor: pointer;
+        border: 1px solid var(--gray-100);
+      }
+      .course-card:hover {
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-2px);
+      }
+      .course-card-thumb {
+        height: 160px;
+        background: linear-gradient(
+          135deg,
+          #3b82f6 0%,
+          #2563eb 40%,
+          #1d4ed8 100%
+        );
+        position: relative;
+        overflow: hidden;
+      }
+      .course-card-thumb::before {
+        content: "";
+        position: absolute;
+        width: 200px;
+        height: 200px;
+        background: rgba(255, 255, 255, 0.12);
+        border-radius: 50%;
+        top: -60px;
+        left: -40px;
+      }
+      .course-card-thumb::after {
+        content: "";
+        position: absolute;
+        width: 120px;
+        height: 120px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 50%;
+        bottom: -20px;
+        right: 20px;
+      }
+      .course-card-body {
+        padding: 16px 18px;
+      }
+      .course-card-type {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 6px;
+      }
+      .course-card-type .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+      .course-card-type .status-dot.published {
+        background: var(--success);
+      }
+      .course-card-type .status-dot.draft {
+        background: var(--warning);
+      }
+      .course-card-type .status-dot.archived {
+        background: var(--gray-400);
+      }
+      .course-card-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin-bottom: 12px;
+        line-height: 1.3;
+      }
+      .course-card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .course-card-date {
+        font-size: 12px;
+        color: var(--gray-400);
+      }
+      .course-card-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .icon-btn {
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: transparent;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gray-400);
+        transition: all 0.15s;
+      }
+      .icon-btn:hover {
+        background: var(--gray-100);
+        color: var(--gray-600);
+      }
+
+      /* ── BUTTONS ── */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 20px;
+        border-radius: var(--radius);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.15s;
+        font-family: inherit;
+      }
+      .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+      }
+      .btn:active {
+        transform: translateY(0);
+      }
+      .btn-primary {
+        background: var(--primary);
+        color: #fff;
+      }
+      .btn-primary:hover {
+        background: var(--primary-dark);
+      }
+      .btn-success {
+        background: var(--success);
+        color: #fff;
+      }
+      .btn-danger {
+        background: var(--danger);
+        color: #fff;
+      }
+      .btn-outline {
+        background: #fff;
+        border: 1.5px solid var(--gray-200);
+        color: var(--gray-700);
+      }
+      .btn-outline:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+        background: #fff;
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--gray-600);
+      }
+      .btn-ghost:hover {
+        background: var(--gray-100);
+        box-shadow: none;
+        transform: none;
+      }
+      .btn-sm {
+        padding: 7px 14px;
+        font-size: 13px;
+      }
+      .btn-xs {
+        padding: 4px 10px;
+        font-size: 12px;
+        border-radius: 6px;
+      }
+
+      /* ── EDITOR VIEW ── */
+      .editor-view {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      .editor-topbar {
+        height: 52px;
+        background: #fff;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        gap: 12px;
+        flex-shrink: 0;
+        z-index: 50;
+      }
+      .editor-topbar .back-btn {
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: transparent;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gray-500);
+        font-size: 18px;
+      }
+      .editor-topbar .back-btn:hover {
+        background: var(--gray-100);
+      }
+      .editor-topbar .course-name {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--gray-800);
+        flex: 1;
+      }
+      .editor-topbar .course-name input {
+        border: none;
+        outline: none;
+        font-size: 15px;
+        font-weight: 600;
+        font-family: inherit;
+        color: var(--gray-800);
+        background: transparent;
+        width: 300px;
+      }
+      .editor-topbar .save-status {
+        font-size: 12px;
+        color: var(--success);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-weight: 500;
+      }
+      .editor-tabs {
+        display: flex;
+        gap: 0;
+        background: #fff;
+        border-bottom: 1px solid var(--gray-200);
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .editor-tab {
+        padding: 12px 24px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--gray-500);
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.15s;
+      }
+      .editor-tab:hover {
+        color: var(--gray-700);
+      }
+      .editor-tab.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+        font-weight: 600;
+      }
+
+      .editor-body {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+      }
+
+      /* ── TOC SIDEBAR ── */
+      .toc-sidebar {
+        width: 240px;
+        background: #fff;
+        border-right: 1px solid var(--gray-200);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+      .toc-header {
+        padding: 16px 16px 12px;
+      }
+      .toc-header h3 {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .toc-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0 8px 8px;
+      }
+      .toc-section {
+        margin-bottom: 4px;
+      }
+      .toc-section-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--gray-800);
+        padding: 8px 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: default;
+        border-radius: 6px;
+      }
+      .toc-section-title:hover {
+        background: var(--gray-50);
+      }
+      .toc-section-title .section-actions {
+        display: flex;
+        gap: 2px;
+        opacity: 0;
+        transition: opacity 0.15s;
+      }
+      .toc-section-title:hover .section-actions {
+        opacity: 1;
+      }
+      .toc-page {
+        padding: 7px 10px 7px 28px;
+        font-size: 13px;
+        color: var(--gray-600);
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.1s;
+      }
+      .toc-page:hover {
+        background: var(--gray-100);
+        color: var(--gray-800);
+      }
+      .toc-page.active {
+        background: var(--primary-bg);
+        color: var(--primary);
+        font-weight: 600;
+      }
+      .toc-page .page-icon {
+        font-size: 14px;
+        color: var(--gray-400);
+        flex-shrink: 0;
+        width: 18px;
+        text-align: center;
+      }
+      .toc-page.active .page-icon {
+        color: var(--primary);
+      }
+      .toc-add-page {
+        padding: 4px 10px 4px 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .toc-add-page button {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: none;
+        background: var(--primary);
+        color: #fff;
+        font-size: 14px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+      }
+      .toc-add-page button:hover {
+        transform: scale(1.1);
+        background: var(--primary-dark);
+      }
+      .toc-footer {
+        padding: 12px 16px;
+        border-top: 1px solid var(--gray-200);
+      }
+      .toc-footer button {
+        width: 100%;
+        padding: 8px;
+        border: none;
+        background: transparent;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--gray-500);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 6px;
+        font-family: inherit;
+      }
+      .toc-footer button:hover {
+        background: var(--gray-100);
+        color: var(--gray-700);
+      }
+
+      /* ── CONTENT EDITOR ── */
+      .content-editor {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 32px 24px;
+        background: #f8fafc;
+      }
+      .content-editor-inner {
+        width: 100%;
+        max-width: 720px;
+      }
+      .editor-page-title {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--gray-900);
+        border: none;
+        outline: none;
+        width: 100%;
+        margin-bottom: 20px;
+        font-family: inherit;
+        background: transparent;
+      }
+      .editor-page-title::placeholder {
+        color: var(--gray-300);
+      }
+      .content-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 12px;
+        background: #fff;
+        border: 1px solid var(--gray-200);
+        border-radius: var(--radius);
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        box-shadow: var(--shadow);
+      }
+      .toolbar-btn {
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: transparent;
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gray-600);
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.1s;
+      }
+      .toolbar-btn:hover {
+        background: var(--gray-100);
+        color: var(--gray-800);
+      }
+      .toolbar-btn.active {
+        background: var(--primary-bg);
+        color: var(--primary);
+      }
+      .toolbar-sep {
+        width: 1px;
+        height: 20px;
+        background: var(--gray-200);
+        margin: 0 4px;
+      }
+      .toolbar-select {
+        padding: 4px 8px;
+        border: 1px solid var(--gray-200);
+        border-radius: 4px;
+        font-size: 13px;
+        font-family: inherit;
+        color: var(--gray-600);
+        cursor: pointer;
+        background: #fff;
+      }
+
+      /* ── CONTENT BLOCKS ── */
+      .block-wrapper {
+        position: relative;
+        margin-bottom: 4px;
+        border-radius: var(--radius);
+        transition: all 0.15s;
+      }
+      .block-wrapper:hover {
+        background: rgba(0, 0, 0, 0.015);
+      }
+      .block-wrapper:hover .block-controls {
+        opacity: 1;
+      }
+      .block-controls {
+        position: absolute;
+        left: -44px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        opacity: 0;
+        transition: opacity 0.15s;
+      }
+      .block-control-btn {
+        width: 28px;
+        height: 28px;
+        border: none;
+        background: #fff;
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gray-400);
+        font-size: 12px;
+        box-shadow: var(--shadow);
+        transition: all 0.1s;
+      }
+      .block-control-btn:hover {
+        color: var(--danger);
+        background: var(--danger-bg);
+      }
+      .block-control-btn.drag {
+        cursor: grab;
+      }
+      .block-control-btn.drag:hover {
+        color: var(--gray-600);
+        background: var(--gray-100);
+      }
+      .block-content {
+        padding: 12px 16px;
+        min-height: 40px;
+      }
+      .block-content[contenteditable]:focus {
+        outline: none;
+      }
+      .block-content h2 {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--gray-900);
+      }
+      .block-content p {
+        font-size: 15px;
+        color: var(--gray-600);
+        line-height: 1.7;
+      }
+      .block-content.heading {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--gray-900);
+      }
+      .block-content.paragraph {
+        font-size: 15px;
+        color: var(--gray-600);
+        line-height: 1.7;
+      }
+      .block-content.video-block,
+      .block-content.image-block,
+      .block-content.embed-block {
+        background: var(--gray-50);
+        border: 2px dashed var(--gray-300);
+        border-radius: var(--radius);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 8px;
+        min-height: 120px;
+        color: var(--gray-400);
+        cursor: pointer;
+      }
+      .block-content.video-block:hover,
+      .block-content.image-block:hover,
+      .block-content.embed-block:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+        background: var(--primary-bg);
+      }
+
+      .add-block-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px;
+        margin: 8px auto;
+      }
+      .add-block-btn button {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: none;
+        background: var(--primary);
+        color: #fff;
+        font-size: 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+        box-shadow: var(--shadow-md);
+      }
+      .add-block-btn button:hover {
+        transform: scale(1.15);
+        background: var(--primary-dark);
+      }
+      .add-block-tooltip {
+        font-size: 11px;
+        color: var(--gray-800);
+        background: var(--gray-900);
+        color: #fff;
+        padding: 4px 8px;
+        border-radius: 4px;
+        margin-top: 4px;
+        white-space: nowrap;
+        opacity: 0;
+        transition: opacity 0.15s;
+        pointer-events: none;
+        position: absolute;
+        top: 100%;
+      }
+      .add-block-btn:hover .add-block-tooltip {
+        opacity: 1;
+      }
+
+      /* ── BLOCK PALETTE (RIGHT SIDEBAR) ── */
+      .block-palette {
+        width: 72px;
+        background: #fff;
+        border-left: 1px solid var(--gray-200);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 16px 0;
+        gap: 4px;
+        flex-shrink: 0;
+      }
+      .palette-btn {
+        width: 56px;
+        padding: 10px 4px;
+        border: none;
+        background: transparent;
+        border-radius: var(--radius);
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        color: var(--gray-500);
+        font-size: 10px;
+        font-weight: 600;
+        font-family: inherit;
+        transition: all 0.15s;
+      }
+      .palette-btn:hover {
+        background: var(--primary-bg);
+        color: var(--primary);
+      }
+      .palette-btn svg,
+      .palette-btn .palette-icon {
+        font-size: 20px;
+      }
+
+      /* ── MODAL ── */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 200;
+        animation: fadeIn 0.15s;
+      }
+      .modal {
+        background: #fff;
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-lg);
+        width: 90%;
+        max-width: 520px;
+        max-height: 85vh;
+        overflow-y: auto;
+        animation: slideUp 0.2s;
+      }
+      .modal-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .modal-header h3 {
+        font-size: 17px;
+        font-weight: 700;
+      }
+      .modal-close {
+        width: 32px;
+        height: 32px;
+        border-radius: var(--radius);
+        border: none;
+        background: var(--gray-100);
+        cursor: pointer;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gray-500);
+      }
+      .modal-close:hover {
+        background: var(--gray-200);
+      }
+      .modal-body {
+        padding: 24px;
+      }
+      .modal-footer {
+        padding: 16px 24px;
+        border-top: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
+      /* ── FORMS ── */
+      .form-group {
+        margin-bottom: 16px;
+      }
+      .form-group label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--gray-500);
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      .form-control {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1.5px solid var(--gray-200);
+        border-radius: var(--radius);
+        font-size: 14px;
+        color: var(--gray-800);
+        background: #fff;
+        transition: border 0.15s;
+        font-family: inherit;
+      }
+      .form-control:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      }
+      select.form-control {
+        cursor: pointer;
+      }
+      textarea.form-control {
+        resize: vertical;
+        min-height: 80px;
+      }
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      /* ── CONFIG BAR ── */
+      .config-bar {
+        background: #fff;
+        border-bottom: 1px solid var(--gray-100);
+        padding: 8px 40px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .config-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .config-group label {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--gray-400);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        white-space: nowrap;
+      }
+      .config-group input {
+        padding: 5px 10px;
+        border: 1px solid var(--gray-200);
+        border-radius: 6px;
+        font-size: 12px;
+        font-family: "JetBrains Mono", "Fira Code", monospace;
+        color: var(--gray-700);
+        background: var(--gray-50);
+      }
+      .config-group input:focus {
+        outline: none;
+        border-color: var(--primary);
+        background: #fff;
+      }
+
+      /* ── TOAST ── */
+      .toast-container {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        z-index: 300;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .toast {
+        padding: 12px 18px;
+        border-radius: var(--radius);
+        font-size: 13px;
+        font-weight: 600;
+        color: #fff;
+        box-shadow: var(--shadow-lg);
+        animation: slideIn 0.3s;
+      }
+      .toast-success {
+        background: var(--success);
+      }
+      .toast-error {
+        background: var(--danger);
+      }
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateX(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* ── EMPTY STATE ── */
+      .empty-state {
+        text-align: center;
+        padding: 64px 24px;
+      }
+      .empty-state .icon {
+        font-size: 56px;
+        margin-bottom: 16px;
+      }
+      .empty-state h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--gray-500);
+        margin-bottom: 8px;
+      }
+      .empty-state p {
+        font-size: 14px;
+        color: var(--gray-400);
+      }
+
+      /* ── ID BADGE ── */
+      .id-badge {
+        font-size: 11px;
+        font-family: "JetBrains Mono", "Fira Code", monospace;
+        background: var(--gray-100);
+        padding: 2px 6px;
+        border-radius: 4px;
+        color: var(--gray-500);
+        cursor: pointer;
+        border: none;
+      }
+      .id-badge:hover {
+        background: var(--gray-200);
+      }
+
+      /* ── QUIZZES INLINE ── */
+      .quiz-block {
+        background: #fff;
+        border: 1.5px solid var(--gray-200);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+      }
+      .quiz-block-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+      .quiz-block-header h4 {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--gray-800);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .question-item {
+        background: var(--gray-50);
+        border-radius: var(--radius);
+        padding: 14px 16px;
+        margin-bottom: 8px;
+      }
+      .question-item .q-prompt {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin-bottom: 6px;
+      }
+      .choice-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        margin: 2px 4px 2px 0;
+      }
+      .choice-pill.correct {
+        background: var(--success-bg);
+        color: var(--success);
+      }
+      .choice-pill.incorrect {
+        background: var(--gray-100);
+        color: var(--gray-500);
+      }
+
+      ::-webkit-scrollbar {
+        width: 5px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--gray-300);
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--gray-400);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <div class="toast-container" id="toast-container"></div>
+
+    <script type="text/babel">
+      const { useState, useEffect, useCallback, useRef } = React;
+
+      // ═══════════════════════════════════════════════════
+      //  API
+      // ═══════════════════════════════════════════════════
+      let API_URL = "https://backend.impulselc.uz/api";
+      let JWT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4YzIyYTE3Mi03MDMzLTQxYzUtYmMyNy1lMTg0ZjY5OTU5Y2UiLCJ1c2VybmFtZSI6ImZhcmFuZ2l6X2FkbWluIiwicGhvbmUiOiIrOTk4NTA3MDIwMDI0Iiwic2Vzc2lvbklkIjoiOTc4NzRjZGEtNDM2NS00ZjVmLTgxMjctNGY5Yzg3ZTQ5N2RjIiwicm9sZXMiOlsiYWRtaW4iXSwicGVybWlzc2lvbnMiOlsidXNlcnM6Y3JlYXRlIiwidXNlcnM6cmVhZCIsInVzZXJzOnVwZGF0ZSIsInVzZXJzOmRlbGV0ZSIsInJvbGVzOmNyZWF0ZSIsInJvbGVzOnJlYWQiLCJyb2xlczp1cGRhdGUiLCJyb2xlczpkZWxldGUiLCJwZXJtaXNzaW9uczpjcmVhdGUiLCJwZXJtaXNzaW9uczpyZWFkIiwicGVybWlzc2lvbnM6dXBkYXRlIiwicGVybWlzc2lvbnM6ZGVsZXRlIiwic3lzdGVtOmFkbWluIiwic3lzdGVtOnJlYWQiLCJwcm9maWxlOnJlYWQiLCJwcm9maWxlOnVwZGF0ZSJdLCJpYXQiOjE3NzA2NTIxNDMsImV4cCI6MTc3MzI0NDE0M30.5o3h60e0LJ0RBjVKoyP5_cwfgwjYJGHwIQ366fDosi4";
+
+      function hdrs() {
+        return {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + JWT_TOKEN,
+        };
+      }
+      async function api(method, path, body) {
+        const opts = { method, headers: hdrs() };
+        if (body) opts.body = JSON.stringify(body);
+        const res = await fetch(API_URL + path, opts);
+        if (method === "DELETE" && res.ok) return true;
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok)
+          throw new Error(
+            Array.isArray(data.message)
+              ? data.message.join(", ")
+              : data.message || `Error ${res.status}`,
+          );
+        return data;
+      }
+      const apiGet = (p) => api("GET", p);
+      const apiPost = (p, b) => api("POST", p, b);
+      const apiPatch = (p, b) => api("PATCH", p, b);
+      const apiDelete = (p) => api("DELETE", p);
+
+      function toast(msg, type = "success") {
+        const c = document.getElementById("toast-container");
+        const t = document.createElement("div");
+        t.className = `toast toast-${type}`;
+        t.textContent = msg;
+        c.appendChild(t);
+        setTimeout(() => t.remove(), 3500);
+      }
+      function copyId(id) {
+        navigator.clipboard.writeText(id).then(() => toast("ID copied!"));
+      }
+      function truncId(id) {
+        return id ? id.substring(0, 8) + "…" : "-";
+      }
+      function fmtDate(d) {
+        if (!d) return "";
+        try {
+          return new Date(d).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          });
+        } catch {
+          return "";
+        }
+      }
+
+      // ═══════════════════════════════════════════════════
+      //  SVG ICONS
+      // ═══════════════════════════════════════════════════
+      const Icons = {
+        search: (
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <path d="M21 21l-4.35-4.35" />
+          </svg>
+        ),
+        back: (
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M19 12H5" />
+            <path d="M12 19l-7-7 7-7" />
+          </svg>
+        ),
+        edit: (
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+          </svg>
+        ),
+        trash: (
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M3 6h18" />
+            <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+          </svg>
+        ),
+        drag: (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="9" cy="5" r="1.5" />
+            <circle cx="15" cy="5" r="1.5" />
+            <circle cx="9" cy="12" r="1.5" />
+            <circle cx="15" cy="12" r="1.5" />
+            <circle cx="9" cy="19" r="1.5" />
+            <circle cx="15" cy="19" r="1.5" />
+          </svg>
+        ),
+        settings: (
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+          </svg>
+        ),
+        more: (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="12" cy="5" r="2" />
+            <circle cx="12" cy="12" r="2" />
+            <circle cx="12" cy="19" r="2" />
+          </svg>
+        ),
+        plus: (
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+          >
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        ),
+        chart: (
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M18 20V10M12 20V4M6 20v-6" />
+          </svg>
+        ),
+        page: (
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+            <path d="M14 2v6h6" />
+          </svg>
+        ),
+      };
+
+      // ═══════════════════════════════════════════════════
+      //  MODAL
+      // ═══════════════════════════════════════════════════
+      function Modal({ title, onClose, children }) {
+        return (
+          <div
+            className="modal-overlay"
+            onClick={(e) => e.target === e.currentTarget && onClose()}
+          >
+            <div className="modal">
+              <div className="modal-header">
+                <h3>{title}</h3>
+                <button className="modal-close" onClick={onClose}>
+                  ×
+                </button>
+              </div>
+              {children}
+            </div>
+          </div>
+        );
+      }
+
+      // ═══════════════════════════════════════════════════
+      //  CONFIG BAR
+      // ═══════════════════════════════════════════════════
+      function ConfigBar() {
+        const [url, setUrl] = useState(API_URL);
+        const [token, setToken] = useState(JWT_TOKEN);
+        return (
+          <div className="config-bar">
+            <div className="config-group">
+              <label>API</label>
+              <input
+                value={url}
+                onChange={(e) => {
+                  setUrl(e.target.value);
+                  API_URL = e.target.value.replace(/\/+$/, "");
+                }}
+                style={{ width: 180 }}
+              />
+            </div>
+            <div className="config-group">
+              <label>Token</label>
+              <input
+                value={token}
+                onChange={(e) => {
+                  setToken(e.target.value);
+                  JWT_TOKEN = e.target.value.trim();
+                }}
+                style={{ width: 400 }}
+                placeholder="Paste JWT token…"
+              />
+            </div>
+          </div>
+        );
+      }
+
+      // ═══════════════════════════════════════════════════
+      //  COURSES LIST VIEW
+      // ═══════════════════════════════════════════════════
+      function CoursesListView({ onOpenCourse }) {
+        const [courses, setCourses] = useState([]);
+        const [search, setSearch] = useState("");
+        const [sort, setSort] = useState("newest");
+        const [loading, setLoading] = useState(true);
+        const [showCreate, setShowCreate] = useState(false);
+
+        const load = useCallback(async () => {
+          setLoading(true);
+          try {
+            const d = await apiGet("/ielts-courses?limit=100");
+            setCourses(d.data || d || []);
+          } catch (e) {
+            toast(e.message, "error");
+          }
+          setLoading(false);
+        }, []);
+        useEffect(() => {
+          load();
+        }, [load]);
+
+        const filtered = courses.filter(
+          (c) =>
+            !search ||
+            (c.title || "").toLowerCase().includes(search.toLowerCase()),
+        );
+        const sorted = [...filtered].sort((a, b) => {
+          if (sort === "newest")
+            return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+          if (sort === "oldest")
+            return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+          return (a.title || "").localeCompare(b.title || "");
+        });
+
+        const deleteCourse = async (e, id) => {
+          e.stopPropagation();
+          if (!confirm("Delete this course and all its contents?")) return;
+          try {
+            await apiDelete(`/ielts-courses/${id}`);
+            toast("Course deleted!");
+            load();
+          } catch (err) {
+            toast(err.message, "error");
+          }
+        };
+
+        return (
+          <div className="courses-view">
+            <div className="courses-header">
+              <h1>Mini courses</h1>
+              <button
+                className="btn btn-primary"
+                onClick={() => setShowCreate(true)}
+              >
+                + Create mini course
+              </button>
+            </div>
+            <div className="courses-toolbar">
+              <div className="search-box">
+                {Icons.search}
+                <input
+                  placeholder="Search courses…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+              <select
+                className="sort-select"
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+              >
+                <option value="newest">Created Date (Newest)</option>
+                <option value="oldest">Created Date (Oldest)</option>
+                <option value="alpha">Alphabetical</option>
+              </select>
+            </div>
+
+            {loading ? (
+              <p
+                style={{
+                  color: "var(--gray-400)",
+                  textAlign: "center",
+                  padding: 40,
+                }}
+              >
+                Loading courses…
+              </p>
+            ) : !sorted.length ? (
+              <div className="empty-state">
+                <div className="icon">📚</div>
+                <h3>No courses yet</h3>
+                <p>Create your first course to get started</p>
+              </div>
+            ) : (
+              <div className="courses-grid">
+                {sorted.map((c) => (
+                  <div
+                    className="course-card"
+                    key={c.id}
+                    onClick={() => onOpenCourse(c)}
+                  >
+                    <div
+                      className="course-card-thumb"
+                      style={
+                        c.thumbnail_url
+                          ? {
+                              background: `url(${c.thumbnail_url}) center/cover`,
+                            }
+                          : {}
+                      }
+                    />
+                    <div className="course-card-body">
+                      <div className="course-card-type">
+                        <span>MINI COURSE</span>
+                        <span
+                          className={`status-dot ${c.status || "draft"}`}
+                          title={c.status || "draft"}
+                        />
+                      </div>
+                      <div className="course-card-title">
+                        {c.title || "Untitled"}
+                      </div>
+                      <div className="course-card-footer">
+                        <span className="course-card-date">
+                          {fmtDate(c.createdAt)}
+                        </span>
+                        <div className="course-card-actions">
+                          <button className="icon-btn" title="Stats">
+                            {Icons.chart}
+                          </button>
+                          <button
+                            className="icon-btn"
+                            title="Delete"
+                            onClick={(e) => deleteCourse(e, c.id)}
+                          >
+                            {Icons.more}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {showCreate && (
+              <CreateCourseModal
+                onClose={() => setShowCreate(false)}
+                onCreated={(c) => {
+                  load();
+                  setShowCreate(false);
+                  onOpenCourse(c);
+                }}
+              />
+            )}
+          </div>
+        );
+      }
+
+      function CreateCourseModal({ onClose, onCreated }) {
+        const [title, setTitle] = useState("");
+        const [desc, setDesc] = useState("");
+        const [saving, setSaving] = useState(false);
+        const save = async () => {
+          if (!title.trim()) {
+            toast("Title is required", "error");
+            return;
+          }
+          setSaving(true);
+          try {
+            const r = await apiPost("/ielts-courses", {
+              title,
+              description: desc || undefined,
+            });
+            toast("Course created!");
+            onCreated(r);
+          } catch (e) {
+            toast(e.message, "error");
+          }
+          setSaving(false);
+        };
+        return (
+          <Modal title="Create mini course" onClose={onClose}>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Course Title</label>
+                <input
+                  className="form-control"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. IELTS Academic Masterclass"
+                  autoFocus
+                />
+              </div>
+              <div className="form-group">
+                <label>Description (optional)</label>
+                <textarea
+                  className="form-control"
+                  value={desc}
+                  onChange={(e) => setDesc(e.target.value)}
+                  placeholder="Course description…"
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-outline btn-sm" onClick={onClose}>
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={save}
+                disabled={saving}
+              >
+                {saving ? "Creating…" : "Create"}
+              </button>
+            </div>
+          </Modal>
+        );
+      }
+
+      // ═══════════════════════════════════════════════════
+      //  COURSE EDITOR VIEW
+      // ═══════════════════════════════════════════════════
+      function CourseEditorView({ course, onBack }) {
+        const [courseData, setCourseData] = useState(course);
+        const [sections, setSections] = useState([]);
+        const [activeLessonId, setActiveLessonId] = useState(null);
+        const [activeLesson, setActiveLesson] = useState(null);
+        const [tab, setTab] = useState("course");
+        const [saving, setSaving] = useState(false);
+        const [quizzes, setQuizzes] = useState([]);
+
+        // Load sections with their lessons
+        const loadSections = useCallback(async () => {
+          try {
+            const d = await apiGet(
+              `/ielts-course-sections?courseId=${course.id}&limit=100`,
+            );
+            const secs = (d.data || d || []).sort(
+              (a, b) => a.position - b.position,
+            );
+            // Load lessons for each section
+            const secsWithLessons = await Promise.all(
+              secs.map(async (s) => {
+                try {
+                  const ld = await apiGet(
+                    `/ielts-lessons?sectionId=${s.id}&limit=100`,
+                  );
+                  s.lessons = (ld.data || ld || []).sort(
+                    (a, b) => a.position - b.position,
+                  );
+                } catch {
+                  s.lessons = [];
+                }
+                return s;
+              }),
+            );
+            setSections(secsWithLessons);
+            // Auto-select first lesson
+            if (
+              !activeLessonId &&
+              secsWithLessons.length &&
+              secsWithLessons[0].lessons?.length
+            ) {
+              setActiveLessonId(secsWithLessons[0].lessons[0].id);
+            }
+          } catch (e) {
+            toast(e.message, "error");
+          }
+        }, [course.id]);
+
+        const loadQuizzes = useCallback(async () => {
+          try {
+            const d = await apiGet(
+              `/ielts-quizzes?courseId=${course.id}&limit=100`,
+            );
+            setQuizzes(d.data || d || []);
+          } catch {}
+        }, [course.id]);
+
+        useEffect(() => {
+          loadSections();
+          loadQuizzes();
+        }, [loadSections, loadQuizzes]);
+
+        // Load active lesson detail
+        useEffect(() => {
+          if (!activeLessonId) {
+            setActiveLesson(null);
+            return;
+          }
+          apiGet(`/ielts-lessons/${activeLessonId}`)
+            .then(setActiveLesson)
+            .catch((e) => toast(e.message, "error"));
+        }, [activeLessonId]);
+
+        const updateCourseName = async (newTitle) => {
+          setCourseData({ ...courseData, title: newTitle });
+          try {
+            await apiPatch(`/ielts-courses/${course.id}`, { title: newTitle });
+          } catch {}
+        };
+
+        // ── Section CRUD ──
+        const addSection = async () => {
+          try {
+            const r = await apiPost("/ielts-course-sections", {
+              course_id: course.id,
+              title: "New Section",
+              position: sections.length + 1,
+            });
+            toast("Section added!");
+            loadSections();
+          } catch (e) {
+            toast(e.message, "error");
+          }
+        };
+        const renameSection = async (id, title) => {
+          try {
+            await apiPatch(`/ielts-course-sections/${id}`, { title });
+            loadSections();
+          } catch (e) {
+            toast(e.message, "error");
+          }
+        };
+        const deleteSection = async (id) => {
+          if (!confirm("Delete this section and all its pages?")) return;
+          try {
+            await apiDelete(`/ielts-course-sections/${id}`);
+            toast("Section deleted!");
+            loadSections();
+          } catch (e) {
+            toast(e.message, "error");
+          }
+        };
+
+        // ── Lesson/Page CRUD ──
+        const addLesson = async (sectionId) => {
+          const sec = sections.find((s) => s.id === sectionId);
+          const pos = sec?.lessons?.length ? sec.lessons.length + 1 : 1;
+          try {
+            const r = await apiPost("/ielts-lessons", {
+              section_id: sectionId,
+              title: "Untitled Page",
+              position: pos,
+              lesson_type: "text",
+            });
+            toast("Page added!");
+            loadSections();
+            setActiveLessonId(r.id);
+          } catch (e) {
+            toast(e.message, "error");
+          }
+        };
+        const deleteLesson = async (id) => {
+          if (!confirm("Delete this page?")) return;
+          try {
+            await apiDelete(`/ielts-lessons/${id}`);
+            toast("Page deleted!");
+            if (activeLessonId === id) setActiveLessonId(null);
+            loadSections();
+          } catch (e) {
+            toast(e.message, "error");
+          }
+        };
+
+        // ── Lesson content save ──
+        const saveLessonContent = async (lessonId, data) => {
+          setSaving(true);
+          try {
+            await apiPatch(`/ielts-lessons/${lessonId}`, data);
+            setSaving(false);
+          } catch (e) {
+            toast(e.message, "error");
+            setSaving(false);
+          }
+        };
+
+        return (
+          <div className="editor-view">
+            {/* TOP BAR */}
+            <div className="editor-topbar">
+              <button className="back-btn" onClick={onBack}>
+                {Icons.back}
+              </button>
+              <div className="course-name">
+                <input
+                  value={courseData.title || ""}
+                  onChange={(e) => updateCourseName(e.target.value)}
+                />
+              </div>
+              <button className="icon-btn" title="Edit">
+                {Icons.edit}
+              </button>
+              <div className="save-status">
+                {saving ? "⏳ Saving…" : "✅ Saved"}
+              </div>
+              <button className="btn btn-outline btn-sm">Preview</button>
+              <button className="btn btn-primary btn-sm">Share</button>
+            </div>
+
+            {/* TABS */}
+            <div className="editor-tabs">
+              <div
+                className={`editor-tab ${tab === "course" ? "active" : ""}`}
+                onClick={() => setTab("course")}
+              >
+                Mini course
+              </div>
+              <div
+                className={`editor-tab ${tab === "quizzes" ? "active" : ""}`}
+                onClick={() => setTab("quizzes")}
+              >
+                Quizzes
+              </div>
+              <div
+                className={`editor-tab ${tab === "settings" ? "active" : ""}`}
+                onClick={() => setTab("settings")}
+              >
+                Settings
+              </div>
+            </div>
+
+            {tab === "course" && (
+              <div className="editor-body">
+                {/* TOC SIDEBAR */}
+                <div className="toc-sidebar">
+                  <div className="toc-header">
+                    <h3>☰ Table of content</h3>
+                  </div>
+                  <div className="toc-body">
+                    {sections.map((sec) => (
+                      <div className="toc-section" key={sec.id}>
+                        <div className="toc-section-title">
+                          <SectionName section={sec} onRename={renameSection} />
+                          <div className="section-actions">
+                            <button
+                              className="icon-btn"
+                              style={{ width: 22, height: 22 }}
+                              onClick={() => deleteSection(sec.id)}
+                              title="Delete section"
+                            >
+                              {Icons.trash}
+                            </button>
+                          </div>
+                        </div>
+                        {(sec.lessons || []).map((l) => (
+                          <div
+                            className={`toc-page ${activeLessonId === l.id ? "active" : ""}`}
+                            key={l.id}
+                            onClick={() => setActiveLessonId(l.id)}
+                          >
+                            <span className="page-icon">{Icons.page}</span>
+                            <span
+                              style={{
+                                flex: 1,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {l.title || "Untitled Page"}
+                            </span>
+                          </div>
+                        ))}
+                        <div className="toc-add-page">
+                          <button
+                            onClick={() => addLesson(sec.id)}
+                            title="Add page"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="toc-footer">
+                    <button onClick={addSection}>⊕ Add Section</button>
+                  </div>
+                </div>
+
+                {/* CONTENT EDITOR */}
+                {activeLesson ? (
+                  <ContentEditor
+                    lesson={activeLesson}
+                    onSave={saveLessonContent}
+                    onReload={() => {
+                      loadSections();
+                      apiGet(`/ielts-lessons/${activeLessonId}`).then(
+                        setActiveLesson,
+                      );
+                    }}
+                  />
+                ) : (
+                  <div className="content-editor">
+                    <div className="empty-state" style={{ marginTop: 80 }}>
+                      <div className="icon">📄</div>
+                      <h3>Select a page</h3>
+                      <p>Choose a page from the sidebar or add a new section</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* BLOCK PALETTE */}
+                <div className="block-palette">
+                  <PaletteBtn
+                    icon="🎬"
+                    label="Video"
+                    onClick={() => activeLesson && addBlockToLesson("video")}
+                  />
+                  <PaletteBtn
+                    icon="🖼️"
+                    label="Image"
+                    onClick={() => activeLesson && addBlockToLesson("image")}
+                  />
+                  <PaletteBtn
+                    icon="📝"
+                    label="Text"
+                    onClick={() => activeLesson && addBlockToLesson("text")}
+                  />
+                  <PaletteBtn icon="✨" label="Actions" onClick={() => {}} />
+                  <PaletteBtn
+                    icon="</>"
+                    label="Embed"
+                    onClick={() => activeLesson && addBlockToLesson("embed")}
+                  />
+                  <PaletteBtn icon="🎯" label="Activities" onClick={() => {}} />
+                </div>
+              </div>
+            )}
+
+            {tab === "quizzes" && (
+              <QuizzesTab
+                courseId={course.id}
+                quizzes={quizzes}
+                onReload={loadQuizzes}
+              />
+            )}
+            {tab === "settings" && (
+              <SettingsTab
+                course={courseData}
+                onUpdate={(c) => {
+                  setCourseData(c);
+                  toast("Settings updated!");
+                }}
+              />
+            )}
+          </div>
+        );
+      }
+
+      // Editable section name
+      function SectionName({ section, onRename }) {
+        const [editing, setEditing] = useState(false);
+        const [val, setVal] = useState(section.title);
+        const inputRef = useRef(null);
+        useEffect(() => {
+          if (editing && inputRef.current) inputRef.current.focus();
+        }, [editing]);
+        if (editing) {
+          return (
+            <input
+              ref={inputRef}
+              value={val}
+              onChange={(e) => setVal(e.target.value)}
+              onBlur={() => {
+                setEditing(false);
+                if (val !== section.title) onRename(section.id, val);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  setEditing(false);
+                  if (val !== section.title) onRename(section.id, val);
+                }
+              }}
+              style={{
+                border: "none",
+                outline: "none",
+                fontWeight: 700,
+                fontSize: 13,
+                background: "transparent",
+                width: "100%",
+                fontFamily: "inherit",
+                color: "var(--gray-800)",
+              }}
+            />
+          );
+        }
+        return (
+          <span onDoubleClick={() => setEditing(true)} style={{ flex: 1 }}>
+            {section.title}
+          </span>
+        );
+      }
+
+      function PaletteBtn({ icon, label, onClick }) {
+        return (
+          <button className="palette-btn" onClick={onClick}>
+            <span className="palette-icon">{icon}</span>
+            {label}
+          </button>
+        );
+      }
+
+      // Placeholder for adding blocks from palette
+      let addBlockToLesson = () => {};
+
+      // ═══════════════════════════════════════════════════
+      //  CONTENT EDITOR
+      // ═══════════════════════════════════════════════════
+      function ContentEditor({ lesson, onSave, onReload }) {
+        const [title, setTitle] = useState(lesson.title || "");
+        const [blocks, setBlocks] = useState([]);
+        const [contentUrl, setContentUrl] = useState(lesson.content_url || "");
+        const [lessonType, setLessonType] = useState(
+          lesson.lesson_type || "text",
+        );
+        const saveTimeout = useRef(null);
+
+        useEffect(() => {
+          setTitle(lesson.title || "");
+          setContentUrl(lesson.content_url || "");
+          setLessonType(lesson.lesson_type || "text");
+          // Parse content_text as blocks
+          try {
+            const parsed = JSON.parse(lesson.content_text || "[]");
+            setBlocks(
+              Array.isArray(parsed)
+                ? parsed
+                : [{ type: "paragraph", content: lesson.content_text || "" }],
+            );
+          } catch {
+            setBlocks(
+              lesson.content_text
+                ? [{ type: "paragraph", content: lesson.content_text }]
+                : [],
+            );
+          }
+        }, [lesson.id]);
+
+        // Expose addBlock globally for palette
+        addBlockToLesson = (type) => {
+          const newBlock = { type, content: "" };
+          if (type === "video") newBlock.content = "";
+          if (type === "image") newBlock.content = "";
+          if (type === "embed") newBlock.content = "";
+          setBlocks((prev) => [...prev, newBlock]);
+        };
+
+        const autoSave = (newTitle, newBlocks, newUrl, newType) => {
+          clearTimeout(saveTimeout.current);
+          saveTimeout.current = setTimeout(() => {
+            onSave(lesson.id, {
+              title: newTitle,
+              content_text: JSON.stringify(newBlocks),
+              content_url: newUrl || undefined,
+              lesson_type: newType,
+            });
+          }, 1200);
+        };
+
+        const updateTitle = (v) => {
+          setTitle(v);
+          autoSave(v, blocks, contentUrl, lessonType);
+        };
+        const updateBlock = (idx, content) => {
+          const nb = [...blocks];
+          nb[idx] = { ...nb[idx], content };
+          setBlocks(nb);
+          autoSave(title, nb, contentUrl, lessonType);
+        };
+        const removeBlock = (idx) => {
+          const nb = blocks.filter((_, i) => i !== idx);
+          setBlocks(nb);
+          autoSave(title, nb, contentUrl, lessonType);
+        };
+        const addBlock = (type, afterIdx) => {
+          const nb = [...blocks];
+          nb.splice(afterIdx + 1, 0, { type, content: "" });
+          setBlocks(nb);
+        };
+        const updateBlockUrl = (idx, url) => {
+          const nb = [...blocks];
+          nb[idx] = { ...nb[idx], content: url };
+          setBlocks(nb);
+          autoSave(title, nb, contentUrl, lessonType);
+        };
+
+        return (
+          <div className="content-editor">
+            <div className="content-editor-inner">
+              <input
+                className="editor-page-title"
+                value={title}
+                onChange={(e) => updateTitle(e.target.value)}
+                placeholder="Untitled Page"
+              />
+
+              {/* Toolbar */}
+              <div className="content-toolbar">
+                <select
+                  className="toolbar-select"
+                  value={lessonType}
+                  onChange={(e) => {
+                    setLessonType(e.target.value);
+                    autoSave(title, blocks, contentUrl, e.target.value);
+                  }}
+                >
+                  <option value="text">Text</option>
+                  <option value="video">Video</option>
+                  <option value="audio">Audio</option>
+                  <option value="live">Live</option>
+                  <option value="assignment">Assignment</option>
+                </select>
+                <div className="toolbar-sep" />
+                <button className="toolbar-btn" title="Bold">
+                  <b>B</b>
+                </button>
+                <button className="toolbar-btn" title="Italic">
+                  <i>I</i>
+                </button>
+                <button
+                  className="toolbar-btn"
+                  title="Underline"
+                  style={{ textDecoration: "underline" }}
+                >
+                  U
+                </button>
+                <div className="toolbar-sep" />
+                <button className="toolbar-btn" title="Link">
+                  🔗
+                </button>
+                <button className="toolbar-btn" title="Image">
+                  🖼️
+                </button>
+                <button className="toolbar-btn" title="Video">
+                  🎬
+                </button>
+                <div className="toolbar-sep" />
+                <button
+                  className="toolbar-btn"
+                  onClick={() => addBlock("heading", blocks.length - 1)}
+                  title="Add Heading"
+                >
+                  H
+                </button>
+                <button
+                  className="toolbar-btn"
+                  onClick={() => addBlock("paragraph", blocks.length - 1)}
+                  title="Add Paragraph"
+                >
+                  ¶
+                </button>
+              </div>
+
+              {/* Content URL for video/audio */}
+              {(lessonType === "video" || lessonType === "audio") && (
+                <div style={{ marginBottom: 16 }}>
+                  <div className="form-group">
+                    <label>Content URL</label>
+                    <input
+                      className="form-control"
+                      value={contentUrl}
+                      onChange={(e) => {
+                        setContentUrl(e.target.value);
+                        autoSave(title, blocks, e.target.value, lessonType);
+                      }}
+                      placeholder="https://…"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* BLOCKS */}
+              {blocks.map((block, idx) => (
+                <div key={idx}>
+                  <BlockRenderer
+                    block={block}
+                    idx={idx}
+                    onChange={updateBlock}
+                    onRemove={removeBlock}
+                    onUrlChange={updateBlockUrl}
+                  />
+                  <div
+                    className="add-block-btn"
+                    style={{ position: "relative" }}
+                  >
+                    <button
+                      onClick={() => addBlock("paragraph", idx)}
+                      title="Add Block"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {blocks.length === 0 && (
+                <div
+                  className="add-block-btn"
+                  style={{ position: "relative", marginTop: 24 }}
+                >
+                  <button
+                    onClick={() => addBlock("heading", -1)}
+                    title="Add Block"
+                    style={{ width: 28, height: 28, fontSize: 18 }}
+                  >
+                    +
+                  </button>
+                  <span
+                    style={{
+                      fontSize: 13,
+                      color: "var(--gray-400)",
+                      marginLeft: 8,
+                    }}
+                  >
+                    Add your first block
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      function BlockRenderer({ block, idx, onChange, onRemove, onUrlChange }) {
+        if (block.type === "heading") {
+          return (
+            <div className="block-wrapper">
+              <div className="block-controls">
+                <button className="block-control-btn drag" title="Drag">
+                  {Icons.drag}
+                </button>
+                <button
+                  className="block-control-btn"
+                  onClick={() => onRemove(idx)}
+                  title="Delete"
+                >
+                  {Icons.trash}
+                </button>
+              </div>
+              <div
+                className="block-content heading"
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={(e) => onChange(idx, e.currentTarget.textContent)}
+                dangerouslySetInnerHTML={{ __html: block.content || "Heading" }}
+              />
+            </div>
+          );
+        }
+        if (block.type === "paragraph") {
+          return (
+            <div className="block-wrapper">
+              <div className="block-controls">
+                <button className="block-control-btn drag" title="Drag">
+                  {Icons.drag}
+                </button>
+                <button
+                  className="block-control-btn"
+                  onClick={() => onRemove(idx)}
+                  title="Delete"
+                >
+                  {Icons.trash}
+                </button>
+              </div>
+              <div
+                className="block-content paragraph"
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={(e) => onChange(idx, e.currentTarget.textContent)}
+                dangerouslySetInnerHTML={{
+                  __html: block.content || "Click to start writing…",
+                }}
+              />
+            </div>
+          );
+        }
+        if (block.type === "video") {
+          return (
+            <div className="block-wrapper">
+              <div className="block-controls">
+                <button className="block-control-btn drag">{Icons.drag}</button>
+                <button
+                  className="block-control-btn"
+                  onClick={() => onRemove(idx)}
+                >
+                  {Icons.trash}
+                </button>
+              </div>
+              {block.content ? (
+                <div className="block-content" style={{ padding: 0 }}>
+                  <video
+                    src={block.content}
+                    controls
+                    style={{
+                      width: "100%",
+                      borderRadius: "var(--radius)",
+                      maxHeight: 400,
+                    }}
+                  />
+                  <input
+                    className="form-control"
+                    value={block.content}
+                    onChange={(e) => onUrlChange(idx, e.target.value)}
+                    placeholder="Video URL"
+                    style={{ marginTop: 8 }}
+                  />
+                </div>
+              ) : (
+                <div
+                  className="block-content video-block"
+                  onClick={() => {
+                    const url = prompt("Enter video URL:");
+                    if (url) onUrlChange(idx, url);
+                  }}
+                >
+                  <span style={{ fontSize: 28 }}>🎬</span>
+                  <span style={{ fontWeight: 600, fontSize: 13 }}>
+                    Click to add video URL
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        }
+        if (block.type === "image") {
+          return (
+            <div className="block-wrapper">
+              <div className="block-controls">
+                <button className="block-control-btn drag">{Icons.drag}</button>
+                <button
+                  className="block-control-btn"
+                  onClick={() => onRemove(idx)}
+                >
+                  {Icons.trash}
+                </button>
+              </div>
+              {block.content ? (
+                <div className="block-content" style={{ padding: 0 }}>
+                  <img
+                    src={block.content}
+                    style={{
+                      width: "100%",
+                      borderRadius: "var(--radius)",
+                      maxHeight: 400,
+                      objectFit: "cover",
+                    }}
+                  />
+                  <input
+                    className="form-control"
+                    value={block.content}
+                    onChange={(e) => onUrlChange(idx, e.target.value)}
+                    placeholder="Image URL"
+                    style={{ marginTop: 8 }}
+                  />
+                </div>
+              ) : (
+                <div
+                  className="block-content image-block"
+                  onClick={() => {
+                    const url = prompt("Enter image URL:");
+                    if (url) onUrlChange(idx, url);
+                  }}
+                >
+                  <span style={{ fontSize: 28 }}>🖼️</span>
+                  <span style={{ fontWeight: 600, fontSize: 13 }}>
+                    Click to add image URL
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        }
+        if (block.type === "embed") {
+          return (
+            <div className="block-wrapper">
+              <div className="block-controls">
+                <button className="block-control-btn drag">{Icons.drag}</button>
+                <button
+                  className="block-control-btn"
+                  onClick={() => onRemove(idx)}
+                >
+                  {Icons.trash}
+                </button>
+              </div>
+              {block.content ? (
+                <div className="block-content" style={{ padding: 0 }}>
+                  <iframe
+                    src={block.content}
+                    style={{
+                      width: "100%",
+                      height: 300,
+                      border: "none",
+                      borderRadius: "var(--radius)",
+                    }}
+                  />
+                  <input
+                    className="form-control"
+                    value={block.content}
+                    onChange={(e) => onUrlChange(idx, e.target.value)}
+                    placeholder="Embed URL"
+                    style={{ marginTop: 8 }}
+                  />
+                </div>
+              ) : (
+                <div
+                  className="block-content embed-block"
+                  onClick={() => {
+                    const url = prompt("Enter embed URL:");
+                    if (url) onUrlChange(idx, url);
+                  }}
+                >
+                  <span style={{ fontSize: 28 }}>&lt;/&gt;</span>
+                  <span style={{ fontWeight: 600, fontSize: 13 }}>
+                    Click to add embed URL
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        }
+        return null;
+      }
+
+      // ═══════════════════════════════════════════════════
+      //  QUIZZES TAB
+      // ═══════════════════════════════════════════════════
+      function QuizzesTab({ courseId, quizzes, onReload }) {
+        const [showCreate, setShowCreate] = useState(false);
+        const [editQuiz, setEditQuiz] = useState(null);
+        const [viewQuiz, setViewQuiz] = useState(null);
+
+        const deleteQuiz = async (id) => {
+          if (!confirm("Delete this quiz?")) return;
+          try {
+            await apiDelete(`/ielts-quizzes/${id}`);
+            toast("Quiz deleted!");
+            onReload();
+          } catch (e) {
+            toast(e.message, "error");
+          }
+        };
+
+        if (viewQuiz)
+          return (
+            <QuizDetail
+              quiz={viewQuiz}
+              onBack={() => {
+                setViewQuiz(null);
+                onReload();
+              }}
+            />
+          );
+
+        return (
+          <div style={{ flex: 1, overflow: "auto", padding: "32px 40px" }}>
+            <div style={{ maxWidth: 800, margin: "0 auto" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: 20,
+                }}
+              >
+                <h2 style={{ fontSize: 18, fontWeight: 700 }}>Quizzes</h2>
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => setShowCreate(true)}
+                >
+                  + Create Quiz
+                </button>
+              </div>
+              {!quizzes.length ? (
+                <div className="empty-state">
+                  <div className="icon">❓</div>
+                  <h3>No quizzes yet</h3>
+                  <p>Add quizzes to test learner knowledge</p>
+                </div>
+              ) : (
+                quizzes.map((q) => (
+                  <div
+                    className="quiz-block"
+                    key={q.id}
+                    style={{ marginBottom: 12 }}
+                  >
+                    <div className="quiz-block-header">
+                      <h4>
+                        ❓ {q.title}{" "}
+                        <button
+                          className="id-badge"
+                          onClick={() => copyId(q.id)}
+                        >
+                          {truncId(q.id)}
+                        </button>
+                      </h4>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button
+                          className="btn btn-outline btn-xs"
+                          onClick={() => setViewQuiz(q)}
+                        >
+                          Questions
+                        </button>
+                        <button
+                          className="btn btn-outline btn-xs"
+                          onClick={() => setEditQuiz(q)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="btn btn-danger btn-xs"
+                          onClick={() => deleteQuiz(q.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 13, color: "var(--gray-500)" }}>
+                      {q.time_limit_seconds
+                        ? `⏱ ${Math.floor(q.time_limit_seconds / 60)} min`
+                        : "No time limit"}{" "}
+                      · {q.is_published ? "✅ Published" : "📝 Draft"} ·
+                      Attempts:{" "}
+                      {q.attempts_allowed === 0 ? "∞" : q.attempts_allowed}
+                    </div>
+                  </div>
+                ))
+              )}
+              {(showCreate || editQuiz) && (
+                <QuizFormModal
+                  courseId={courseId}
+                  item={editQuiz}
+                  onClose={() => {
+                    setShowCreate(false);
+                    setEditQuiz(null);
+                  }}
+                  onDone={() => {
+                    setShowCreate(false);
+                    setEditQuiz(null);
+                    onReload();
+                  }}
+                />
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      function QuizFormModal({ courseId, item, onClose, onDone }) {
+        const [title, setTitle] = useState(item?.title || "");
+        const [timeLimit, setTimeLimit] = useState(
+          item?.time_limit_seconds || "",
+        );
+        const [attempts, setAttempts] = useState(item?.attempts_allowed ?? 0);
+        const [published, setPublished] = useState(item?.is_published ?? false);
+        const [saving, setSaving] = useState(false);
+        const save = async () => {
+          setSaving(true);
+          try {
+            const body = {
+              course_id: courseId,
+              title,
+              time_limit_seconds: timeLimit ? parseInt(timeLimit) : undefined,
+              attempts_allowed: parseInt(attempts),
+              is_published: published,
+            };
+            if (item?.id) {
+              await apiPatch(`/ielts-quizzes/${item.id}`, body);
+              toast("Quiz updated!");
+            } else {
+              await apiPost("/ielts-quizzes", body);
+              toast("Quiz created!");
+            }
+            onDone();
+          } catch (e) {
+            toast(e.message, "error");
+          }
+          setSaving(false);
+        };
+        return (
+          <Modal title={item ? "Edit Quiz" : "Create Quiz"} onClose={onClose}>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Title</label>
+                <input
+                  className="form-control"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Quiz title"
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Time Limit (sec)</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={timeLimit}
+                    onChange={(e) => setTimeLimit(e.target.value)}
+                    placeholder="600"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Attempts (0=∞)</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={attempts}
+                    onChange={(e) => setAttempts(e.target.value)}
+                    min={0}
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Published</label>
+                <select
+                  className="form-control"
+                  value={published ? "true" : "false"}
+                  onChange={(e) => setPublished(e.target.value === "true")}
+                >
+                  <option value="false">No</option>
+                  <option value="true">Yes</option>
+                </select>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-outline btn-sm" onClick={onClose}>
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={save}
+                disabled={saving}
+              >
+                {saving ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </Modal>
+        );
+      }
+
+      // ═══════════════════════════════════════════════════
+      //  QUIZ DETAIL (questions)
+      // ═══════════════════════════════════════════════════
+      function QuizDetail({ quiz, onBack }) {
+        const [questions, setQuestions] = useState([]);
+        const [loading, setLoading] = useState(true);
+        const [showForm, setShowForm] = useState(false);
+        const [editQ, setEditQ] = useState(null);
+
+        const load = useCallback(async () => {
+          setLoading(true);
+          try {
+            const d = await apiGet(
+              `/ielts-quiz-questions?quizId=${quiz.id}&limit=100`,
+            );
+            setQuestions(
+              (d.data || d || []).sort((a, b) => a.position - b.position),
+            );
+          } catch (e) {
+            toast(e.message, "error");
+          }
+          setLoading(false);
+        }, [quiz.id]);
+        useEffect(() => {
+          load();
+        }, [load]);
+
+        const deleteQ = async (id) => {
+          if (!confirm("Delete this question?")) return;
+          try {
+            await apiDelete(`/ielts-quiz-questions/${id}`);
+            toast("Deleted!");
+            load();
+          } catch (e) {
+            toast(e.message, "error");
+          }
+        };
+
+        return (
+          <div style={{ flex: 1, overflow: "auto", padding: "32px 40px" }}>
+            <div style={{ maxWidth: 800, margin: "0 auto" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  marginBottom: 20,
+                }}
+              >
+                <button className="btn btn-ghost btn-sm" onClick={onBack}>
+                  {Icons.back} Back
+                </button>
+                <h2 style={{ fontSize: 18, fontWeight: 700, flex: 1 }}>
+                  {quiz.title} — Questions
+                </h2>
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => setShowForm(true)}
+                >
+                  + Add Question
+                </button>
+              </div>
+              {loading ? (
+                <p style={{ color: "var(--gray-400)" }}>Loading…</p>
+              ) : !questions.length ? (
+                <div className="empty-state">
+                  <div className="icon">📝</div>
+                  <h3>No questions</h3>
+                </div>
+              ) : (
+                questions.map((q) => (
+                  <div className="question-item" key={q.id}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                      }}
+                    >
+                      <div>
+                        <div className="q-prompt">
+                          {q.position}. {q.prompt}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: "var(--gray-400)",
+                            marginBottom: 4,
+                          }}
+                        >
+                          Type: {q.question_type} · Points: {q.points ?? 1}
+                        </div>
+                        {q.choices?.map((c) => (
+                          <span
+                            className={`choice-pill ${c.is_correct ? "correct" : "incorrect"}`}
+                            key={c.id}
+                          >
+                            {c.is_correct ? "✓" : "○"} {c.choice_text}
+                          </span>
+                        ))}
+                        {q.accepted_answers?.map((a) => (
+                          <span className="choice-pill correct" key={a.id}>
+                            ✓ {a.answer_text}
+                          </span>
+                        ))}
+                      </div>
+                      <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                        <button
+                          className="btn btn-outline btn-xs"
+                          onClick={() => setEditQ(q)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="btn btn-danger btn-xs"
+                          onClick={() => deleteQ(q.id)}
+                        >
+                          Del
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+              {(showForm || editQ) && (
+                <QuestionFormModal
+                  quizId={quiz.id}
+                  item={editQ}
+                  onClose={() => {
+                    setShowForm(false);
+                    setEditQ(null);
+                  }}
+                  onDone={() => {
+                    setShowForm(false);
+                    setEditQ(null);
+                    load();
+                  }}
+                />
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      function QuestionFormModal({ quizId, item, onClose, onDone }) {
+        const [qType, setQType] = useState(
+          item?.question_type || "single_choice",
+        );
+        const [prompt, setPrompt] = useState(item?.prompt || "");
+        const [explanation, setExplanation] = useState(item?.explanation || "");
+        const [points, setPoints] = useState(item?.points ?? 1);
+        const [position, setPosition] = useState(item?.position || 1);
+        const [choices, setChoices] = useState(
+          item?.choices?.length ? item.choices.map((c) => ({ ...c })) : [],
+        );
+        const [accepted, setAccepted] = useState(
+          item?.accepted_answers?.length
+            ? item.accepted_answers.map((a) => ({ ...a }))
+            : [],
+        );
+        const [saving, setSaving] = useState(false);
+        const isChoice = [
+          "single_choice",
+          "multiple_choice",
+          "true_false",
+        ].includes(qType);
+
+        useEffect(() => {
+          if (qType === "true_false" && !choices.length)
+            setChoices([
+              { choice_text: "True", is_correct: true, position: 1 },
+              { choice_text: "False", is_correct: false, position: 2 },
+            ]);
+        }, [qType]);
+
+        const save = async () => {
+          setSaving(true);
+          try {
+            const body = {
+              quiz_id: quizId,
+              question_type: qType,
+              prompt,
+              explanation: explanation || undefined,
+              points: parseFloat(points),
+              position: parseInt(position),
+            };
+            if (isChoice && choices.length)
+              body.choices = choices.map((c, i) => ({
+                choice_text: c.choice_text,
+                is_correct: !!c.is_correct,
+                position: c.position || i + 1,
+              }));
+            if (qType === "short_text" && accepted.length)
+              body.acceptedAnswers = accepted
+                .filter((a) => a.answer_text?.trim())
+                .map((a) => ({ answer_text: a.answer_text }));
+            if (item?.id) {
+              await apiPatch(`/ielts-quiz-questions/${item.id}`, body);
+              toast("Updated!");
+            } else {
+              await apiPost("/ielts-quiz-questions", body);
+              toast("Question created!");
+            }
+            onDone();
+          } catch (e) {
+            toast(e.message, "error");
+          }
+          setSaving(false);
+        };
+
+        return (
+          <Modal
+            title={item ? "Edit Question" : "Add Question"}
+            onClose={onClose}
+          >
+            <div className="modal-body">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Type</label>
+                  <select
+                    className="form-control"
+                    value={qType}
+                    onChange={(e) => setQType(e.target.value)}
+                  >
+                    <option value="single_choice">Single Choice</option>
+                    <option value="multiple_choice">Multiple Choice</option>
+                    <option value="true_false">True/False</option>
+                    <option value="short_text">Short Text</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Position</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={position}
+                    onChange={(e) => setPosition(e.target.value)}
+                    min={1}
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Prompt</label>
+                <textarea
+                  className="form-control"
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Question text…"
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Points</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={points}
+                    onChange={(e) => setPoints(e.target.value)}
+                    min={0}
+                    step={0.5}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Explanation</label>
+                  <input
+                    className="form-control"
+                    value={explanation}
+                    onChange={(e) => setExplanation(e.target.value)}
+                    placeholder="Optional"
+                  />
+                </div>
+              </div>
+              {isChoice && (
+                <div>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <label
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: "var(--gray-500)",
+                      }}
+                    >
+                      CHOICES
+                    </label>
+                    <button
+                      className="btn btn-outline btn-xs"
+                      onClick={() =>
+                        setChoices([
+                          ...choices,
+                          {
+                            choice_text: "",
+                            is_correct: false,
+                            position: choices.length + 1,
+                          },
+                        ])
+                      }
+                    >
+                      + Add
+                    </button>
+                  </div>
+                  {choices.map((c, i) => (
+                    <div
+                      className="choice-row"
+                      key={i}
+                      style={{
+                        display: "flex",
+                        gap: 8,
+                        marginBottom: 6,
+                        alignItems: "center",
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: 24,
+                          height: 24,
+                          borderRadius: "50%",
+                          background: c.is_correct
+                            ? "var(--success-bg)"
+                            : "var(--gray-200)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: c.is_correct
+                            ? "var(--success)"
+                            : "var(--gray-500)",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {String.fromCharCode(65 + i)}
+                      </span>
+                      <input
+                        className="form-control"
+                        value={c.choice_text}
+                        onChange={(e) => {
+                          const n = [...choices];
+                          n[i] = { ...n[i], choice_text: e.target.value };
+                          setChoices(n);
+                        }}
+                        style={{ flex: 1 }}
+                      />
+                      <label
+                        style={{
+                          fontSize: 12,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 3,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={c.is_correct}
+                          onChange={(e) => {
+                            const n = [...choices];
+                            n[i] = { ...n[i], is_correct: e.target.checked };
+                            setChoices(n);
+                          }}
+                        />{" "}
+                        ✓
+                      </label>
+                      <button
+                        className="btn btn-danger btn-xs"
+                        onClick={() =>
+                          setChoices(choices.filter((_, j) => j !== i))
+                        }
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {qType === "short_text" && (
+                <div>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <label
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: "var(--gray-500)",
+                      }}
+                    >
+                      ACCEPTED ANSWERS
+                    </label>
+                    <button
+                      className="btn btn-outline btn-xs"
+                      onClick={() =>
+                        setAccepted([...accepted, { answer_text: "" }])
+                      }
+                    >
+                      + Add
+                    </button>
+                  </div>
+                  {accepted.map((a, i) => (
+                    <div
+                      style={{ display: "flex", gap: 8, marginBottom: 6 }}
+                      key={i}
+                    >
+                      <input
+                        className="form-control"
+                        value={a.answer_text}
+                        onChange={(e) => {
+                          const n = [...accepted];
+                          n[i] = { answer_text: e.target.value };
+                          setAccepted(n);
+                        }}
+                        style={{ flex: 1 }}
+                      />
+                      <button
+                        className="btn btn-danger btn-xs"
+                        onClick={() =>
+                          setAccepted(accepted.filter((_, j) => j !== i))
+                        }
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-outline btn-sm" onClick={onClose}>
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={save}
+                disabled={saving}
+              >
+                {saving ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </Modal>
+        );
+      }
+
+      // ═══════════════════════════════════════════════════
+      //  SETTINGS TAB
+      // ═══════════════════════════════════════════════════
+      function SettingsTab({ course, onUpdate }) {
+        const [title, setTitle] = useState(course.title || "");
+        const [desc, setDesc] = useState(course.description || "");
+        const [status, setStatus] = useState(course.status || "draft");
+        const [saving, setSaving] = useState(false);
+
+        const save = async () => {
+          setSaving(true);
+          try {
+            const r = await apiPatch(`/ielts-courses/${course.id}`, {
+              title,
+              description: desc || undefined,
+              status,
+            });
+            onUpdate({ ...course, title, description: desc, status });
+          } catch (e) {
+            toast(e.message, "error");
+          }
+          setSaving(false);
+        };
+
+        return (
+          <div style={{ flex: 1, overflow: "auto", padding: "32px 40px" }}>
+            <div style={{ maxWidth: 600, margin: "0 auto" }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>
+                Course Settings
+              </h2>
+              <div className="form-group">
+                <label>Title</label>
+                <input
+                  className="form-control"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label>Description</label>
+                <textarea
+                  className="form-control"
+                  value={desc}
+                  onChange={(e) => setDesc(e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label>Status</label>
+                <select
+                  className="form-control"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                >
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
+              <button
+                className="btn btn-success"
+                onClick={save}
+                disabled={saving}
+              >
+                {saving ? "Saving…" : "💾 Save Settings"}
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      // ═══════════════════════════════════════════════════
+      //  APP ROOT
+      // ═══════════════════════════════════════════════════
+      function App() {
+        const [view, setView] = useState("list");
+        const [activeCourse, setActiveCourse] = useState(null);
+
+        const openCourse = (c) => {
+          setActiveCourse(c);
+          setView("editor");
+        };
+        const backToList = () => {
+          setActiveCourse(null);
+          setView("list");
+        };
+
+        return (
+          <React.Fragment>
+            {view === "list" && (
+              <React.Fragment>
+                <ConfigBar />
+                <CoursesListView onOpenCourse={openCourse} />
+              </React.Fragment>
+            )}
+            {view === "editor" && activeCourse && (
+              <CourseEditorView course={activeCourse} onBack={backToList} />
+            )}
+          </React.Fragment>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    </script>
+  </body>
+</html>

@@ -1,20 +1,38 @@
 "use client";
 
 import { Box, Icon, Text, VStack } from "@chakra-ui/react";
-import { Home, BookOpen, ClipboardCheck, BookMarked, Target } from "lucide-react";
+import {
+  Home,
+  BookOpen,
+  ClipboardCheck,
+  BookMarked,
+  Target,
+  Users,
+  FileText,
+  BarChart3,
+  Calendar,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
-const menuItems = [
-  { icon: Home, label: "Home", href: "/" },
+const studentMenuItems = [
+  { icon: Home, label: "Home", href: "/home" },
   { icon: Target, label: "Practice", href: "/practice" },
   { icon: BookOpen, label: "Courses", href: "/courses" },
-  // { icon: ClipboardCheck, label: "My Mock Tests", href: "/mock-tests" },
   { icon: BookMarked, label: "Resources", href: "/resources" },
+];
+
+const teacherMenuItems = [
+  { icon: Home, label: "Home", href: "/dashboard" },
+  { icon: BookOpen, label: "Courses", href: "/course-builder" },
+  { icon: Users, label: "Groups", href: "/groups" },
 ];
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
+  const { role } = useAuth();
+  const menuItems = role === "teacher" ? teacherMenuItems : studentMenuItems;
 
   return (
     <Box
@@ -33,7 +51,7 @@ export default function MobileBottomNav() {
       boxShadow="0 -2px 10px rgba(0,0,0,0.05)"
     >
       {menuItems.map((item) => {
-        const isActive = pathname === item.href;
+        const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
         const IconComponent = item.icon;
 
         return (

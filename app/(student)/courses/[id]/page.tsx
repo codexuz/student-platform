@@ -17,12 +17,12 @@ import {
   LuChevronRight,
   LuX,
   LuCircle,
-  LuVideo,
   LuFileText,
   LuBookOpen,
 } from "react-icons/lu";
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { ieltsCourseAPI } from "@/lib/api";
 
@@ -40,14 +40,18 @@ interface Section {
   };
 }
 
+interface ContentBlock {
+  id: number | string;
+  type: string;
+  content: string;
+}
+
 interface Lesson {
   id: string;
   section_id: string;
   title: string;
   position: number;
-  lesson_type: string;
-  content_url: string | null;
-  content_text: string | null;
+  content: ContentBlock[] | null;
   duration_seconds: number | null;
   section?: Section;
 }
@@ -59,19 +63,6 @@ interface SectionWithLessons extends Section {
 
 // ── Helpers ────────────────────────────────────────────
 
-function extractYouTubeId(url: string): string | null {
-  try {
-    const u = new URL(url);
-    if (u.hostname === "youtu.be") return u.pathname.slice(1);
-    if (u.hostname === "www.youtube.com" || u.hostname === "youtube.com") {
-      return u.searchParams.get("v");
-    }
-  } catch {
-    /* ignore */
-  }
-  return null;
-}
-
 function formatDuration(seconds: number | null): string {
   if (!seconds) return "";
   const m = Math.floor(seconds / 60);
@@ -79,34 +70,8 @@ function formatDuration(seconds: number | null): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-function parseContentText(raw: string | null): string {
-  if (!raw) return "";
-  try {
-    const arr = JSON.parse(raw);
-    if (Array.isArray(arr)) {
-      return arr
-        .filter(
-          (b: { type?: string; content?: string }) =>
-            b.type === "text" && b.content,
-        )
-        .map((b: { content?: string }) => b.content)
-        .join("\n\n");
-    }
-  } catch {
-    /* not JSON, return as-is */
-  }
-  return raw;
-}
-
-function getLessonIcon(type: string) {
-  switch (type) {
-    case "video":
-      return LuVideo;
-    case "text":
-      return LuFileText;
-    default:
-      return LuBookOpen;
-  }
+function hasContent(blocks: ContentBlock[] | null): boolean {
+  return !!blocks && blocks.length > 0 && blocks.some((b) => b.content);
 }
 
 // ── Component ──────────────────────────────────────────
@@ -201,12 +166,9 @@ export default function CourseDetailPage() {
   // ── Computed ──
 
   const totalLessons = sections.reduce((a, s) => a + s.lessons.length, 0);
-  const videoId = activeLesson?.content_url
-    ? extractYouTubeId(activeLesson.content_url)
-    : null;
-  const contentText = activeLesson
-    ? parseContentText(activeLesson.content_text)
-    : "";
+  const lessonHasContent = activeLesson
+    ? hasContent(activeLesson.content)
+    : false;
 
   // ── Loading ──
 
@@ -377,7 +339,9 @@ export default function CourseDetailPage() {
                       <VStack gap={0} align="stretch">
                         {section.lessons.map((lesson) => {
                           const isActive = activeLesson?.id === lesson.id;
-                          const LessonIcon = getLessonIcon(lesson.lesson_type);
+                          const LessonIcon = hasContent(lesson.content)
+                            ? LuFileText
+                            : LuBookOpen;
 
                           return (
                             <Flex
@@ -540,74 +504,40 @@ export default function CourseDetailPage() {
                 {activeTab === "overview" && (
                   <Box px={{ base: 4, md: 8 }} py={6}>
                     <Box maxW="860px" mx="auto">
-                      {/* Video player */}
-                      {videoId && (
-                        <Box
-                          mb={6}
-                          borderRadius="lg"
-                          overflow="hidden"
-                          position="relative"
-                          pb="56.25%" /* 16:9 */
-                          h={0}
-                        >
-                          <iframe
-                            src={`https://www.youtube.com/embed/${videoId}`}
-                            title={activeLesson.title}
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                            style={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              width: "100%",
-                              height: "100%",
-                              border: "none",
-                            }}
-                          />
-                        </Box>
-                      )}
-
                       {/* Lesson title */}
                       <Heading
                         size={{ base: "md", md: "lg" }}
-                        mb={4}
+                        mb={6}
                         color="gray.900"
                         _dark={{ color: "gray.100" }}
                       >
                         {activeLesson.title}
                       </Heading>
 
-                      {/* Text content */}
-                      {contentText && (
-                        <Text
-                          color="gray.700"
-                          _dark={{ color: "gray.300" }}
-                          lineHeight="tall"
-                          whiteSpace="pre-wrap"
-                          fontSize={{ base: "sm", md: "md" }}
+                      {/* Render content blocks */}
+                      {lessonHasContent ? (
+                        <VStack gap={4} align="stretch">
+                          {activeLesson.content!.map((block) => (
+                            <ContentBlockView key={block.id} block={block} />
+                          ))}
+                        </VStack>
+                      ) : (
+                        <Flex
+                          justify="center"
+                          align="center"
+                          minH="200px"
+                          direction="column"
+                          gap={3}
                         >
-                          {contentText}
-                        </Text>
+                          <Icon fontSize="4xl" color="gray.300">
+                            <LuBookOpen />
+                          </Icon>
+                          <Text color="gray.400" fontSize="sm">
+                            No content available for this lesson yet.
+                          </Text>
+                        </Flex>
                       )}
                     </Box>
-
-                    {/* Empty state when no video and no text */}
-                    {!videoId && !contentText && (
-                      <Flex
-                        justify="center"
-                        align="center"
-                        minH="200px"
-                        direction="column"
-                        gap={3}
-                      >
-                        <Icon fontSize="4xl" color="gray.300">
-                          <LuBookOpen />
-                        </Icon>
-                        <Text color="gray.400" fontSize="sm">
-                          No content available for this lesson yet.
-                        </Text>
-                      </Flex>
-                    )}
                   </Box>
                 )}
 
@@ -650,4 +580,159 @@ export default function CourseDetailPage() {
       </Flex>
     </ProtectedRoute>
   );
+}
+
+// ── Content Block Renderer ─────────────────────────────
+
+function ContentBlockView({ block }: { block: ContentBlock }) {
+  switch (block.type) {
+    case "heading":
+      return (
+        <Heading
+          size="md"
+          color="gray.900"
+          _dark={{ color: "gray.100" }}
+          dangerouslySetInnerHTML={{ __html: block.content }}
+        />
+      );
+    case "paragraph":
+      return (
+        <Box
+          color="gray.700"
+          _dark={{ color: "gray.300" }}
+          lineHeight="tall"
+          fontSize={{ base: "sm", md: "md" }}
+          css={{
+            "& p": { margin: 0 },
+            "& a": {
+              color: "var(--chakra-colors-brand-500)",
+              textDecoration: "underline",
+            },
+          }}
+          dangerouslySetInnerHTML={{ __html: block.content }}
+        />
+      );
+    case "image":
+      return (
+        <Box borderRadius="lg" overflow="hidden" position="relative" w="100%">
+          <Image
+            src={block.content}
+            alt=""
+            width={860}
+            height={480}
+            style={{ width: "100%", height: "auto", display: "block" }}
+            unoptimized
+          />
+        </Box>
+      );
+    case "video": {
+      const ytId = extractVideoId(block.content);
+      if (ytId) {
+        return (
+          <Box
+            borderRadius="lg"
+            overflow="hidden"
+            position="relative"
+            pb="56.25%"
+            h={0}
+            bg="black"
+          >
+            <iframe
+              src={`https://www.youtube.com/embed/${ytId}`}
+              title="Video"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                border: "none",
+              }}
+            />
+          </Box>
+        );
+      }
+      return (
+        <Box borderRadius="lg" overflow="hidden">
+          <video src={block.content} controls style={{ width: "100%" }} />
+        </Box>
+      );
+    }
+    case "embed": {
+      const embedUrl = toYouTubeEmbed(block.content);
+      if (!embedUrl) return null;
+      return (
+        <Box
+          borderRadius="lg"
+          overflow="hidden"
+          position="relative"
+          pb="56.25%"
+          h={0}
+          bg="black"
+        >
+          <iframe
+            src={embedUrl}
+            title="YouTube video"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              border: "none",
+            }}
+          />
+        </Box>
+      );
+    }
+    default:
+      return (
+        <Box
+          color="gray.700"
+          _dark={{ color: "gray.300" }}
+          dangerouslySetInnerHTML={{ __html: block.content }}
+        />
+      );
+  }
+}
+
+function extractVideoId(url: string): string | null {
+  try {
+    const u = new URL(url);
+    if (u.hostname === "youtu.be") return u.pathname.slice(1);
+    if (u.hostname === "www.youtube.com" || u.hostname === "youtube.com") {
+      return u.searchParams.get("v");
+    }
+  } catch {
+    /* not a URL */
+  }
+  return null;
+}
+
+function toYouTubeEmbed(url: string): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    if (
+      (u.hostname === "www.youtube.com" || u.hostname === "youtube.com") &&
+      u.pathname.startsWith("/embed/")
+    ) {
+      return url;
+    }
+    if (u.hostname === "www.youtube.com" || u.hostname === "youtube.com") {
+      const v = u.searchParams.get("v");
+      if (v) return `https://www.youtube.com/embed/${v}`;
+    }
+    if (u.hostname === "youtu.be") {
+      const id = u.pathname.slice(1);
+      if (id) return `https://www.youtube.com/embed/${id}`;
+    }
+  } catch {
+    /* invalid URL */
+  }
+  return null;
 }

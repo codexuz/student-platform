@@ -8,16 +8,22 @@ import {
   Input,
   Stack,
   Text,
+  Tabs,
+  Icon,
 } from "@chakra-ui/react";
 import { useState } from "react";
+import { LuGraduationCap, LuUserCog } from "react-icons/lu";
 import { toaster } from "@/components/ui/toaster";
 import { ColorModeButton } from "@/components/ui/color-mode";
 import { useAuth } from "@/contexts/AuthContext";
+
+type UserRole = "student" | "teacher";
 
 export default function LoginPage() {
   const { login } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [activeRole, setActiveRole] = useState<UserRole>("student");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{
     username?: string;
@@ -59,7 +65,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const result = await login(username, password);
+      const result = await login(username, password, activeRole);
 
       if (result.success) {
         toaster.create({
@@ -119,6 +125,50 @@ export default function LoginPage() {
               Sign in to your account
             </Text>
           </Stack>
+
+          <Tabs.Root
+            value={activeRole}
+            onValueChange={(e) => {
+              setActiveRole(e.value as UserRole);
+              setErrors({});
+            }}
+            variant="enclosed"
+            fitted
+          >
+            <Tabs.List>
+              <Tabs.Trigger value="student">
+                <Icon as={LuGraduationCap} mr={2} />
+                Student
+              </Tabs.Trigger>
+              <Tabs.Trigger value="teacher">
+                <Icon as={LuUserCog} mr={2} />
+                Teacher
+              </Tabs.Trigger>
+            </Tabs.List>
+
+            <Tabs.Content value="student" pt={4}>
+              <Text
+                fontSize="sm"
+                color="gray.500"
+                _dark={{ color: "gray.400" }}
+                mb={4}
+              >
+                Sign in as a student to access courses, practice, and track your
+                progress.
+              </Text>
+            </Tabs.Content>
+            <Tabs.Content value="teacher" pt={4}>
+              <Text
+                fontSize="sm"
+                color="gray.500"
+                _dark={{ color: "gray.400" }}
+                mb={4}
+              >
+                Sign in as a teacher to manage courses, groups, and student
+                progress.
+              </Text>
+            </Tabs.Content>
+          </Tabs.Root>
 
           <form onSubmit={handleSubmit}>
             <Stack gap={4}>

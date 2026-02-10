@@ -12,7 +12,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Mockmee Platform - Student Practice and AI Recommendations",
+  title: "Mockmee - IELTS Exam Practice Platform for Students",
   description: "A comprehensive platform for students to practice and excel in their exams with personalized AI recommendations.",
 };
 

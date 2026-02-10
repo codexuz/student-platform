@@ -22,13 +22,17 @@ interface User {
   avatar_url?: string;
 }
 
+type UserRole = "student" | "teacher";
+
 interface AuthContextType {
   user: User | null;
   token: string | null;
+  role: UserRole | null;
   loading: boolean;
   login: (
     username: string,
     password: string,
+    role: UserRole,
   ) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   updateUser: (userData: User) => void;
@@ -40,6 +44,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [role, setRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
@@ -58,8 +63,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (storedToken && storedUser) {
         const parsedUser = JSON.parse(storedUser);
+        const storedRole = (await storage.getItem(
+          "userRole",
+        )) as UserRole | null;
         setToken(storedToken);
         setUser(parsedUser);
+        setRole(storedRole || "student");
 
         // Verify token is still valid
         const isValid = await authAPI.checkAuthStatus();
@@ -83,14 +92,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const login = async (username: string, password: string) => {
+  const login = async (
+    username: string,
+    password: string,
+    loginRole: UserRole = "student",
+  ) => {
     try {
-      const response = await authAPI.login(username, password);
+      const response = await authAPI.login(username, password, loginRole);
 
       if (response && response.access_token) {
         setToken(response.access_token);
         setUser(response.user);
-        router.push("/");
+        setRole(loginRole);
+        router.push(loginRole === "teacher" ? "/dashboard" : "/home");
         return { success: true };
       }
 
@@ -110,6 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setToken(null);
       setUser(null);
+      setRole(null);
       router.push("/auth/login");
     }
   };
@@ -125,6 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const clearUser = () => {
     setUser(null);
     setToken(null);
+    setRole(null);
   };
 
   // Set user store for API calls
@@ -142,6 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = {
     user,
     token,
+    role,
     loading,
     login,
     logout,

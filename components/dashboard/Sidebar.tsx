@@ -14,48 +14,34 @@ import {
 import {
   Home,
   BookOpen,
-  ClipboardCheck,
   Bookmark,
   Settings,
   Target,
   LogOut,
   ChevronUp,
+  Users,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 
-const menuItems = [
-  { icon: Home, label: "Home", href: "/", section: "MAIN" },
-  {
-    icon: Target,
-    label: "Practice",
-    href: "/practice",
-    section: "MAIN",
-  },
-  {
-    icon: BookOpen,
-    label: "Courses",
-    href: "/courses",
-    section: "MAIN",
-  },
-  // {
-  //   icon: ClipboardCheck,
-  //   label: "My Mock Tests",
-  //   href: "/mock-tests",
-  //   section: "MAIN",
-  // },
-  {
-    icon: Bookmark,
-    label: "Resources",
-    href: "/resources",
-    section: "MAIN",
-  },
+const studentMenuItems = [
+  { icon: Home, label: "Home", href: "/home", section: "MAIN" },
+  { icon: Target, label: "Practice", href: "/practice", section: "MAIN" },
+  { icon: BookOpen, label: "Courses", href: "/courses", section: "MAIN" },
+  { icon: Bookmark, label: "Resources", href: "/resources", section: "MAIN" },
+];
+
+const teacherMenuItems = [
+  { icon: Home, label: "Dashboard", href: "/dashboard", section: "MAIN" },
+  { icon: BookOpen, label: "Courses", href: "/course-builder", section: "MAIN" },
+  { icon: Users, label: "Groups", href: "/groups", section: "MAIN" },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user, role, logout } = useAuth();
+  const menuItems = role === "teacher" ? teacherMenuItems : studentMenuItems;
   const fullName =
     [user?.first_name, user?.last_name].filter(Boolean).join(" ") || "User";
   const initials = fullName
@@ -101,7 +87,7 @@ export default function Sidebar() {
         {menuItems
           .filter((item) => item.section === "MAIN")
           .map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
               <Link key={item.href} href={item.href}>
                 <HStack
