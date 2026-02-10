@@ -135,9 +135,6 @@ export default function SettingsPage() {
             maxW="720px"
             mx="auto"
           >
-            <Text fontSize="xs" color="gray.400" mb={1}>
-              Home &rsaquo; Settings &rsaquo; Profile
-            </Text>
             <Heading size="2xl" fontWeight="800" mb={1}>
               Profile
             </Heading>
@@ -151,12 +148,6 @@ export default function SettingsPage() {
             <VStack gap={8} align="stretch">
               {/* Profile Picture */}
               <Box>
-                <Text fontWeight="700" fontSize="md" mb={0.5}>
-                  Profile picture
-                </Text>
-                <Text fontSize="xs" color="gray.500" mb={4}>
-                  We support JPEGs and PNGs under 5MB
-                </Text>
                 <HStack gap={5} align="center">
                   {/* Avatar */}
                   <Box position="relative">
