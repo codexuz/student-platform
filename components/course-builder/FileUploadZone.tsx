@@ -21,7 +21,7 @@ export default function FileUploadZone({ type, onUploaded }: Props) {
 
   const accept = type === "image" ? "image/*" : "video/*";
   const label = type === "image" ? "image" : "video";
-  const maxSize = type === "image" ? 10 : 100; // MB
+  const maxSize = type === "image" ? 10 : 400; // MB
 
   const handleFile = useCallback(
     async (file: File) => {
