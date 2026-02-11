@@ -18,6 +18,12 @@ export interface Section {
   lessons?: Lesson[];
 }
 
+export interface VideoTrack {
+  src: string;
+  lang: "uz" | "en" | "ru";
+  label: string;
+}
+
 export interface Lesson {
   id: string;
   section_id: string;
@@ -25,6 +31,7 @@ export interface Lesson {
   position: number;
   content?: ContentBlock[];
   duration_seconds?: number;
+  tracks?: VideoTrack[];
 }
 
 export type BlockType =

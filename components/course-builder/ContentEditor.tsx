@@ -17,7 +17,7 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import BlockRenderer from "./BlockRenderer";
-import type { Lesson, ContentBlock, BlockType } from "./types";
+import type { Lesson, ContentBlock, BlockType, VideoTrack } from "./types";
 
 interface Props {
   lesson: Lesson;
@@ -50,13 +50,16 @@ export default function ContentEditor({ lesson, onSave }: Props) {
     () => ({
       title: lesson.title || "",
       blocks: parseBlocks(lesson.content),
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+      tracks: lesson.tracks || [],
     }),
-    [lesson.id, lesson.title, lesson.content],
+    // lesson.id included intentionally to reset state on lesson switch
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [lesson.id, lesson.title, lesson.content, lesson.tracks],
   );
 
   const [title, setTitle] = useState(initialState.title);
   const [blocks, setBlocks] = useState<ContentBlock[]>(initialState.blocks);
+  const [tracks, setTracks] = useState<VideoTrack[]>(initialState.tracks);
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevLessonId = useRef(lesson.id);
 
@@ -65,6 +68,7 @@ export default function ContentEditor({ lesson, onSave }: Props) {
     prevLessonId.current = lesson.id;
     setTitle(initialState.title);
     setBlocks(initialState.blocks);
+    setTracks(initialState.tracks);
   }
 
   const sensors = useSensors(
@@ -72,20 +76,25 @@ export default function ContentEditor({ lesson, onSave }: Props) {
   );
 
   const autoSave = useCallback(
-    (newTitle: string, newBlocks: ContentBlock[]) => {
+    (newTitle: string, newBlocks: ContentBlock[], newTracks?: VideoTrack[]) => {
       if (saveTimeout.current) clearTimeout(saveTimeout.current);
       saveTimeout.current = setTimeout(() => {
-        onSave(lesson.id, {
+        const data: Record<string, unknown> = {
           title: newTitle,
           content: newBlocks.map((b, i) => ({
             id: typeof b.id === "number" ? b.id : i + 1,
             type: b.type,
             content: b.content,
           })),
-        });
+        };
+        const t = newTracks ?? tracks;
+        if (t.length > 0) {
+          data.tracks = t;
+        }
+        onSave(lesson.id, data);
       }, 1200);
     },
-    [lesson.id, onSave],
+    [lesson.id, onSave, tracks],
   );
 
   const updateTitle = (v: string) => {
@@ -111,6 +120,11 @@ export default function ContentEditor({ lesson, onSave }: Props) {
     nb[idx] = { ...nb[idx], content: url };
     setBlocks(nb);
     autoSave(title, nb);
+  };
+
+  const updateTracks = (newTracks: VideoTrack[]) => {
+    setTracks(newTracks);
+    autoSave(title, blocks, newTracks);
   };
 
   const addBlock = (type: BlockType, afterIdx: number) => {
@@ -187,6 +201,9 @@ export default function ContentEditor({ lesson, onSave }: Props) {
                 onChange={(content) => updateBlock(idx, content)}
                 onRemove={() => removeBlock(idx)}
                 onUrlChange={(url) => updateBlockUrl(idx, url)}
+                {...(block.type === "video"
+                  ? { tracks, onTracksChange: updateTracks }
+                  : {})}
               />
             ))}
           </SortableContext>

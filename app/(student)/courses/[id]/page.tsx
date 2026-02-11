@@ -47,6 +47,12 @@ interface ContentBlock {
   content: string;
 }
 
+interface VideoTrack {
+  src: string;
+  lang: string;
+  label: string;
+}
+
 interface Lesson {
   id: string;
   section_id: string;
@@ -54,6 +60,7 @@ interface Lesson {
   position: number;
   content: ContentBlock[] | null;
   duration_seconds: number | null;
+  tracks?: VideoTrack[];
   section?: Section;
 }
 
@@ -509,7 +516,15 @@ export default function CourseDetailPage() {
                       {lessonHasContent ? (
                         <VStack gap={4} align="stretch">
                           {activeLesson.content!.map((block) => (
-                            <ContentBlockView key={block.id} block={block} />
+                            <ContentBlockView
+                              key={block.id}
+                              block={block}
+                              tracks={
+                                block.type === "video"
+                                  ? activeLesson.tracks
+                                  : undefined
+                              }
+                            />
                           ))}
                         </VStack>
                       ) : (
@@ -580,7 +595,13 @@ export default function CourseDetailPage() {
 
 // ── Content Block Renderer ─────────────────────────────
 
-function ContentBlockView({ block }: { block: ContentBlock }) {
+function ContentBlockView({
+  block,
+  tracks,
+}: {
+  block: ContentBlock;
+  tracks?: VideoTrack[];
+}) {
   switch (block.type) {
     case "heading":
       return (
@@ -692,7 +713,22 @@ function ContentBlockView({ block }: { block: ContentBlock }) {
       }
       return (
         <Box borderRadius="lg" overflow="hidden">
-          <video src={block.content} controls style={{ width: "100%" }} />
+          <video
+            src={block.content}
+            controls
+            crossOrigin="anonymous"
+            style={{ width: "100%" }}
+          >
+            {(tracks || []).map((t) => (
+              <track
+                key={t.lang}
+                src={t.src}
+                kind="subtitles"
+                srcLang={t.lang}
+                label={t.label}
+              />
+            ))}
+          </video>
         </Box>
       );
     }

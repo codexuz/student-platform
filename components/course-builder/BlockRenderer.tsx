@@ -5,18 +5,21 @@ import {
   Button,
   CloseButton,
   Dialog,
+  HStack,
   Icon,
   Input,
   Portal,
   Text,
+  VStack,
 } from "@chakra-ui/react";
-import { GripVertical, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { GripVertical, Trash2, Upload, X } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import Image from "next/image";
-import type { ContentBlock } from "./types";
+import type { ContentBlock, VideoTrack } from "./types";
 import FileUploadZone from "./FileUploadZone";
+import { uploadAPI } from "@/lib/teacher-api";
 
 function toYouTubeEmbed(url: string): string | null {
   if (!url) return null;
@@ -71,6 +74,200 @@ interface Props {
   onChange: (content: string) => void;
   onRemove: () => void;
   onUrlChange: (url: string) => void;
+  tracks?: VideoTrack[];
+  onTracksChange?: (tracks: VideoTrack[]) => void;
+}
+
+const TRACK_LANGUAGES: { lang: VideoTrack["lang"]; label: string }[] = [
+  { lang: "en", label: "English" },
+  { lang: "uz", label: "O'zbekcha" },
+  { lang: "ru", label: "Русский" },
+];
+
+function TrackUploadRow({
+  track,
+  onRemove,
+}: {
+  track: VideoTrack;
+  onRemove: () => void;
+}) {
+  return (
+    <HStack
+      gap={2}
+      p={2}
+      bg="gray.50"
+      _dark={{ bg: "gray.700" }}
+      rounded="md"
+      fontSize="sm"
+    >
+      <Text fontWeight="600" minW="90px">
+        {track.label}
+      </Text>
+      <Text color="gray.500" flex={1} truncate fontSize="xs">
+        {decodeURIComponent(track.src.split("/").pop() || track.src)}
+      </Text>
+      <Box
+        as="button"
+        p={1}
+        rounded="sm"
+        color="gray.400"
+        _hover={{ color: "red.500", bg: "red.50" }}
+        onClick={onRemove}
+      >
+        <X size={14} />
+      </Box>
+    </HStack>
+  );
+}
+
+function TrackUploader({
+  tracks,
+  onTracksChange,
+}: {
+  tracks: VideoTrack[];
+  onTracksChange: (tracks: VideoTrack[]) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadingLang, setUploadingLang] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState("");
+  const [pendingLang, setPendingLang] = useState<
+    (typeof TRACK_LANGUAGES)[0] | null
+  >(null);
+
+  const existingLangs = new Set(tracks.map((t) => t.lang));
+  const availableLangs = TRACK_LANGUAGES.filter(
+    (l) => !existingLangs.has(l.lang),
+  );
+
+  const handleFile = useCallback(
+    async (file: File, langInfo: (typeof TRACK_LANGUAGES)[0]) => {
+      const ext = file.name.split(".").pop()?.toLowerCase();
+      if (!ext || !["vtt", "srt"].includes(ext)) {
+        setError("Only .vtt and .srt files are supported");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setError("Track file must be smaller than 5MB");
+        return;
+      }
+
+      setError("");
+      setUploading(true);
+      setUploadingLang(langInfo.lang);
+      setProgress(0);
+
+      try {
+        const result = await uploadAPI.uploadFile(file, {
+          onUploadProgress: (event: ProgressEvent) => {
+            const pct = Math.round((event.loaded / event.total) * 100);
+            setProgress(pct);
+          },
+        });
+
+        const url = result?.url ?? result?.data?.url ?? result?.file_url ?? "";
+        if (url) {
+          onTracksChange([
+            ...tracks,
+            { src: url, lang: langInfo.lang, label: langInfo.label },
+          ]);
+        } else {
+          setError("Upload succeeded but no URL returned");
+        }
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : "Upload failed");
+      } finally {
+        setUploading(false);
+        setUploadingLang(null);
+        setProgress(0);
+        setPendingLang(null);
+      }
+    },
+    [tracks, onTracksChange],
+  );
+
+  const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && pendingLang) handleFile(file, pendingLang);
+    e.target.value = "";
+  };
+
+  const removeTrack = (lang: string) => {
+    onTracksChange(tracks.filter((t) => t.lang !== lang));
+  };
+
+  return (
+    <Box
+      mt={3}
+      p={3}
+      border="1px solid"
+      borderColor="gray.200"
+      _dark={{ borderColor: "gray.600" }}
+      rounded="lg"
+    >
+      <Text
+        fontSize="xs"
+        fontWeight="700"
+        color="gray.500"
+        mb={2}
+        textTransform="uppercase"
+        letterSpacing="wide"
+      >
+        Subtitles / Captions
+      </Text>
+
+      <VStack gap={2} align="stretch">
+        {tracks.map((track) => (
+          <TrackUploadRow
+            key={track.lang}
+            track={track}
+            onRemove={() => removeTrack(track.lang)}
+          />
+        ))}
+      </VStack>
+
+      {availableLangs.length > 0 && (
+        <HStack mt={2} gap={2} flexWrap="wrap">
+          {availableLangs.map((langInfo) => (
+            <Button
+              key={langInfo.lang}
+              size="xs"
+              variant="outline"
+              disabled={uploading}
+              onClick={() => {
+                setPendingLang(langInfo);
+                inputRef.current?.click();
+              }}
+            >
+              {uploading && uploadingLang === langInfo.lang ? (
+                `Uploading… ${progress}%`
+              ) : (
+                <>
+                  <Upload size={12} />
+                  {langInfo.label}
+                </>
+              )}
+            </Button>
+          ))}
+        </HStack>
+      )}
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".vtt,.srt"
+        style={{ display: "none" }}
+        onChange={onInputChange}
+      />
+
+      {error && (
+        <Text fontSize="xs" color="red.500" mt={1}>
+          {error}
+        </Text>
+      )}
+    </Box>
+  );
 }
 
 export default function BlockRenderer({
@@ -78,6 +275,8 @@ export default function BlockRenderer({
   onChange,
   onRemove,
   onUrlChange,
+  tracks,
+  onTracksChange,
 }: Props) {
   const {
     attributes,
@@ -234,8 +433,19 @@ export default function BlockRenderer({
             <video
               src={block.content}
               controls
+              crossOrigin="anonymous"
               style={{ width: "100%", borderRadius: "8px", maxHeight: "400px" }}
-            />
+            >
+              {(tracks || []).map((t) => (
+                <track
+                  key={t.lang}
+                  src={t.src}
+                  kind="subtitles"
+                  srcLang={t.lang}
+                  label={t.label}
+                />
+              ))}
+            </video>
             <Input
               mt={2}
               w="full"
@@ -244,6 +454,12 @@ export default function BlockRenderer({
               onChange={(e) => onUrlChange(e.target.value)}
               placeholder="Video URL"
             />
+            {onTracksChange && (
+              <TrackUploader
+                tracks={tracks || []}
+                onTracksChange={onTracksChange}
+              />
+            )}
           </Box>
         ) : (
           <FileUploadZone type="video" onUploaded={(url) => onUrlChange(url)} />
