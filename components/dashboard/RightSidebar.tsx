@@ -81,7 +81,11 @@ export default function RightSidebar() {
                       color={day.active ? "orange.500" : "gray.400"}
                     />
                   </Box>
-                  <Text fontSize="xs" color="gray.600" _dark={{ color: "gray.400" }}>
+                  <Text
+                    fontSize="xs"
+                    color="gray.600"
+                    _dark={{ color: "gray.400" }}
+                  >
                     {day.day}
                   </Text>
                 </VStack>
@@ -187,7 +191,12 @@ export default function RightSidebar() {
                     <Text fontWeight="semibold" fontSize="sm">
                       {quiz.title}
                     </Text>
-                    <HStack gap={2} fontSize="xs" color="gray.600" _dark={{ color: "gray.400" }}>
+                    <HStack
+                      gap={2}
+                      fontSize="xs"
+                      color="gray.600"
+                      _dark={{ color: "gray.400" }}
+                    >
                       <Text>📝 {quiz.questions} question</Text>
                       <Text>⏱️ {quiz.duration} min</Text>
                     </HStack>

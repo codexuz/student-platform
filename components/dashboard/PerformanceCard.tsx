@@ -21,7 +21,10 @@ export default function PerformanceCard() {
             <Box position="relative" display="inline-flex">
               <ProgressCircle.Root value={80} size="lg">
                 <ProgressCircle.Circle>
-                  <ProgressCircle.Track stroke="gray.200" _dark={{ stroke: "gray.600" }} />
+                  <ProgressCircle.Track
+                    stroke="gray.200"
+                    _dark={{ stroke: "gray.600" }}
+                  />
                   <ProgressCircle.Range stroke="green.500" strokeWidth={8} />
                 </ProgressCircle.Circle>
                 <ProgressCircle.ValueText

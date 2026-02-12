@@ -243,7 +243,11 @@ export default function CoursesList({ onOpenCourse }: CoursesListProps) {
                       justifyContent="center"
                       rounded="md"
                       color="gray.400"
-                      _hover={{ bg: "gray.100", color: "gray.600", _dark: { bg: "gray.700", color: "gray.300" } }}
+                      _hover={{
+                        bg: "gray.100",
+                        color: "gray.600",
+                        _dark: { bg: "gray.700", color: "gray.300" },
+                      }}
                       onClick={(e: React.MouseEvent) => e.stopPropagation()}
                     >
                       <BarChart3 size={14} />
@@ -264,7 +268,11 @@ export default function CoursesList({ onOpenCourse }: CoursesListProps) {
                           justifyContent="center"
                           rounded="md"
                           color="gray.400"
-                          _hover={{ bg: "red.50", color: "red.500", _dark: { bg: "red.900" } }}
+                          _hover={{
+                            bg: "red.50",
+                            color: "red.500",
+                            _dark: { bg: "red.900" },
+                          }}
                           onClick={(e: React.MouseEvent) => e.stopPropagation()}
                         >
                           <Trash2 size={14} />

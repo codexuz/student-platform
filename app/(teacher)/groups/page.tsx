@@ -120,10 +120,18 @@ export default function GroupsPage() {
                       <Icon fontSize="5xl" color="gray.400">
                         <LuUsers />
                       </Icon>
-                      <Heading size="md" color="gray.600" _dark={{ color: "gray.400" }}>
+                      <Heading
+                        size="md"
+                        color="gray.600"
+                        _dark={{ color: "gray.400" }}
+                      >
                         No groups yet
                       </Heading>
-                      <Text color="gray.500" _dark={{ color: "gray.400" }} textAlign="center">
+                      <Text
+                        color="gray.500"
+                        _dark={{ color: "gray.400" }}
+                        textAlign="center"
+                      >
                         Your groups will appear here.
                       </Text>
                     </VStack>
@@ -149,7 +157,12 @@ export default function GroupsPage() {
                             </Badge>
                           </HStack>
                           {group.description && (
-                            <Text fontSize="sm" color="gray.600" _dark={{ color: "gray.400" }} lineClamp={2}>
+                            <Text
+                              fontSize="sm"
+                              color="gray.600"
+                              _dark={{ color: "gray.400" }}
+                              lineClamp={2}
+                            >
                               {group.description}
                             </Text>
                           )}

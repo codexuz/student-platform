@@ -251,7 +251,11 @@ export default function DashboardPage() {
                       <Heading size={{ base: "xl", md: "2xl" }}>
                         {userStats.coins}
                       </Heading>
-                      <Text fontSize="xs" color="gray.500" _dark={{ color: "gray.400" }}>
+                      <Text
+                        fontSize="xs"
+                        color="gray.500"
+                        _dark={{ color: "gray.400" }}
+                      >
                         Keep earning!
                       </Text>
                     </VStack>
@@ -280,7 +284,11 @@ export default function DashboardPage() {
                       <Heading size={{ base: "xl", md: "2xl" }}>
                         {userStats.points}
                       </Heading>
-                      <Text fontSize="xs" color="gray.500" _dark={{ color: "gray.400" }}>
+                      <Text
+                        fontSize="xs"
+                        color="gray.500"
+                        _dark={{ color: "gray.400" }}
+                      >
                         Level {userStats.level}
                       </Text>
                     </VStack>
@@ -309,7 +317,11 @@ export default function DashboardPage() {
                       <Heading size={{ base: "xl", md: "2xl" }}>
                         {userStats.streak}
                       </Heading>
-                      <Text fontSize="xs" color="gray.500" _dark={{ color: "gray.400" }}>
+                      <Text
+                        fontSize="xs"
+                        color="gray.500"
+                        _dark={{ color: "gray.400" }}
+                      >
                         Days in a row
                       </Text>
                     </VStack>
@@ -338,7 +350,11 @@ export default function DashboardPage() {
                       <Heading size={{ base: "xl", md: "2xl" }}>
                         #{userStats.ranking}
                       </Heading>
-                      <Text fontSize="xs" color="gray.500" _dark={{ color: "gray.400" }}>
+                      <Text
+                        fontSize="xs"
+                        color="gray.500"
+                        _dark={{ color: "gray.400" }}
+                      >
                         In your class
                       </Text>
                     </VStack>

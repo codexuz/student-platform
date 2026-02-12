@@ -185,7 +185,12 @@ export default function Sidebar() {
                 <Text fontWeight="semibold" fontSize="sm" truncate>
                   {fullName}
                 </Text>
-                <Text fontSize="xs" color="gray.500" _dark={{ color: "gray.400" }} truncate>
+                <Text
+                  fontSize="xs"
+                  color="gray.500"
+                  _dark={{ color: "gray.400" }}
+                  truncate
+                >
                   {user?.phone || ""}
                 </Text>
               </Box>

@@ -131,7 +131,9 @@ export default function MyCoursesPage() {
                   gap={4}
                 >
                   <Spinner size="xl" color="brand.500" />
-                  <Text color="gray.500" _dark={{ color: "gray.400" }}>Loading your courses...</Text>
+                  <Text color="gray.500" _dark={{ color: "gray.400" }}>
+                    Loading your courses...
+                  </Text>
                 </Flex>
               )}
 
@@ -159,10 +161,19 @@ export default function MyCoursesPage() {
                       <Icon fontSize="5xl" color="gray.400">
                         <LuBookOpen />
                       </Icon>
-                      <Heading size="md" color="gray.600" _dark={{ color: "gray.400" }}>
+                      <Heading
+                        size="md"
+                        color="gray.600"
+                        _dark={{ color: "gray.400" }}
+                      >
                         No courses yet
                       </Heading>
-                      <Text color="gray.500" _dark={{ color: "gray.400" }} textAlign="center" maxW="md">
+                      <Text
+                        color="gray.500"
+                        _dark={{ color: "gray.400" }}
+                        textAlign="center"
+                        maxW="md"
+                      >
                         You haven&apos;t enrolled in any courses yet. Your
                         enrolled courses will appear here once you join them.
                       </Text>

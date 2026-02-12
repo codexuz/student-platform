@@ -321,7 +321,11 @@ export default function BlockRenderer({
         justifyContent="center"
         color="gray.400"
         shadow="sm"
-        _hover={{ color: "gray.600", bg: "gray.100", _dark: { color: "gray.300", bg: "gray.600" } }}
+        _hover={{
+          color: "gray.600",
+          bg: "gray.100",
+          _dark: { color: "gray.300", bg: "gray.600" },
+        }}
       >
         <Icon>
           <GripVertical size={14} />

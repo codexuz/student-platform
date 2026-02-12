@@ -241,7 +241,12 @@ export default function SettingsPage() {
                 <Text fontWeight="700" fontSize="md" mb={0.5}>
                   Basic info
                 </Text>
-                <Text fontSize="xs" color="gray.500" _dark={{ color: "gray.400" }} mb={5}>
+                <Text
+                  fontSize="xs"
+                  color="gray.500"
+                  _dark={{ color: "gray.400" }}
+                  mb={5}
+                >
                   Tell us your basic info details
                 </Text>
 

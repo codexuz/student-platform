@@ -16,7 +16,9 @@ type CourseStatus = "draft" | "published" | "archived";
 export default function SettingsTab({ course, onUpdate }: Props) {
   const [title, setTitle] = useState(course.title || "");
   const [desc, setDesc] = useState(course.description || "");
-  const [status, setStatus] = useState<CourseStatus>((course.status || "draft") as CourseStatus);
+  const [status, setStatus] = useState<CourseStatus>(
+    (course.status || "draft") as CourseStatus,
+  );
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
@@ -46,7 +48,13 @@ export default function SettingsTab({ course, onUpdate }: Props) {
         <VStack gap={5} align="stretch">
           {/* Title */}
           <Box>
-            <Text fontSize="sm" fontWeight="600" mb={1.5} color="gray.600" _dark={{ color: "gray.400" }}>
+            <Text
+              fontSize="sm"
+              fontWeight="600"
+              mb={1.5}
+              color="gray.600"
+              _dark={{ color: "gray.400" }}
+            >
               Title
             </Text>
             <Input
@@ -58,7 +66,13 @@ export default function SettingsTab({ course, onUpdate }: Props) {
 
           {/* Description */}
           <Box>
-            <Text fontSize="sm" fontWeight="600" mb={1.5} color="gray.600" _dark={{ color: "gray.400" }}>
+            <Text
+              fontSize="sm"
+              fontWeight="600"
+              mb={1.5}
+              color="gray.600"
+              _dark={{ color: "gray.400" }}
+            >
               Description
             </Text>
             <textarea
@@ -84,7 +98,13 @@ export default function SettingsTab({ course, onUpdate }: Props) {
 
           {/* Status */}
           <Box>
-            <Text fontSize="sm" fontWeight="600" mb={1.5} color="gray.600" _dark={{ color: "gray.400" }}>
+            <Text
+              fontSize="sm"
+              fontWeight="600"
+              mb={1.5}
+              color="gray.600"
+              _dark={{ color: "gray.400" }}
+            >
               Status
             </Text>
             <select
