@@ -83,7 +83,7 @@ export default function CreateCourseModal({ onClose, onCreated }: Props) {
             cursor="pointer"
             fontSize="lg"
             color="gray.500"
-            _hover={{ bg: "gray.200" }}
+            _hover={{ bg: "gray.200", _dark: { bg: "gray.600" } }}
             onClick={onClose}
           >
             ×

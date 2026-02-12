@@ -208,6 +208,7 @@ export default function DashboardPage() {
                         <Text
                           fontSize={{ base: "xs", md: "sm" }}
                           color="gray.600"
+                          _dark={{ color: "gray.400" }}
                         >
                           Overall Progress
                         </Text>
@@ -236,6 +237,7 @@ export default function DashboardPage() {
                         <Text
                           fontSize={{ base: "xs", md: "sm" }}
                           color="gray.600"
+                          _dark={{ color: "gray.400" }}
                         >
                           Coins
                         </Text>
@@ -249,7 +251,7 @@ export default function DashboardPage() {
                       <Heading size={{ base: "xl", md: "2xl" }}>
                         {userStats.coins}
                       </Heading>
-                      <Text fontSize="xs" color="gray.500">
+                      <Text fontSize="xs" color="gray.500" _dark={{ color: "gray.400" }}>
                         Keep earning!
                       </Text>
                     </VStack>
@@ -264,6 +266,7 @@ export default function DashboardPage() {
                         <Text
                           fontSize={{ base: "xs", md: "sm" }}
                           color="gray.600"
+                          _dark={{ color: "gray.400" }}
                         >
                           Points
                         </Text>
@@ -277,7 +280,7 @@ export default function DashboardPage() {
                       <Heading size={{ base: "xl", md: "2xl" }}>
                         {userStats.points}
                       </Heading>
-                      <Text fontSize="xs" color="gray.500">
+                      <Text fontSize="xs" color="gray.500" _dark={{ color: "gray.400" }}>
                         Level {userStats.level}
                       </Text>
                     </VStack>
@@ -292,6 +295,7 @@ export default function DashboardPage() {
                         <Text
                           fontSize={{ base: "xs", md: "sm" }}
                           color="gray.600"
+                          _dark={{ color: "gray.400" }}
                         >
                           Day Streak
                         </Text>
@@ -305,7 +309,7 @@ export default function DashboardPage() {
                       <Heading size={{ base: "xl", md: "2xl" }}>
                         {userStats.streak}
                       </Heading>
-                      <Text fontSize="xs" color="gray.500">
+                      <Text fontSize="xs" color="gray.500" _dark={{ color: "gray.400" }}>
                         Days in a row
                       </Text>
                     </VStack>
@@ -320,6 +324,7 @@ export default function DashboardPage() {
                         <Text
                           fontSize={{ base: "xs", md: "sm" }}
                           color="gray.600"
+                          _dark={{ color: "gray.400" }}
                         >
                           Ranking
                         </Text>
@@ -333,7 +338,7 @@ export default function DashboardPage() {
                       <Heading size={{ base: "xl", md: "2xl" }}>
                         #{userStats.ranking}
                       </Heading>
-                      <Text fontSize="xs" color="gray.500">
+                      <Text fontSize="xs" color="gray.500" _dark={{ color: "gray.400" }}>
                         In your class
                       </Text>
                     </VStack>

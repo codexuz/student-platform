@@ -185,7 +185,7 @@ export default function LessonQuiz({ lessonId }: LessonQuizProps) {
                 <Text fontWeight="600" fontSize="md" lineClamp={1}>
                   {quiz.title}
                 </Text>
-                <HStack gap={3} fontSize="xs" color="gray.500">
+                <HStack gap={3} fontSize="xs" color="gray.500" _dark={{ color: "gray.400" }}>
                   {quiz.time_limit_seconds ? (
                     <HStack gap={1}>
                       <Icon fontSize="sm" color="orange.400">
@@ -532,7 +532,7 @@ function QuizPlayer({ quiz, onBack }: { quiz: Quiz; onBack: () => void }) {
   if (!questions.length) {
     return (
       <Box mt={8} textAlign="center">
-        <Text color="gray.500">No questions found for this quiz.</Text>
+        <Text color="gray.500" _dark={{ color: "gray.400" }}>No questions found for this quiz.</Text>
         <Button variant="ghost" size="sm" mt={3} onClick={onBack}>
           ← Back to quizzes
         </Button>
@@ -582,7 +582,7 @@ function QuizPlayer({ quiz, onBack }: { quiz: Quiz; onBack: () => void }) {
           <Heading size="lg" mb={1}>
             {pct}%
           </Heading>
-          <Text fontSize="sm" color="gray.500" mb={4}>
+          <Text fontSize="sm" color="gray.500" _dark={{ color: "gray.400" }} mb={4}>
             {earned} / {total} points
           </Text>
           <Text
@@ -762,7 +762,7 @@ function QuizPlayer({ quiz, onBack }: { quiz: Quiz; onBack: () => void }) {
               <Text>{formatTime(timeLeft)}</Text>
             </HStack>
           )}
-          <Text fontSize="sm" color="gray.500">
+          <Text fontSize="sm" color="gray.500" _dark={{ color: "gray.400" }}>
             {answeredCount}/{questions.length} answered
           </Text>
         </HStack>

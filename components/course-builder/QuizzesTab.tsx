@@ -105,10 +105,10 @@ export default function QuizzesTab({ courseId, sections }: Props) {
         ) : !quizzes.length ? (
           <VStack py={16} gap={3}>
             <Text fontSize="5xl">❓</Text>
-            <Heading size="md" color="gray.500">
+            <Heading size="md" color="gray.500" _dark={{ color: "gray.400" }}>
               No quizzes yet
             </Heading>
-            <Text fontSize="sm" color="gray.400">
+            <Text fontSize="sm" color="gray.400" _dark={{ color: "gray.500" }}>
               Add quizzes to test learner knowledge
             </Text>
           </VStack>
@@ -298,6 +298,8 @@ function QuizFormModal({
               borderWidth: "1px",
               borderRadius: "6px",
               fontSize: "0.875rem",
+              background: "var(--chakra-colors-bg)",
+              color: "inherit",
             }}
             value={lessonId}
             onChange={(e) => setLessonId(e.target.value)}
@@ -336,6 +338,8 @@ function QuizFormModal({
               borderWidth: "1px",
               borderRadius: "6px",
               fontSize: "0.875rem",
+              background: "var(--chakra-colors-bg)",
+              color: "inherit",
             }}
             value={published ? "true" : "false"}
             onChange={(e) => setPublished(e.target.value === "true")}
@@ -482,6 +486,7 @@ function QuizDetail({ quiz, onBack }: { quiz: Quiz; onBack: () => void }) {
                           fontWeight="500"
                           bg="green.100"
                           color="green.700"
+                          _dark={{ bg: "green.900", color: "green.300" }}
                         >
                           ✓ {a.answer_text}
                         </Box>
@@ -669,6 +674,8 @@ function QuestionFormModal({
                 borderWidth: "1px",
                 borderRadius: "6px",
                 fontSize: "0.875rem",
+                background: "var(--chakra-colors-bg)",
+                color: "inherit",
               }}
               value={qType}
               onChange={(e) => setQType(e.target.value as QuestionType)}
@@ -933,7 +940,7 @@ function ModalWrapper({
             cursor="pointer"
             fontSize="lg"
             color="gray.500"
-            _hover={{ bg: "gray.200" }}
+            _hover={{ bg: "gray.200", _dark: { bg: "gray.600" } }}
             onClick={onClose}
           >
             ×

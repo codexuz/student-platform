@@ -12,7 +12,7 @@ export default function PerformanceCard() {
             <Text fontSize="lg" fontWeight="bold">
               Overall performance
             </Text>
-            <Text fontSize="sm" color="gray.500">
+            <Text fontSize="sm" color="gray.500" _dark={{ color: "gray.400" }}>
               Course completion rate
             </Text>
           </Box>
@@ -21,7 +21,7 @@ export default function PerformanceCard() {
             <Box position="relative" display="inline-flex">
               <ProgressCircle.Root value={80} size="lg">
                 <ProgressCircle.Circle>
-                  <ProgressCircle.Track stroke="gray.200" />
+                  <ProgressCircle.Track stroke="gray.200" _dark={{ stroke: "gray.600" }} />
                   <ProgressCircle.Range stroke="green.500" strokeWidth={8} />
                 </ProgressCircle.Circle>
                 <ProgressCircle.ValueText
@@ -35,6 +35,7 @@ export default function PerformanceCard() {
               fontSize="xs"
               fontWeight="semibold"
               color="gray.600"
+              _dark={{ color: "gray.400" }}
               textTransform="uppercase"
             >
               Pro Learner

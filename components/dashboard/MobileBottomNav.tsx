@@ -11,6 +11,7 @@ import {
   FileText,
   BarChart3,
   Calendar,
+  ClipboardList,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -27,6 +28,7 @@ const teacherMenuItems = [
   { icon: Home, label: "Home", href: "/dashboard" },
   { icon: BookOpen, label: "Courses", href: "/course-builder" },
   { icon: Users, label: "Groups", href: "/groups" },
+  { icon: ClipboardList, label: "IELTS", href: "/ielts-test-builder" },
 ];
 
 export default function MobileBottomNav() {
@@ -51,7 +53,8 @@ export default function MobileBottomNav() {
       boxShadow="0 -2px 10px rgba(0,0,0,0.05)"
     >
       {menuItems.map((item) => {
-        const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+        const isActive =
+          pathname === item.href || pathname.startsWith(item.href + "/");
         const IconComponent = item.icon;
 
         return (

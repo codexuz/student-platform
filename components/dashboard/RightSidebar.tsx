@@ -59,7 +59,7 @@ export default function RightSidebar() {
         <Card.Body>
           <VStack gap={4} alignItems="stretch">
             <Heading size="sm">5 days without a break</Heading>
-            <Text fontSize="xs" color="gray.600">
+            <Text fontSize="xs" color="gray.600" _dark={{ color: "gray.400" }}>
               The record is 16 days without a break
             </Text>
 
@@ -71,6 +71,7 @@ export default function RightSidebar() {
                     h={8}
                     rounded="md"
                     bg={day.active ? "orange.100" : "gray.100"}
+                    _dark={{ bg: day.active ? "orange.900" : "gray.700" }}
                     display="flex"
                     alignItems="center"
                     justifyContent="center"
@@ -80,7 +81,7 @@ export default function RightSidebar() {
                       color={day.active ? "orange.500" : "gray.400"}
                     />
                   </Box>
-                  <Text fontSize="xs" color="gray.600">
+                  <Text fontSize="xs" color="gray.600" _dark={{ color: "gray.400" }}>
                     {day.day}
                   </Text>
                 </VStack>
@@ -186,7 +187,7 @@ export default function RightSidebar() {
                     <Text fontWeight="semibold" fontSize="sm">
                       {quiz.title}
                     </Text>
-                    <HStack gap={2} fontSize="xs" color="gray.600">
+                    <HStack gap={2} fontSize="xs" color="gray.600" _dark={{ color: "gray.400" }}>
                       <Text>📝 {quiz.questions} question</Text>
                       <Text>⏱️ {quiz.duration} min</Text>
                     </HStack>

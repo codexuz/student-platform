@@ -137,6 +137,7 @@ export default function TeacherDashboardPage() {
                           <Text
                             fontSize={{ base: "xs", md: "sm" }}
                             color="gray.600"
+                            _dark={{ color: "gray.400" }}
                           >
                             My Groups
                           </Text>
@@ -161,6 +162,7 @@ export default function TeacherDashboardPage() {
                           <Text
                             fontSize={{ base: "xs", md: "sm" }}
                             color="gray.600"
+                            _dark={{ color: "gray.400" }}
                           >
                             Total Students
                           </Text>
@@ -185,6 +187,7 @@ export default function TeacherDashboardPage() {
                           <Text
                             fontSize={{ base: "xs", md: "sm" }}
                             color="gray.600"
+                            _dark={{ color: "gray.400" }}
                           >
                             Courses
                           </Text>
@@ -207,6 +210,7 @@ export default function TeacherDashboardPage() {
                           <Text
                             fontSize={{ base: "xs", md: "sm" }}
                             color="gray.600"
+                            _dark={{ color: "gray.400" }}
                           >
                             Homeworks
                           </Text>

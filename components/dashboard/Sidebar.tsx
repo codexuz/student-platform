@@ -20,6 +20,7 @@ import {
   LogOut,
   ChevronUp,
   Users,
+  ClipboardList,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -34,8 +35,19 @@ const studentMenuItems = [
 
 const teacherMenuItems = [
   { icon: Home, label: "Dashboard", href: "/dashboard", section: "MAIN" },
-  { icon: BookOpen, label: "Courses", href: "/course-builder", section: "MAIN" },
+  {
+    icon: BookOpen,
+    label: "Courses",
+    href: "/course-builder",
+    section: "MAIN",
+  },
   { icon: Users, label: "Groups", href: "/groups", section: "MAIN" },
+  {
+    icon: ClipboardList,
+    label: "IELTS Builder",
+    href: "/ielts-test-builder",
+    section: "MAIN",
+  },
 ];
 
 export default function Sidebar() {
@@ -65,7 +77,13 @@ export default function Sidebar() {
       h="100vh"
       zIndex={10}
     >
-      <Flex h="16" px={6} alignItems="center" borderBottomWidth="1px" flexShrink={0}>
+      <Flex
+        h="16"
+        px={6}
+        alignItems="center"
+        borderBottomWidth="1px"
+        flexShrink={0}
+      >
         <HStack gap={2}>
           <Image src="/logo.png" alt="Mockmee" w={8} h={8} rounded="md" />
           <Heading size="md">Mockmee</Heading>
@@ -79,6 +97,7 @@ export default function Sidebar() {
             fontSize="xs"
             fontWeight="semibold"
             color="gray.500"
+            _dark={{ color: "gray.400" }}
             px={3}
             py={2}
             textTransform="uppercase"
@@ -88,7 +107,8 @@ export default function Sidebar() {
           {menuItems
             .filter((item) => item.section === "MAIN")
             .map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+              const isActive =
+                pathname === item.href || pathname.startsWith(item.href + "/");
               return (
                 <Link key={item.href} href={item.href}>
                   <HStack
@@ -165,7 +185,7 @@ export default function Sidebar() {
                 <Text fontWeight="semibold" fontSize="sm" truncate>
                   {fullName}
                 </Text>
-                <Text fontSize="xs" color="gray.500" truncate>
+                <Text fontSize="xs" color="gray.500" _dark={{ color: "gray.400" }} truncate>
                   {user?.phone || ""}
                 </Text>
               </Box>

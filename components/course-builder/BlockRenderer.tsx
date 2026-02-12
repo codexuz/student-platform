@@ -111,7 +111,7 @@ function TrackUploadRow({
         p={1}
         rounded="sm"
         color="gray.400"
-        _hover={{ color: "red.500", bg: "red.50" }}
+        _hover={{ color: "red.500", bg: "red.50", _dark: { bg: "red.900" } }}
         onClick={onRemove}
       >
         <X size={14} />
@@ -321,7 +321,7 @@ export default function BlockRenderer({
         justifyContent="center"
         color="gray.400"
         shadow="sm"
-        _hover={{ color: "gray.600", bg: "gray.100" }}
+        _hover={{ color: "gray.600", bg: "gray.100", _dark: { color: "gray.300", bg: "gray.600" } }}
       >
         <Icon>
           <GripVertical size={14} />
@@ -340,7 +340,7 @@ export default function BlockRenderer({
         justifyContent="center"
         color="gray.400"
         shadow="sm"
-        _hover={{ color: "red.500", bg: "red.50" }}
+        _hover={{ color: "red.500", bg: "red.50", _dark: { bg: "red.900" } }}
         onClick={onRemove}
       >
         <Icon>

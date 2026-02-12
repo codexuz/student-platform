@@ -116,7 +116,7 @@ export default function StatsGrid() {
           {stat.showCircle && (
             <ProgressCircle.Root value={stat.circleValue} size="sm">
               <ProgressCircle.Circle>
-                <ProgressCircle.Track stroke="gray.200" />
+                <ProgressCircle.Track stroke="gray.200" _dark={{ stroke: "gray.600" }} />
                 <ProgressCircle.Range
                   stroke={stat.circleColor || "green.500"}
                   strokeWidth={6}

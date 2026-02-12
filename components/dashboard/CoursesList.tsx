@@ -112,7 +112,7 @@ export default function CoursesList() {
                     </Box>
                     <VStack gap={0} alignItems="flex-start">
                       <Text fontWeight="semibold">{course.name}</Text>
-                      <HStack gap={2} fontSize="xs" color="gray.600">
+                      <HStack gap={2} fontSize="xs" color="gray.600" _dark={{ color: "gray.400" }}>
                         <HStack gap={1}>
                           <Icon as={BookOpen} />
                           <Text>{course.chapters} chapter</Text>
@@ -134,7 +134,7 @@ export default function CoursesList() {
                       }
                       size="sm"
                     />
-                    <Text fontSize="xs" color="gray.600">
+                    <Text fontSize="xs" color="gray.600" _dark={{ color: "gray.400" }}>
                       {course.progress}%
                     </Text>
                   </VStack>

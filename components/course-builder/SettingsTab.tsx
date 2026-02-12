@@ -46,7 +46,7 @@ export default function SettingsTab({ course, onUpdate }: Props) {
         <VStack gap={5} align="stretch">
           {/* Title */}
           <Box>
-            <Text fontSize="sm" fontWeight="600" mb={1.5} color="gray.600">
+            <Text fontSize="sm" fontWeight="600" mb={1.5} color="gray.600" _dark={{ color: "gray.400" }}>
               Title
             </Text>
             <Input
@@ -58,7 +58,7 @@ export default function SettingsTab({ course, onUpdate }: Props) {
 
           {/* Description */}
           <Box>
-            <Text fontSize="sm" fontWeight="600" mb={1.5} color="gray.600">
+            <Text fontSize="sm" fontWeight="600" mb={1.5} color="gray.600" _dark={{ color: "gray.400" }}>
               Description
             </Text>
             <textarea
@@ -76,13 +76,15 @@ export default function SettingsTab({ course, onUpdate }: Props) {
                 resize: "vertical",
                 outline: "none",
                 fontFamily: "inherit",
+                background: "var(--chakra-colors-bg)",
+                color: "inherit",
               }}
             />
           </Box>
 
           {/* Status */}
           <Box>
-            <Text fontSize="sm" fontWeight="600" mb={1.5} color="gray.600">
+            <Text fontSize="sm" fontWeight="600" mb={1.5} color="gray.600" _dark={{ color: "gray.400" }}>
               Status
             </Text>
             <select
@@ -100,7 +102,8 @@ export default function SettingsTab({ course, onUpdate }: Props) {
                 border: "1px solid var(--chakra-colors-gray-200, #e5e7eb)",
                 fontSize: "0.875rem",
                 cursor: "pointer",
-                background: "white",
+                background: "var(--chakra-colors-bg)",
+                color: "inherit",
                 fontFamily: "inherit",
               }}
             >

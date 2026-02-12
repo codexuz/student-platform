@@ -1,0 +1,363 @@
+"use client";
+
+import {
+  Box,
+  Button,
+  Flex,
+  Heading,
+  HStack,
+  Input,
+  NativeSelect,
+  Text,
+  Textarea,
+  VStack,
+} from "@chakra-ui/react";
+import { Save } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ieltsListeningPartsAPI } from "@/lib/ielts-api";
+import { toaster } from "@/components/ui/toaster";
+import type { QuestionGroup, QuestionContent, PageId } from "./types";
+import QuestionGroupsBuilder from "./QuestionGroupsBuilder";
+
+interface ListeningPartFormProps {
+  editId?: string | null;
+  prefillListeningId?: string;
+  onNavigate: (page: PageId, data?: Record<string, string>) => void;
+}
+
+function buildContentPayload(c: QuestionContent) {
+  const block: Record<string, unknown> = {
+    type: c.type,
+    title: c.title,
+    condition: c.condition || null,
+    content: c.content || null,
+    limit: c.limit,
+    showOptions: c.showOptions,
+    optionsTitle: c.optionsTitle || null,
+    order: c.order,
+  };
+  if (c.options?.length) {
+    block.options = c.options.map((o, i) => ({
+      value: o.value,
+      label: o.label,
+      order: o.order || i + 1,
+    }));
+  }
+  if (c.multipleChoiceQuestions?.length) {
+    block.multipleChoiceQuestions = c.multipleChoiceQuestions.map((m, i) => ({
+      question: m.question,
+      order: m.order || i + 1,
+      options: m.options.map((o, j) => ({
+        value: o.value,
+        label: o.label,
+        order: o.order || j + 1,
+      })),
+    }));
+  }
+  return block;
+}
+
+export default function ListeningPartForm({
+  editId,
+  prefillListeningId,
+  onNavigate,
+}: ListeningPartFormProps) {
+  const [listeningId, setListeningId] = useState(prefillListeningId || "");
+  const [part, setPart] = useState("PART_1");
+  const [title, setTitle] = useState("");
+  const [audioUrl, setAudioUrl] = useState("");
+  const [audioName, setAudioName] = useState("");
+  const [audioDuration, setAudioDuration] = useState("");
+  const [answers, setAnswers] = useState("");
+  const [questionGroups, setQuestionGroups] = useState<QuestionGroup[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const isEdit = !!editId;
+
+  useEffect(() => {
+    if (editId) {
+      setLoading(true);
+      ieltsListeningPartsAPI
+        .getById(editId)
+        .then((p: Record<string, unknown>) => {
+          setListeningId((p.listening_id as string) || "");
+          setPart((p.part as string) || "PART_1");
+          setTitle((p.title as string) || "");
+          const audio = p.audio as Record<string, unknown> | null;
+          setAudioUrl((audio?.url as string) || "");
+          setAudioName((audio?.file_name as string) || "");
+          setAudioDuration(audio?.duration ? String(audio.duration) : "");
+          setAnswers(p.answers ? JSON.stringify(p.answers, null, 2) : "");
+          setQuestionGroups(
+            ((p.questions as QuestionGroup[]) || []).map((q) => ({
+              number_of_questions: q.number_of_questions || 0,
+              contents: (q.contents || []).map((c) => ({ ...c })),
+            })),
+          );
+        })
+        .catch((e: Error) =>
+          toaster.error({ title: "Error", description: e.message }),
+        )
+        .finally(() => setLoading(false));
+    }
+  }, [editId]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      let parsedAnswers = null;
+      if (answers.trim()) {
+        try {
+          parsedAnswers = JSON.parse(answers);
+        } catch {
+          toaster.error({ title: "Invalid JSON in answers" });
+          setSaving(false);
+          return;
+        }
+      }
+      const body = {
+        listening_id: listeningId,
+        part,
+        title: title || null,
+        answers: parsedAnswers,
+        audio: audioUrl
+          ? {
+              url: audioUrl,
+              file_name: audioName || null,
+              duration: audioDuration ? parseInt(audioDuration) : null,
+            }
+          : null,
+        questions: questionGroups.map((q) => ({
+          number_of_questions: q.number_of_questions,
+          contents: q.contents.map(buildContentPayload),
+        })),
+      };
+
+      if (isEdit) {
+        await ieltsListeningPartsAPI.update(editId!, body);
+        toaster.success({ title: "Listening part updated!" });
+      } else {
+        const r = await ieltsListeningPartsAPI.create(body);
+        toaster.success({ title: `Listening part created! ID: ${r.id}` });
+      }
+      onNavigate("listening-parts");
+    } catch (e: unknown) {
+      toaster.error({ title: "Error", description: (e as Error).message });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading)
+    return (
+      <Box py={12} textAlign="center" color="gray.400">
+        Loading...
+      </Box>
+    );
+
+  return (
+    <Box>
+      <HStack gap={1.5} fontSize="sm" color="gray.400" mb={4}>
+        <Text
+          as="span"
+          color="#4f46e5"
+          cursor="pointer"
+          fontWeight="500"
+          _hover={{ textDecoration: "underline" }}
+          onClick={() => onNavigate("listening-parts")}
+        >
+          Listening Parts
+        </Text>
+        <Text color="gray.300" _dark={{ color: "gray.600" }}>
+          /
+        </Text>
+        <Text>{isEdit ? "Edit Listening Part" : "Create Listening Part"}</Text>
+      </HStack>
+
+      <Box
+        bg="white"
+        _dark={{ bg: "gray.800" }}
+        rounded="lg"
+        borderWidth="1px"
+        shadow="sm"
+      >
+        <Box px={5} py={3.5} borderBottomWidth="1px">
+          <Heading size="sm" fontWeight="600">
+            {isEdit ? "Edit Listening Part" : "Create Listening Part"}
+          </Heading>
+        </Box>
+        <Box px={5} py={5}>
+          <VStack gap={4} alignItems="stretch">
+            <Flex gap={3} direction={{ base: "column", md: "row" }}>
+              <Box flex="1">
+                <Text
+                  fontSize="xs"
+                  fontWeight="600"
+                  color="gray.600"
+                  _dark={{ color: "gray.400" }}
+                  mb={1}
+                  textTransform="uppercase"
+                  letterSpacing="0.3px"
+                >
+                  Listening ID
+                </Text>
+                <Input
+                  placeholder="UUID of listening section"
+                  value={listeningId}
+                  onChange={(e) => setListeningId(e.target.value)}
+                />
+              </Box>
+              <Box flex="1">
+                <Text
+                  fontSize="xs"
+                  fontWeight="600"
+                  color="gray.600"
+                  _dark={{ color: "gray.400" }}
+                  mb={1}
+                  textTransform="uppercase"
+                  letterSpacing="0.3px"
+                >
+                  Part
+                </Text>
+                <NativeSelect.Root size="sm" w="full">
+                  <NativeSelect.Field
+                    value={part}
+                    onChange={(e) => setPart(e.currentTarget.value)}
+                  >
+                    <option value="PART_1">Part 1</option>
+                    <option value="PART_2">Part 2</option>
+                    <option value="PART_3">Part 3</option>
+                    <option value="PART_4">Part 4</option>
+                  </NativeSelect.Field>
+                  <NativeSelect.Indicator />
+                </NativeSelect.Root>
+              </Box>
+            </Flex>
+
+            <Box>
+              <Text
+                fontSize="xs"
+                fontWeight="600"
+                color="gray.600"
+                _dark={{ color: "gray.400" }}
+                mb={1}
+                textTransform="uppercase"
+                letterSpacing="0.3px"
+              >
+                Title
+              </Text>
+              <Input
+                placeholder="e.g. A conversation between two students"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </Box>
+
+            <Flex gap={3} direction={{ base: "column", md: "row" }}>
+              <Box flex="1">
+                <Text
+                  fontSize="xs"
+                  fontWeight="600"
+                  color="gray.600"
+                  _dark={{ color: "gray.400" }}
+                  mb={1}
+                  textTransform="uppercase"
+                  letterSpacing="0.3px"
+                >
+                  Audio URL
+                </Text>
+                <Input
+                  placeholder="https://..."
+                  value={audioUrl}
+                  onChange={(e) => setAudioUrl(e.target.value)}
+                />
+              </Box>
+              <Box flex="1">
+                <Text
+                  fontSize="xs"
+                  fontWeight="600"
+                  color="gray.600"
+                  _dark={{ color: "gray.400" }}
+                  mb={1}
+                  textTransform="uppercase"
+                  letterSpacing="0.3px"
+                >
+                  Audio File Name
+                </Text>
+                <Input
+                  placeholder="part1.mp3"
+                  value={audioName}
+                  onChange={(e) => setAudioName(e.target.value)}
+                />
+              </Box>
+              <Box flex="1">
+                <Text
+                  fontSize="xs"
+                  fontWeight="600"
+                  color="gray.600"
+                  _dark={{ color: "gray.400" }}
+                  mb={1}
+                  textTransform="uppercase"
+                  letterSpacing="0.3px"
+                >
+                  Duration (s)
+                </Text>
+                <Input
+                  type="number"
+                  placeholder="300"
+                  value={audioDuration}
+                  onChange={(e) => setAudioDuration(e.target.value)}
+                />
+              </Box>
+            </Flex>
+
+            <Box>
+              <Text
+                fontSize="xs"
+                fontWeight="600"
+                color="gray.600"
+                _dark={{ color: "gray.400" }}
+                mb={1}
+                textTransform="uppercase"
+                letterSpacing="0.3px"
+              >
+                Answer Key (JSON)
+              </Text>
+              <Textarea
+                placeholder='{"1":"answer1","2":"answer2"}'
+                value={answers}
+                onChange={(e) => setAnswers(e.target.value)}
+                rows={3}
+              />
+            </Box>
+
+            <QuestionGroupsBuilder
+              groups={questionGroups}
+              onChange={setQuestionGroups}
+            />
+
+            <HStack gap={2} pt={2}>
+              <Button
+                bg="#10b981"
+                color="white"
+                _hover={{ bg: "#059669" }}
+                onClick={handleSave}
+                loading={saving}
+                size="sm"
+              >
+                <Save size={14} /> {isEdit ? "Update" : "Save Listening Part"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => onNavigate("listening-parts")}
+                size="sm"
+              >
+                Cancel
+              </Button>
+            </HStack>
+          </VStack>
+        </Box>
+      </Box>
+    </Box>
+  );
+}

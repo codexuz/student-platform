@@ -310,12 +310,12 @@ export default function ResourcesPage() {
                                 )}
                                 <HStack justify="space-between" fontSize="sm">
                                   {movie.release_year && (
-                                    <Text color="gray.500">
+                                    <Text color="gray.500" _dark={{ color: "gray.400" }}>
                                       {movie.release_year}
                                     </Text>
                                   )}
                                   {movie.duration && (
-                                    <HStack color="gray.500">
+                                    <HStack color="gray.500" _dark={{ color: "gray.400" }}>
                                       <Icon>
                                         <LuClock />
                                       </Icon>
@@ -324,7 +324,7 @@ export default function ResourcesPage() {
                                   )}
                                 </HStack>
                                 {movie.views !== undefined && (
-                                  <HStack fontSize="sm" color="gray.500">
+                                  <HStack fontSize="sm" color="gray.500" _dark={{ color: "gray.400" }}>
                                     <Icon>
                                       <LuEye />
                                     </Icon>
@@ -435,12 +435,12 @@ export default function ResourcesPage() {
                                   flexWrap="wrap"
                                 >
                                   {article.author && (
-                                    <Text color="gray.500" fontWeight="medium">
+                                    <Text color="gray.500" _dark={{ color: "gray.400" }} fontWeight="medium">
                                       By {article.author}
                                     </Text>
                                   )}
                                   {article.views !== undefined && (
-                                    <HStack color="gray.500">
+                                    <HStack color="gray.500" _dark={{ color: "gray.400" }}>
                                       <Icon>
                                         <LuEye />
                                       </Icon>
@@ -449,7 +449,7 @@ export default function ResourcesPage() {
                                   )}
                                 </HStack>
                                 {article.created_at && (
-                                  <Text fontSize="xs" color="gray.500">
+                                  <Text fontSize="xs" color="gray.500" _dark={{ color: "gray.400" }}>
                                     {new Date(
                                       article.created_at,
                                     ).toLocaleDateString()}
