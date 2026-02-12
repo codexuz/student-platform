@@ -53,7 +53,8 @@ export default function Sidebar() {
 
   return (
     <Box
-      display={{ base: "none", lg: "block" }}
+      display={{ base: "none", lg: "flex" }}
+      flexDirection="column"
       w="240px"
       bg="white"
       _dark={{ bg: "gray.800" }}
@@ -62,64 +63,62 @@ export default function Sidebar() {
       top={0}
       left={0}
       h="100vh"
-      overflowY="auto"
       zIndex={10}
     >
-      <Flex h="16" px={6} alignItems="center" borderBottomWidth="1px">
+      <Flex h="16" px={6} alignItems="center" borderBottomWidth="1px" flexShrink={0}>
         <HStack gap={2}>
           <Image src="/logo.png" alt="Mockmee" w={8} h={8} rounded="md" />
           <Heading size="md">Mockmee</Heading>
         </HStack>
       </Flex>
 
-      <VStack gap={1} p={4} alignItems="stretch">
-        {/* MAIN Section */}
-        <Text
-          fontSize="xs"
-          fontWeight="semibold"
-          color="gray.500"
-          px={3}
-          py={2}
-          textTransform="uppercase"
-        >
-          Main
-        </Text>
-        {menuItems
-          .filter((item) => item.section === "MAIN")
-          .map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-            return (
-              <Link key={item.href} href={item.href}>
-                <HStack
-                  px={4}
-                  py={2.5}
-                  rounded="lg"
-                  cursor="pointer"
-                  bg={isActive ? "#0f172a" : "transparent"}
-                  color={isActive ? "white" : "gray.700"}
-                  _dark={{
-                    color: isActive ? "white" : "gray.300",
-                  }}
-                  _hover={{
-                    bg: isActive ? "#1e293b" : "gray.100",
-                    _dark: { bg: isActive ? "#1e293b" : "gray.700" },
-                  }}
-                  transition="all 0.2s"
-                >
-                  <Icon as={item.icon} fontSize="lg" />
-                  <Text fontWeight="medium">{item.label}</Text>
-                </HStack>
-              </Link>
-            );
-          })}
-      </VStack>
+      <Box flex="1" overflowY="auto" minH={0}>
+        <VStack gap={1} p={4} alignItems="stretch">
+          {/* MAIN Section */}
+          <Text
+            fontSize="xs"
+            fontWeight="semibold"
+            color="gray.500"
+            px={3}
+            py={2}
+            textTransform="uppercase"
+          >
+            Main
+          </Text>
+          {menuItems
+            .filter((item) => item.section === "MAIN")
+            .map((item) => {
+              const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+              return (
+                <Link key={item.href} href={item.href}>
+                  <HStack
+                    px={4}
+                    py={2.5}
+                    rounded="lg"
+                    cursor="pointer"
+                    bg={isActive ? "#0f172a" : "transparent"}
+                    color={isActive ? "white" : "gray.700"}
+                    _dark={{
+                      color: isActive ? "white" : "gray.300",
+                    }}
+                    _hover={{
+                      bg: isActive ? "#1e293b" : "gray.100",
+                      _dark: { bg: isActive ? "#1e293b" : "gray.700" },
+                    }}
+                    transition="all 0.2s"
+                  >
+                    <Icon as={item.icon} fontSize="lg" />
+                    <Text fontWeight="medium">{item.label}</Text>
+                  </HStack>
+                </Link>
+              );
+            })}
+        </VStack>
+      </Box>
 
       {/* Sidebar Footer */}
       <Box
-        position="absolute"
-        bottom={0}
-        left={0}
-        right={0}
+        flexShrink={0}
         borderTopWidth="1px"
         p={3}
         bg="white"

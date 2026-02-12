@@ -70,6 +70,7 @@ interface Quiz {
   time_limit_seconds: number | null;
   attempts_allowed: number;
   is_published: boolean;
+  questions?: QuizQuestion[];
 }
 
 // ── Component ──
@@ -82,19 +83,41 @@ export default function LessonQuiz({ lessonId }: LessonQuizProps) {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
+  const [fetchId, setFetchId] = useState(lessonId);
 
-  useState(() => {
+  if (fetchId !== lessonId) {
+    setFetchId(lessonId);
+    setLoading(true);
+    setQuizzes([]);
+    setActiveQuiz(null);
+  }
+
+  useEffect(() => {
     if (!lessonId) return;
     ieltsCourseAPI
       .getQuizzesByLessonId(lessonId)
-      .then((res: { data?: Quiz[] }) => {
-        const data = res?.data ?? [];
-        const published = data.filter((q: Quiz) => q.is_published);
+      .then((res: Quiz | Quiz[] | { data?: Quiz[] }) => {
+        let list: Quiz[];
+        if (Array.isArray(res)) {
+          list = res;
+        } else if (
+          res &&
+          typeof res === "object" &&
+          "data" in res &&
+          Array.isArray((res as { data?: Quiz[] }).data)
+        ) {
+          list = (res as { data: Quiz[] }).data;
+        } else if (res && typeof res === "object" && "id" in res) {
+          list = [res as Quiz];
+        } else {
+          list = [];
+        }
+        const published = list.filter((q: Quiz) => q.is_published);
         setQuizzes(published);
       })
       .catch(() => setQuizzes([]))
       .finally(() => setLoading(false));
-  });
+  }, [lessonId]);
 
   if (loading) {
     return (
@@ -262,12 +285,26 @@ function QuizPlayer({ quiz, onBack }: { quiz: Quiz; onBack: () => void }) {
   );
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Fetch questions
+  // Use embedded questions if available, otherwise fetch
   useState(() => {
+    if (quiz.questions && quiz.questions.length > 0) {
+      const sorted = [...quiz.questions].sort(
+        (a: QuizQuestion, b: QuizQuestion) => a.position - b.position,
+      );
+      setQuestions(sorted);
+      setLoading(false);
+      return;
+    }
     ieltsCourseAPI
       .getQuizQuestions(quiz.id)
-      .then((res: { data?: QuizQuestion[] }) => {
-        const data = (res?.data ?? []).sort(
+      .then((res: QuizQuestion[] | { data?: QuizQuestion[] }) => {
+        let data: QuizQuestion[];
+        if (Array.isArray(res)) {
+          data = res;
+        } else {
+          data = res?.data ?? [];
+        }
+        data.sort(
           (a: QuizQuestion, b: QuizQuestion) => a.position - b.position,
         );
         setQuestions(data);

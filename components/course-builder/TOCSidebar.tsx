@@ -10,7 +10,13 @@ import {
   Icon,
   VStack,
 } from "@chakra-ui/react";
-import { FileText, Trash2, GripVertical, Plus } from "lucide-react";
+import {
+  FileText,
+  Trash2,
+  GripVertical,
+  Plus,
+  ChevronDown,
+} from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import {
   DndContext,
@@ -224,6 +230,7 @@ function SectionName({
             if (val !== title) onRename(val);
           }
         }}
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
         style={{
           border: "none",
           outline: "none",
@@ -243,7 +250,10 @@ function SectionName({
       flex={1}
       fontWeight="700"
       fontSize="sm"
-      onDoubleClick={() => setEditing(true)}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        setEditing(true);
+      }}
       cursor="default"
     >
       {title}
@@ -262,6 +272,10 @@ export default function TOCSidebar({
   onDeleteLesson,
   onReorderLessons,
 }: Props) {
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const toggleSection = (id: string) =>
+    setCollapsed((prev) => ({ ...prev, [id]: !prev[id] }));
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
@@ -315,9 +329,22 @@ export default function TOCSidebar({
               px={2.5}
               py={2}
               rounded="md"
+              cursor="pointer"
               _hover={{ bg: "gray.50", _dark: { bg: "gray.700" } }}
               role="group"
+              onClick={() => toggleSection(sec.id)}
             >
+              <Icon
+                color="gray.400"
+                transition="transform 0.2s"
+                transform={
+                  collapsed[sec.id] ? "rotate(-90deg)" : "rotate(0deg)"
+                }
+                flexShrink={0}
+                mr={1}
+              >
+                <ChevronDown size={14} />
+              </Icon>
               <SectionName
                 title={sec.title}
                 onRename={(v) => onRenameSection(sec.id, v)}
@@ -374,53 +401,57 @@ export default function TOCSidebar({
             </Box>
 
             {/* Lessons (sortable) */}
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd(sec.id)}
-            >
-              <SortableContext
-                items={(sec.lessons || []).map((l) => l.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                {(sec.lessons || []).map((l) => (
-                  <SortableLesson
-                    key={l.id}
-                    lesson={l}
-                    isActive={activeLessonId === l.id}
-                    onClick={() => onSelectLesson(l.id)}
-                    onDelete={() => onDeleteLesson(l.id)}
-                  />
-                ))}
-              </SortableContext>
-            </DndContext>
+            {!collapsed[sec.id] && (
+              <>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd(sec.id)}
+                >
+                  <SortableContext
+                    items={(sec.lessons || []).map((l) => l.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {(sec.lessons || []).map((l) => (
+                      <SortableLesson
+                        key={l.id}
+                        lesson={l}
+                        isActive={activeLessonId === l.id}
+                        onClick={() => onSelectLesson(l.id)}
+                        onDelete={() => onDeleteLesson(l.id)}
+                      />
+                    ))}
+                  </SortableContext>
+                </DndContext>
 
-            {/* Add page button */}
-            <Box display="flex" justifyContent="center" py={1} pl={7}>
-              <Box
-                as="button"
-                w={5}
-                h={5}
-                rounded="full"
-                bg="blue.500"
-                color="white"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                cursor="pointer"
-                fontSize="sm"
-                _hover={{
-                  transform: "scale(1.1)",
-                  bg: "blue.600",
-                }}
-                transition="all 0.15s"
-                onClick={() => onAddLesson(sec.id)}
-              >
-                <Icon>
-                  <Plus size={12} />
-                </Icon>
-              </Box>
-            </Box>
+                {/* Add page button */}
+                <Box display="flex" justifyContent="center" py={1} pl={7}>
+                  <Box
+                    as="button"
+                    w={5}
+                    h={5}
+                    rounded="full"
+                    bg="blue.500"
+                    color="white"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    cursor="pointer"
+                    fontSize="sm"
+                    _hover={{
+                      transform: "scale(1.1)",
+                      bg: "blue.600",
+                    }}
+                    transition="all 0.15s"
+                    onClick={() => onAddLesson(sec.id)}
+                  >
+                    <Icon>
+                      <Plus size={12} />
+                    </Icon>
+                  </Box>
+                </Box>
+              </>
+            )}
           </Box>
         ))}
       </Box>

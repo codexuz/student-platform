@@ -279,7 +279,7 @@ export default function CourseEditorPage() {
         ) : (
           <Box flex={1} display="flex" overflow="hidden">
             {/* TOC sidebar */}
-            <Box display={{ base: "none", md: "block" }}>
+            <Box display={{ base: "none", md: "flex" }} h="full">
               <TOCSidebar
                 sections={sections}
                 activeLessonId={activeLessonId}
