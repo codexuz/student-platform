@@ -6,14 +6,16 @@ import {
   Heading,
   HStack,
   Input,
+  NativeSelect,
   Text,
   VStack,
+  Spinner,
 } from "@chakra-ui/react";
 import { Save } from "lucide-react";
-import { useState } from "react";
-import { ieltsReadingAPI } from "@/lib/ielts-api";
+import { useState, useEffect } from "react";
+import { ieltsReadingAPI, ieltsTestsAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
-import type { PageId } from "./types";
+import type { PageId, IELTSTest } from "./types";
 
 interface ReadingFormProps {
   prefillTestId?: string;
@@ -27,6 +29,19 @@ export default function ReadingForm({
   const [title, setTitle] = useState("");
   const [testId, setTestId] = useState(prefillTestId || "");
   const [saving, setSaving] = useState(false);
+  const [tests, setTests] = useState<IELTSTest[]>([]);
+  const [loadingTests, setLoadingTests] = useState(true);
+
+  useEffect(() => {
+    ieltsTestsAPI
+      .getAll()
+      .then((res: IELTSTest[] | { data: IELTSTest[] }) => {
+        const list = Array.isArray(res) ? res : res.data || [];
+        setTests(list);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingTests(false));
+  }, []);
 
   const handleSave = async () => {
     setSaving(true);
@@ -102,13 +117,31 @@ export default function ReadingForm({
                 textTransform="uppercase"
                 letterSpacing="0.3px"
               >
-                Test ID
+                Test
               </Text>
-              <Input
-                placeholder="UUID of the test this belongs to"
-                value={testId}
-                onChange={(e) => setTestId(e.target.value)}
-              />
+              {loadingTests ? (
+                <HStack gap={2} py={2}>
+                  <Spinner size="xs" />
+                  <Text fontSize="sm" color="gray.400">
+                    Loading tests...
+                  </Text>
+                </HStack>
+              ) : (
+                <NativeSelect.Root size="sm" w="full">
+                  <NativeSelect.Field
+                    value={testId}
+                    onChange={(e) => setTestId(e.currentTarget.value)}
+                  >
+                    <option value="">— Select a test —</option>
+                    {tests.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.title}
+                      </option>
+                    ))}
+                  </NativeSelect.Field>
+                  <NativeSelect.Indicator />
+                </NativeSelect.Root>
+              )}
             </Box>
             <HStack gap={2} pt={2}>
               <Button

@@ -11,12 +11,23 @@ import {
   Text,
   Textarea,
   VStack,
+  Spinner,
 } from "@chakra-ui/react";
 import { Save } from "lucide-react";
 import { useState, useEffect } from "react";
-import { ieltsReadingPartsAPI } from "@/lib/ielts-api";
+import { useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
+import TextAlign from "@tiptap/extension-text-align";
+import { Control, RichTextEditor } from "@/components/ui/rich-text-editor";
+import { ieltsReadingPartsAPI, ieltsReadingAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
-import type { QuestionGroup, QuestionContent, PageId } from "./types";
+import type {
+  QuestionGroup,
+  QuestionContent,
+  PageId,
+  IELTSReading,
+} from "./types";
 import QuestionGroupsBuilder from "./QuestionGroupsBuilder";
 
 interface ReadingPartFormProps {
@@ -67,10 +78,37 @@ export default function ReadingPartForm({
   const [title, setTitle] = useState("");
   const [passage, setPassage] = useState("");
   const [answers, setAnswers] = useState("");
+
+  const passageEditor = useEditor({
+    extensions: [
+      StarterKit,
+      Underline,
+      TextAlign.configure({ types: ["paragraph", "heading"] }),
+    ],
+    content: passage,
+    onUpdate({ editor }) {
+      setPassage(editor.getHTML());
+    },
+    shouldRerenderOnTransaction: true,
+    immediatelyRender: false,
+  });
   const [questionGroups, setQuestionGroups] = useState<QuestionGroup[]>([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [readings, setReadings] = useState<IELTSReading[]>([]);
+  const [loadingReadings, setLoadingReadings] = useState(true);
   const isEdit = !!editId;
+
+  useEffect(() => {
+    ieltsReadingAPI
+      .getAll()
+      .then((res: IELTSReading[] | { data: IELTSReading[] }) => {
+        const list = Array.isArray(res) ? res : res.data || [];
+        setReadings(list);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingReadings(false));
+  }, []);
 
   useEffect(() => {
     if (editId) {
@@ -81,7 +119,11 @@ export default function ReadingPartForm({
           setReadingId((p.reading_id as string) || "");
           setPart((p.part as string) || "PART_1");
           setTitle((p.title as string) || "");
-          setPassage((p.passage as string) || "");
+          const passageVal = (p.passage as string) || "";
+          setPassage(passageVal);
+          if (passageEditor) {
+            passageEditor.commands.setContent(passageVal);
+          }
           setAnswers(p.answers ? JSON.stringify(p.answers, null, 2) : "");
           setQuestionGroups(
             ((p.questions as QuestionGroup[]) || []).map((q) => ({
@@ -188,13 +230,31 @@ export default function ReadingPartForm({
                   textTransform="uppercase"
                   letterSpacing="0.3px"
                 >
-                  Reading ID
+                  Reading
                 </Text>
-                <Input
-                  placeholder="UUID of reading section"
-                  value={readingId}
-                  onChange={(e) => setReadingId(e.target.value)}
-                />
+                {loadingReadings ? (
+                  <HStack gap={2} py={2}>
+                    <Spinner size="xs" />
+                    <Text fontSize="sm" color="gray.400">
+                      Loading...
+                    </Text>
+                  </HStack>
+                ) : (
+                  <NativeSelect.Root size="sm" w="full">
+                    <NativeSelect.Field
+                      value={readingId}
+                      onChange={(e) => setReadingId(e.currentTarget.value)}
+                    >
+                      <option value="">— Select a reading —</option>
+                      {readings.map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.title}
+                        </option>
+                      ))}
+                    </NativeSelect.Field>
+                    <NativeSelect.Indicator />
+                  </NativeSelect.Root>
+                )}
               </Box>
               <Box flex="1">
                 <Text
@@ -253,12 +313,39 @@ export default function ReadingPartForm({
               >
                 Passage
               </Text>
-              <Textarea
-                placeholder="Paste the reading passage here..."
-                value={passage}
-                onChange={(e) => setPassage(e.target.value)}
-                rows={6}
-              />
+              <RichTextEditor.Root
+                editor={passageEditor}
+                css={{ "--content-min-height": "200px" }}
+              >
+                <RichTextEditor.Toolbar>
+                  <RichTextEditor.ControlGroup>
+                    <Control.Bold />
+                    <Control.Italic />
+                    <Control.Underline />
+                    <Control.Strikethrough />
+                  </RichTextEditor.ControlGroup>
+                  <RichTextEditor.ControlGroup>
+                    <Control.H1 />
+                    <Control.H2 />
+                    <Control.H3 />
+                  </RichTextEditor.ControlGroup>
+                  <RichTextEditor.ControlGroup>
+                    <Control.BulletList />
+                    <Control.OrderedList />
+                    <Control.Blockquote />
+                  </RichTextEditor.ControlGroup>
+                  <RichTextEditor.ControlGroup>
+                    <Control.AlignLeft />
+                    <Control.AlignCenter />
+                    <Control.AlignRight />
+                  </RichTextEditor.ControlGroup>
+                  <RichTextEditor.ControlGroup>
+                    <Control.Undo />
+                    <Control.Redo />
+                  </RichTextEditor.ControlGroup>
+                </RichTextEditor.Toolbar>
+                <RichTextEditor.Content />
+              </RichTextEditor.Root>
             </Box>
 
             <Box>

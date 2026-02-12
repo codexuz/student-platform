@@ -11,13 +11,22 @@ import {
   Text,
   Textarea,
   VStack,
+  Icon,
+  Spinner,
 } from "@chakra-ui/react";
-import { Save } from "lucide-react";
+import { Save, Upload, X } from "lucide-react";
 import { useState, useEffect } from "react";
-import { ieltsListeningPartsAPI } from "@/lib/ielts-api";
+import { ieltsListeningPartsAPI, ieltsListeningAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
-import type { QuestionGroup, QuestionContent, PageId } from "./types";
+import type {
+  QuestionGroup,
+  QuestionContent,
+  PageId,
+  IELTSListening,
+} from "./types";
 import QuestionGroupsBuilder from "./QuestionGroupsBuilder";
+import FileUploadModal from "./FileUploadModal";
+import AudioPlayer from "./AudioPlayer";
 
 interface ListeningPartFormProps {
   editId?: string | null;
@@ -72,7 +81,21 @@ export default function ListeningPartForm({
   const [questionGroups, setQuestionGroups] = useState<QuestionGroup[]>([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [listenings, setListenings] = useState<IELTSListening[]>([]);
+  const [loadingListenings, setLoadingListenings] = useState(true);
+  const [showAudioUpload, setShowAudioUpload] = useState(false);
   const isEdit = !!editId;
+
+  useEffect(() => {
+    ieltsListeningAPI
+      .getAll()
+      .then((res: IELTSListening[] | { data: IELTSListening[] }) => {
+        const list = Array.isArray(res) ? res : res.data || [];
+        setListenings(list);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingListenings(false));
+  }, []);
 
   useEffect(() => {
     if (editId) {
@@ -199,13 +222,31 @@ export default function ListeningPartForm({
                   textTransform="uppercase"
                   letterSpacing="0.3px"
                 >
-                  Listening ID
+                  Listening
                 </Text>
-                <Input
-                  placeholder="UUID of listening section"
-                  value={listeningId}
-                  onChange={(e) => setListeningId(e.target.value)}
-                />
+                {loadingListenings ? (
+                  <HStack gap={2} py={2}>
+                    <Spinner size="xs" />
+                    <Text fontSize="sm" color="gray.400">
+                      Loading...
+                    </Text>
+                  </HStack>
+                ) : (
+                  <NativeSelect.Root size="sm" w="full">
+                    <NativeSelect.Field
+                      value={listeningId}
+                      onChange={(e) => setListeningId(e.currentTarget.value)}
+                    >
+                      <option value="">— Select a listening —</option>
+                      {listenings.map((l) => (
+                        <option key={l.id} value={l.id}>
+                          {l.title}
+                        </option>
+                      ))}
+                    </NativeSelect.Field>
+                    <NativeSelect.Indicator />
+                  </NativeSelect.Root>
+                )}
               </Box>
               <Box flex="1">
                 <Text
@@ -253,63 +294,49 @@ export default function ListeningPartForm({
               />
             </Box>
 
-            <Flex gap={3} direction={{ base: "column", md: "row" }}>
-              <Box flex="1">
-                <Text
-                  fontSize="xs"
-                  fontWeight="600"
-                  color="gray.600"
-                  _dark={{ color: "gray.400" }}
-                  mb={1}
-                  textTransform="uppercase"
-                  letterSpacing="0.3px"
+            <Box>
+              <Text
+                fontSize="xs"
+                fontWeight="600"
+                color="gray.600"
+                _dark={{ color: "gray.400" }}
+                mb={1}
+                textTransform="uppercase"
+                letterSpacing="0.3px"
+              >
+                Audio
+              </Text>
+              {audioUrl ? (
+                <VStack gap={2} alignItems="stretch">
+                  <AudioPlayer
+                    src={audioUrl}
+                    fileName={audioName || undefined}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    color="red.400"
+                    _hover={{ color: "red.600" }}
+                    onClick={() => {
+                      setAudioUrl("");
+                      setAudioName("");
+                      setAudioDuration("");
+                    }}
+                    alignSelf="flex-start"
+                  >
+                    <Icon as={X} fontSize="xs" /> Remove
+                  </Button>
+                </VStack>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAudioUpload(true)}
                 >
-                  Audio URL
-                </Text>
-                <Input
-                  placeholder="https://..."
-                  value={audioUrl}
-                  onChange={(e) => setAudioUrl(e.target.value)}
-                />
-              </Box>
-              <Box flex="1">
-                <Text
-                  fontSize="xs"
-                  fontWeight="600"
-                  color="gray.600"
-                  _dark={{ color: "gray.400" }}
-                  mb={1}
-                  textTransform="uppercase"
-                  letterSpacing="0.3px"
-                >
-                  Audio File Name
-                </Text>
-                <Input
-                  placeholder="part1.mp3"
-                  value={audioName}
-                  onChange={(e) => setAudioName(e.target.value)}
-                />
-              </Box>
-              <Box flex="1">
-                <Text
-                  fontSize="xs"
-                  fontWeight="600"
-                  color="gray.600"
-                  _dark={{ color: "gray.400" }}
-                  mb={1}
-                  textTransform="uppercase"
-                  letterSpacing="0.3px"
-                >
-                  Duration (s)
-                </Text>
-                <Input
-                  type="number"
-                  placeholder="300"
-                  value={audioDuration}
-                  onChange={(e) => setAudioDuration(e.target.value)}
-                />
-              </Box>
-            </Flex>
+                  <Icon as={Upload} fontSize="sm" /> Upload Audio
+                </Button>
+              )}
+            </Box>
 
             <Box>
               <Text
@@ -358,6 +385,16 @@ export default function ListeningPartForm({
           </VStack>
         </Box>
       </Box>
+
+      <FileUploadModal
+        open={showAudioUpload}
+        onClose={() => setShowAudioUpload(false)}
+        type="audio"
+        onUploaded={(url, fileName) => {
+          setAudioUrl(url);
+          if (fileName) setAudioName(fileName);
+        }}
+      />
     </Box>
   );
 }

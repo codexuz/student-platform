@@ -9,12 +9,15 @@ import {
   Input,
   NativeSelect,
   Text,
-  Textarea,
   VStack,
   IconButton,
 } from "@chakra-ui/react";
 import { X, Plus, Trash2 } from "lucide-react";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
+import { Control, RichTextEditor } from "@/components/ui/rich-text-editor";
 import type {
   QuestionType,
   QuestionContent,
@@ -46,6 +49,34 @@ export default function QuestionContentModal({
   const [title, setTitle] = useState("");
   const [condition, setCondition] = useState("");
   const [content, setContent] = useState("");
+
+  const conditionEditor = useEditor({
+    extensions: [StarterKit, Underline],
+    content: condition,
+    onUpdate({ editor }) {
+      setCondition(editor.getHTML());
+    },
+    shouldRerenderOnTransaction: true,
+    immediatelyRender: false,
+  });
+
+  const contentEditor = useEditor({
+    extensions: [StarterKit, Underline],
+    content: content,
+    onUpdate({ editor }) {
+      setContent(editor.getHTML());
+    },
+    shouldRerenderOnTransaction: true,
+    immediatelyRender: false,
+  });
+
+  // Reset editors when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      conditionEditor?.commands.setContent("");
+      contentEditor?.commands.setContent("");
+    }
+  }, [isOpen, conditionEditor, contentEditor]);
   const [limit, setLimit] = useState<string>("");
   const [order, setOrder] = useState<string>("");
   const [showOptions, setShowOptions] = useState(true);
@@ -299,13 +330,27 @@ export default function QuestionContentModal({
               >
                 Condition / Instructions
               </Text>
-              <Textarea
-                size="sm"
-                placeholder="e.g. Complete the sentences below..."
-                value={condition}
-                onChange={(e) => setCondition(e.target.value)}
-                rows={2}
-              />
+              <RichTextEditor.Root
+                editor={conditionEditor}
+                css={{ "--content-min-height": "60px" }}
+              >
+                <RichTextEditor.Toolbar>
+                  <RichTextEditor.ControlGroup>
+                    <Control.Bold />
+                    <Control.Italic />
+                    <Control.Underline />
+                  </RichTextEditor.ControlGroup>
+                  <RichTextEditor.ControlGroup>
+                    <Control.BulletList />
+                    <Control.OrderedList />
+                  </RichTextEditor.ControlGroup>
+                  <RichTextEditor.ControlGroup>
+                    <Control.Undo />
+                    <Control.Redo />
+                  </RichTextEditor.ControlGroup>
+                </RichTextEditor.Toolbar>
+                <RichTextEditor.Content />
+              </RichTextEditor.Root>
             </Box>
 
             {/* Content */}
@@ -319,15 +364,33 @@ export default function QuestionContentModal({
                 textTransform="uppercase"
                 letterSpacing="0.3px"
               >
-                Content (HTML allowed)
+                Content (HTML)
               </Text>
-              <Textarea
-                size="sm"
-                placeholder="Main content with blanks like {{1}}, {{2}}..."
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                rows={3}
-              />
+              <RichTextEditor.Root
+                editor={contentEditor}
+                css={{ "--content-min-height": "80px" }}
+              >
+                <RichTextEditor.Toolbar>
+                  <RichTextEditor.ControlGroup>
+                    <Control.Bold />
+                    <Control.Italic />
+                    <Control.Underline />
+                  </RichTextEditor.ControlGroup>
+                  <RichTextEditor.ControlGroup>
+                    <Control.H3 />
+                    <Control.H4 />
+                  </RichTextEditor.ControlGroup>
+                  <RichTextEditor.ControlGroup>
+                    <Control.BulletList />
+                    <Control.OrderedList />
+                  </RichTextEditor.ControlGroup>
+                  <RichTextEditor.ControlGroup>
+                    <Control.Undo />
+                    <Control.Redo />
+                  </RichTextEditor.ControlGroup>
+                </RichTextEditor.Toolbar>
+                <RichTextEditor.Content />
+              </RichTextEditor.Root>
             </Box>
 
             {/* Word Limit & Order */}

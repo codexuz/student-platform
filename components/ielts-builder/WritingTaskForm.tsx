@@ -9,14 +9,22 @@ import {
   Input,
   NativeSelect,
   Text,
-  Textarea,
   VStack,
+  Icon,
+  Spinner,
+  Image,
 } from "@chakra-ui/react";
-import { Save } from "lucide-react";
-import { useState } from "react";
-import { ieltsWritingTasksAPI } from "@/lib/ielts-api";
+import { Save, Upload, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
+import TextAlign from "@tiptap/extension-text-align";
+import { Control, RichTextEditor } from "@/components/ui/rich-text-editor";
+import { ieltsWritingTasksAPI, ieltsWritingAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
-import type { PageId } from "./types";
+import type { PageId, IELTSWriting } from "./types";
+import FileUploadModal from "./FileUploadModal";
 
 interface WritingTaskFormProps {
   prefillWritingId?: string;
@@ -31,14 +39,57 @@ export default function WritingTaskForm({
   const [task, setTask] = useState("TASK_1");
   const [prompt, setPrompt] = useState("");
   const [instructions, setInstructions] = useState("");
+
+  const promptEditor = useEditor({
+    extensions: [
+      StarterKit,
+      Underline,
+      TextAlign.configure({ types: ["paragraph", "heading"] }),
+    ],
+    content: prompt,
+    onUpdate({ editor }) {
+      setPrompt(editor.getHTML());
+    },
+    shouldRerenderOnTransaction: true,
+    immediatelyRender: false,
+  });
+
+  const instructionsEditor = useEditor({
+    extensions: [
+      StarterKit,
+      Underline,
+      TextAlign.configure({ types: ["paragraph", "heading"] }),
+    ],
+    content: instructions,
+    onUpdate({ editor }) {
+      setInstructions(editor.getHTML());
+    },
+    shouldRerenderOnTransaction: true,
+    immediatelyRender: false,
+  });
   const [minWords, setMinWords] = useState("150");
   const [suggestedTime, setSuggestedTime] = useState("20");
+  const [imageUrl, setImageUrl] = useState("");
   const [saving, setSaving] = useState(false);
+  const [writings, setWritings] = useState<IELTSWriting[]>([]);
+  const [loadingWritings, setLoadingWritings] = useState(true);
+  const [showImageUpload, setShowImageUpload] = useState(false);
+
+  useEffect(() => {
+    ieltsWritingAPI
+      .getAll()
+      .then((res: IELTSWriting[] | { data: IELTSWriting[] }) => {
+        const list = Array.isArray(res) ? res : res.data || [];
+        setWritings(list);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingWritings(false));
+  }, []);
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      const body = {
+      const body: Record<string, unknown> = {
         writing_id: writingId,
         task,
         prompt: prompt || null,
@@ -46,6 +97,7 @@ export default function WritingTaskForm({
         min_words: parseInt(minWords) || 150,
         suggested_time: parseInt(suggestedTime) || 20,
       };
+      if (imageUrl) body.image_url = imageUrl;
       const r = await ieltsWritingTasksAPI.create(body);
       toaster.success({ title: `Writing task created! ID: ${r.id}` });
       onNavigate("writing-tasks");
@@ -100,13 +152,31 @@ export default function WritingTaskForm({
                   textTransform="uppercase"
                   letterSpacing="0.3px"
                 >
-                  Writing ID
+                  Writing
                 </Text>
-                <Input
-                  placeholder="UUID of writing section"
-                  value={writingId}
-                  onChange={(e) => setWritingId(e.target.value)}
-                />
+                {loadingWritings ? (
+                  <HStack gap={2} py={2}>
+                    <Spinner size="xs" />
+                    <Text fontSize="sm" color="gray.400">
+                      Loading...
+                    </Text>
+                  </HStack>
+                ) : (
+                  <NativeSelect.Root size="sm" w="full">
+                    <NativeSelect.Field
+                      value={writingId}
+                      onChange={(e) => setWritingId(e.currentTarget.value)}
+                    >
+                      <option value="">— Select a writing —</option>
+                      {writings.map((w) => (
+                        <option key={w.id} value={w.id}>
+                          {w.title}
+                        </option>
+                      ))}
+                    </NativeSelect.Field>
+                    <NativeSelect.Indicator />
+                  </NativeSelect.Root>
+                )}
               </Box>
               <Box flex="1">
                 <Text
@@ -145,12 +215,27 @@ export default function WritingTaskForm({
               >
                 Prompt
               </Text>
-              <Textarea
-                placeholder="Write the task prompt here..."
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                rows={4}
-              />
+              <RichTextEditor.Root
+                editor={promptEditor}
+                css={{ "--content-min-height": "120px" }}
+              >
+                <RichTextEditor.Toolbar>
+                  <RichTextEditor.ControlGroup>
+                    <Control.Bold />
+                    <Control.Italic />
+                    <Control.Underline />
+                  </RichTextEditor.ControlGroup>
+                  <RichTextEditor.ControlGroup>
+                    <Control.BulletList />
+                    <Control.OrderedList />
+                  </RichTextEditor.ControlGroup>
+                  <RichTextEditor.ControlGroup>
+                    <Control.Undo />
+                    <Control.Redo />
+                  </RichTextEditor.ControlGroup>
+                </RichTextEditor.Toolbar>
+                <RichTextEditor.Content />
+              </RichTextEditor.Root>
             </Box>
 
             <Box>
@@ -165,12 +250,75 @@ export default function WritingTaskForm({
               >
                 Instructions
               </Text>
-              <Textarea
-                placeholder="Additional instructions..."
-                value={instructions}
-                onChange={(e) => setInstructions(e.target.value)}
-                rows={2}
-              />
+              <RichTextEditor.Root
+                editor={instructionsEditor}
+                css={{ "--content-min-height": "80px" }}
+              >
+                <RichTextEditor.Toolbar>
+                  <RichTextEditor.ControlGroup>
+                    <Control.Bold />
+                    <Control.Italic />
+                    <Control.Underline />
+                  </RichTextEditor.ControlGroup>
+                  <RichTextEditor.ControlGroup>
+                    <Control.BulletList />
+                    <Control.OrderedList />
+                  </RichTextEditor.ControlGroup>
+                  <RichTextEditor.ControlGroup>
+                    <Control.Undo />
+                    <Control.Redo />
+                  </RichTextEditor.ControlGroup>
+                </RichTextEditor.Toolbar>
+                <RichTextEditor.Content />
+              </RichTextEditor.Root>
+            </Box>
+
+            {/* Image upload for writing task (e.g. chart/graph for Task 1) */}
+            <Box>
+              <Text
+                fontSize="xs"
+                fontWeight="600"
+                color="gray.600"
+                _dark={{ color: "gray.400" }}
+                mb={1}
+                textTransform="uppercase"
+                letterSpacing="0.3px"
+              >
+                Task Image (optional)
+              </Text>
+              {imageUrl ? (
+                <Box position="relative" display="inline-block">
+                  <Image
+                    src={imageUrl}
+                    alt="Task image"
+                    maxH="150px"
+                    rounded="md"
+                    borderWidth="1px"
+                  />
+                  <Box
+                    position="absolute"
+                    top={1}
+                    right={1}
+                    bg="white"
+                    rounded="full"
+                    p={0.5}
+                    cursor="pointer"
+                    shadow="sm"
+                    onClick={() => setImageUrl("")}
+                    _hover={{ bg: "red.50" }}
+                  >
+                    <Icon as={X} fontSize="xs" color="red.500" />
+                  </Box>
+                </Box>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowImageUpload(true)}
+                >
+                  <Icon as={Upload} fontSize="sm" /> Upload Image
+                </Button>
+              )}
             </Box>
 
             <Flex gap={3} direction={{ base: "column", md: "row" }}>
@@ -234,6 +382,15 @@ export default function WritingTaskForm({
           </VStack>
         </Box>
       </Box>
+
+      <FileUploadModal
+        open={showImageUpload}
+        onClose={() => setShowImageUpload(false)}
+        type="image"
+        onUploaded={(url) => {
+          setImageUrl(url);
+        }}
+      />
     </Box>
   );
 }

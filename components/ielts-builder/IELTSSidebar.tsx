@@ -8,6 +8,7 @@ import {
   Icon,
   Heading,
   Badge,
+  Collapsible,
 } from "@chakra-ui/react";
 import {
   ClipboardList,
@@ -18,8 +19,12 @@ import {
   PenTool,
   ListChecks,
   ArrowLeft,
+  ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useCallback } from "react";
+import { pageIdToRoute, pathnameToSidebarKey } from "@/lib/ielts-navigation";
 import type { PageId } from "./types";
 
 interface NavItem {
@@ -28,42 +33,169 @@ interface NavItem {
   pageId: PageId;
 }
 
-const navItems: NavItem[] = [
-  { icon: ClipboardList, label: "Tests", pageId: "tests" },
-  { icon: BookOpen, label: "Readings", pageId: "readings" },
-  { icon: FileText, label: "Reading Parts", pageId: "reading-parts" },
-  { icon: Headphones, label: "Listenings", pageId: "listenings" },
-  { icon: Volume2, label: "Listening Parts", pageId: "listening-parts" },
-  { icon: PenTool, label: "Writings", pageId: "writings" },
-  { icon: ListChecks, label: "Writing Tasks", pageId: "writing-tasks" },
+interface NavSection {
+  icon: React.ElementType;
+  label: string;
+  items: NavItem[];
+  /** PageIds that indicate this section should be expanded */
+  relatedPages: PageId[];
+}
+
+const sections: NavSection[] = [
+  {
+    icon: BookOpen,
+    label: "Reading",
+    relatedPages: [
+      "readings",
+      "reading-form",
+      "reading-parts",
+      "reading-part-form",
+    ],
+    items: [
+      { icon: BookOpen, label: "Reading Test", pageId: "readings" },
+      { icon: FileText, label: "Reading Parts", pageId: "reading-parts" },
+    ],
+  },
+  {
+    icon: Headphones,
+    label: "Listening",
+    relatedPages: [
+      "listenings",
+      "listening-form",
+      "listening-parts",
+      "listening-part-form",
+    ],
+    items: [
+      { icon: Headphones, label: "Listening Test", pageId: "listenings" },
+      { icon: Volume2, label: "Listening Parts", pageId: "listening-parts" },
+    ],
+  },
+  {
+    icon: PenTool,
+    label: "Writing",
+    relatedPages: [
+      "writings",
+      "writing-form",
+      "writing-tasks",
+      "writing-task-form",
+    ],
+    items: [
+      { icon: PenTool, label: "Writing Test", pageId: "writings" },
+      { icon: ListChecks, label: "Writing Tasks", pageId: "writing-tasks" },
+    ],
+  },
 ];
 
 interface IELTSSidebarProps {
-  activePage: PageId;
-  onNavigate: (pageId: PageId) => void;
   counts?: Record<string, number>;
 }
 
-export default function IELTSSidebar({
-  activePage,
-  onNavigate,
-  counts = {},
-}: IELTSSidebarProps) {
+export default function IELTSSidebar({ counts = {} }: IELTSSidebarProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const activeKey = pathnameToSidebarKey(pathname);
+
+  const onNavigate = useCallback(
+    (pageId: PageId) => {
+      router.push(pageIdToRoute(pageId));
+    },
+    [router],
+  );
+
   const isActive = (pageId: PageId) => {
-    if (activePage === pageId) return true;
-    // Also highlight parent nav when on sub-pages
-    if (pageId === "tests" && ["test-form", "test-detail"].includes(activePage))
-      return true;
-    if (pageId === "readings" && activePage === "reading-form") return true;
-    if (pageId === "reading-parts" && activePage === "reading-part-form")
-      return true;
-    if (pageId === "listenings" && activePage === "listening-form") return true;
-    if (pageId === "listening-parts" && activePage === "listening-part-form")
-      return true;
-    if (pageId === "writings" && activePage === "writing-form") return true;
-    if (pageId === "writing-tasks" && activePage === "writing-task-form")
-      return true;
-    return false;
+    // Map pageIds to their sidebar keys for matching
+    const keyMap: Record<string, string> = {
+      tests: "tests",
+      "test-form": "tests",
+      "test-detail": "tests",
+      readings: "readings",
+      "reading-form": "readings",
+      "reading-parts": "reading-parts",
+      "reading-part-form": "reading-parts",
+      listenings: "listenings",
+      "listening-form": "listenings",
+      "listening-parts": "listening-parts",
+      "listening-part-form": "listening-parts",
+      writings: "writings",
+      "writing-form": "writings",
+      "writing-tasks": "writing-tasks",
+      "writing-task-form": "writing-tasks",
+    };
+    return (keyMap[pageId] || pageId) === activeKey;
+  };
+
+  const isSectionActive = (section: NavSection) => {
+    const sectionKeys = section.relatedPages.map((p) => {
+      const keyMap: Record<string, string> = {
+        readings: "readings",
+        "reading-form": "readings",
+        "reading-parts": "reading-parts",
+        "reading-part-form": "reading-parts",
+        listenings: "listenings",
+        "listening-form": "listenings",
+        "listening-parts": "listening-parts",
+        "listening-part-form": "listening-parts",
+        writings: "writings",
+        "writing-form": "writings",
+        "writing-tasks": "writing-tasks",
+        "writing-task-form": "writing-tasks",
+      };
+      return keyMap[p] || p;
+    });
+    return sectionKeys.includes(activeKey);
+  };
+
+  const renderNavItem = (item: NavItem) => {
+    const active = isActive(item.pageId);
+    const count = counts[item.pageId];
+    return (
+      <HStack
+        key={item.pageId}
+        px={3}
+        py={2}
+        rounded="lg"
+        cursor="pointer"
+        bg={active ? "#eef2ff" : "transparent"}
+        color={active ? "#4f46e5" : "gray.600"}
+        fontWeight={active ? "600" : "500"}
+        _dark={{
+          bg: active ? "rgba(79, 70, 229, 0.15)" : "transparent",
+          color: active ? "#818cf8" : "gray.400",
+        }}
+        _hover={{
+          bg: active ? "#eef2ff" : "gray.100",
+          color: active ? "#4f46e5" : "gray.800",
+          _dark: {
+            bg: active ? "rgba(79, 70, 229, 0.2)" : "gray.700",
+            color: active ? "#818cf8" : "gray.200",
+          },
+        }}
+        transition="all 0.1s"
+        onClick={() => onNavigate(item.pageId)}
+        fontSize="13px"
+      >
+        <Icon as={item.icon} fontSize="md" />
+        <Text flex="1">{item.label}</Text>
+        {count !== undefined && count > 0 && (
+          <Badge
+            bg={active ? "#c7d2fe" : "gray.200"}
+            color={active ? "#3730a3" : "gray.600"}
+            _dark={{
+              bg: active ? "rgba(79, 70, 229, 0.3)" : "gray.600",
+              color: active ? "#c7d2fe" : "gray.300",
+            }}
+            fontSize="10px"
+            fontWeight="600"
+            px={1.5}
+            py={0}
+            rounded="full"
+            variant="plain"
+          >
+            {count}
+          </Badge>
+        )}
+      </HStack>
+    );
   };
 
   return (
@@ -135,56 +267,54 @@ export default function IELTSSidebar({
           >
             Manage
           </Text>
-          {navItems.map((item) => {
-            const active = isActive(item.pageId);
-            const count = counts[item.pageId];
+
+          {/* Full Tests — standalone item */}
+          {renderNavItem({
+            icon: ClipboardList,
+            label: "Full Tests",
+            pageId: "tests",
+          })}
+
+          {/* Collapsible sections */}
+          {sections.map((section) => {
+            const sectionOpen = isSectionActive(section);
             return (
-              <HStack
-                key={item.pageId}
-                px={3}
-                py={2}
-                rounded="lg"
-                cursor="pointer"
-                bg={active ? "#eef2ff" : "transparent"}
-                color={active ? "#4f46e5" : "gray.600"}
-                fontWeight={active ? "600" : "500"}
-                _dark={{
-                  bg: active ? "rgba(79, 70, 229, 0.15)" : "transparent",
-                  color: active ? "#818cf8" : "gray.400",
-                }}
-                _hover={{
-                  bg: active ? "#eef2ff" : "gray.100",
-                  color: active ? "#4f46e5" : "gray.800",
-                  _dark: {
-                    bg: active ? "rgba(79, 70, 229, 0.2)" : "gray.700",
-                    color: active ? "#818cf8" : "gray.200",
-                  },
-                }}
-                transition="all 0.1s"
-                onClick={() => onNavigate(item.pageId)}
-                fontSize="13px"
-              >
-                <Icon as={item.icon} fontSize="md" />
-                <Text flex="1">{item.label}</Text>
-                {count !== undefined && count > 0 && (
-                  <Badge
-                    bg={active ? "#c7d2fe" : "gray.200"}
-                    color={active ? "#3730a3" : "gray.600"}
+              <Collapsible.Root key={section.label} defaultOpen={sectionOpen}>
+                <Collapsible.Trigger asChild>
+                  <HStack
+                    px={3}
+                    py={2}
+                    rounded="lg"
+                    cursor="pointer"
+                    color={sectionOpen ? "#4f46e5" : "gray.600"}
+                    fontWeight={sectionOpen ? "600" : "500"}
                     _dark={{
-                      bg: active ? "rgba(79, 70, 229, 0.3)" : "gray.600",
-                      color: active ? "#c7d2fe" : "gray.300",
+                      color: sectionOpen ? "#818cf8" : "gray.400",
                     }}
-                    fontSize="10px"
-                    fontWeight="600"
-                    px={1.5}
-                    py={0}
-                    rounded="full"
-                    variant="plain"
+                    _hover={{
+                      bg: "gray.100",
+                      color: "gray.800",
+                      _dark: { bg: "gray.700", color: "gray.200" },
+                    }}
+                    transition="all 0.1s"
+                    fontSize="13px"
                   >
-                    {count}
-                  </Badge>
-                )}
-              </HStack>
+                    <Icon as={section.icon} fontSize="md" />
+                    <Text flex="1">{section.label}</Text>
+                    <Collapsible.Indicator
+                      transition="transform 0.2s"
+                      _open={{ transform: "rotate(90deg)" }}
+                    >
+                      <Icon as={ChevronRight} fontSize="sm" />
+                    </Collapsible.Indicator>
+                  </HStack>
+                </Collapsible.Trigger>
+                <Collapsible.Content>
+                  <VStack gap={0.5} pl={4} pt={0.5} alignItems="stretch">
+                    {section.items.map(renderNavItem)}
+                  </VStack>
+                </Collapsible.Content>
+              </Collapsible.Root>
             );
           })}
         </VStack>

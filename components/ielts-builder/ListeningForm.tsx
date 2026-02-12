@@ -7,15 +7,24 @@ import {
   Heading,
   HStack,
   Input,
+  NativeSelect,
   Text,
-  Textarea,
   VStack,
+  Icon,
+  Spinner,
 } from "@chakra-ui/react";
-import { Save } from "lucide-react";
-import { useState } from "react";
+import { Save, Upload, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
+import { Control, RichTextEditor } from "@/components/ui/rich-text-editor";
 import { ieltsListeningAPI } from "@/lib/ielts-api";
+import { ieltsTestsAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
-import type { PageId } from "./types";
+import type { PageId, IELTSTest } from "./types";
+import FileUploadModal from "./FileUploadModal";
+import AudioPlayer from "./AudioPlayer";
 
 interface ListeningFormProps {
   prefillTestId?: string;
@@ -28,9 +37,34 @@ export default function ListeningForm({
 }: ListeningFormProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+
+  const descriptionEditor = useEditor({
+    extensions: [StarterKit, Underline],
+    content: description,
+    onUpdate({ editor }) {
+      setDescription(editor.getHTML());
+    },
+    shouldRerenderOnTransaction: true,
+    immediatelyRender: false,
+  });
+
   const [testId, setTestId] = useState(prefillTestId || "");
   const [fullAudio, setFullAudio] = useState("");
   const [saving, setSaving] = useState(false);
+  const [tests, setTests] = useState<IELTSTest[]>([]);
+  const [loadingTests, setLoadingTests] = useState(true);
+  const [showAudioUpload, setShowAudioUpload] = useState(false);
+
+  useEffect(() => {
+    ieltsTestsAPI
+      .getAll()
+      .then((res: IELTSTest[] | { data: IELTSTest[] }) => {
+        const list = Array.isArray(res) ? res : res.data || [];
+        setTests(list);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingTests(false));
+  }, []);
 
   const handleSave = async () => {
     setSaving(true);
@@ -64,7 +98,9 @@ export default function ListeningForm({
         >
           Listenings
         </Text>
-        <Text color="gray.300" _dark={{ color: "gray.600" }}>/</Text>
+        <Text color="gray.300" _dark={{ color: "gray.600" }}>
+          /
+        </Text>
         <Text>Create Listening</Text>
       </HStack>
 
@@ -86,8 +122,8 @@ export default function ListeningForm({
               <Text
                 fontSize="xs"
                 fontWeight="600"
-                color="gray.600"                
-                _dark={{ color: "gray.400" }}                
+                color="gray.600"
+                _dark={{ color: "gray.400" }}
                 mb={1}
                 textTransform="uppercase"
                 letterSpacing="0.3px"
@@ -112,12 +148,27 @@ export default function ListeningForm({
               >
                 Description
               </Text>
-              <Textarea
-                placeholder="Optional description..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={2}
-              />
+              <RichTextEditor.Root
+                editor={descriptionEditor}
+                css={{ "--content-min-height": "60px" }}
+              >
+                <RichTextEditor.Toolbar>
+                  <RichTextEditor.ControlGroup>
+                    <Control.Bold />
+                    <Control.Italic />
+                    <Control.Underline />
+                  </RichTextEditor.ControlGroup>
+                  <RichTextEditor.ControlGroup>
+                    <Control.BulletList />
+                    <Control.OrderedList />
+                  </RichTextEditor.ControlGroup>
+                  <RichTextEditor.ControlGroup>
+                    <Control.Undo />
+                    <Control.Redo />
+                  </RichTextEditor.ControlGroup>
+                </RichTextEditor.Toolbar>
+                <RichTextEditor.Content />
+              </RichTextEditor.Root>
             </Box>
             <Flex gap={3} direction={{ base: "column", md: "row" }}>
               <Box flex="1">
@@ -130,13 +181,31 @@ export default function ListeningForm({
                   textTransform="uppercase"
                   letterSpacing="0.3px"
                 >
-                  Test ID
+                  Test
                 </Text>
-                <Input
-                  placeholder="UUID of the test"
-                  value={testId}
-                  onChange={(e) => setTestId(e.target.value)}
-                />
+                {loadingTests ? (
+                  <HStack gap={2} py={2}>
+                    <Spinner size="xs" />
+                    <Text fontSize="sm" color="gray.400">
+                      Loading tests...
+                    </Text>
+                  </HStack>
+                ) : (
+                  <NativeSelect.Root size="sm" w="full">
+                    <NativeSelect.Field
+                      value={testId}
+                      onChange={(e) => setTestId(e.currentTarget.value)}
+                    >
+                      <option value="">— Select a test —</option>
+                      {tests.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.title}
+                        </option>
+                      ))}
+                    </NativeSelect.Field>
+                    <NativeSelect.Indicator />
+                  </NativeSelect.Root>
+                )}
               </Box>
               <Box flex="1">
                 <Text
@@ -148,13 +217,32 @@ export default function ListeningForm({
                   textTransform="uppercase"
                   letterSpacing="0.3px"
                 >
-                  Full Audio URL
+                  Full Audio
                 </Text>
-                <Input
-                  placeholder="https://..."
-                  value={fullAudio}
-                  onChange={(e) => setFullAudio(e.target.value)}
-                />
+                {fullAudio ? (
+                  <VStack gap={2} alignItems="stretch">
+                    <AudioPlayer src={fullAudio} compact />
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      color="red.400"
+                      _hover={{ color: "red.600" }}
+                      onClick={() => setFullAudio("")}
+                      alignSelf="flex-start"
+                    >
+                      <Icon as={X} fontSize="xs" /> Remove
+                    </Button>
+                  </VStack>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    w="full"
+                    onClick={() => setShowAudioUpload(true)}
+                  >
+                    <Icon as={Upload} fontSize="sm" /> Upload Audio
+                  </Button>
+                )}
               </Box>
             </Flex>
             <HStack gap={2} pt={2}>
@@ -179,6 +267,15 @@ export default function ListeningForm({
           </VStack>
         </Box>
       </Box>
+
+      <FileUploadModal
+        open={showAudioUpload}
+        onClose={() => setShowAudioUpload(false)}
+        type="audio"
+        onUploaded={(url) => {
+          setFullAudio(url);
+        }}
+      />
     </Box>
   );
 }
