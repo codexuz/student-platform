@@ -13,7 +13,7 @@ import {
   VStack,
   Spinner,
 } from "@chakra-ui/react";
-import { Save } from "lucide-react";
+import { Save, Plus } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -22,50 +22,12 @@ import TextAlign from "@tiptap/extension-text-align";
 import { Control, RichTextEditor } from "@/components/ui/rich-text-editor";
 import { ieltsReadingPartsAPI, ieltsReadingAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
-import type {
-  QuestionGroup,
-  QuestionContent,
-  PageId,
-  IELTSReading,
-} from "./types";
-import QuestionGroupsBuilder from "./QuestionGroupsBuilder";
+import type { PageId, IELTSReading } from "./types";
 
 interface ReadingPartFormProps {
   editId?: string | null;
   prefillReadingId?: string;
   onNavigate: (page: PageId, data?: Record<string, string>) => void;
-}
-
-function buildContentPayload(c: QuestionContent) {
-  const block: Record<string, unknown> = {
-    type: c.type,
-    title: c.title,
-    condition: c.condition || null,
-    content: c.content || null,
-    limit: c.limit,
-    showOptions: c.showOptions,
-    optionsTitle: c.optionsTitle || null,
-    order: c.order,
-  };
-  if (c.options?.length) {
-    block.options = c.options.map((o, i) => ({
-      value: o.value,
-      label: o.label,
-      order: o.order || i + 1,
-    }));
-  }
-  if (c.multipleChoiceQuestions?.length) {
-    block.multipleChoiceQuestions = c.multipleChoiceQuestions.map((m, i) => ({
-      question: m.question,
-      order: m.order || i + 1,
-      options: m.options.map((o, j) => ({
-        value: o.value,
-        label: o.label,
-        order: o.order || j + 1,
-      })),
-    }));
-  }
-  return block;
 }
 
 export default function ReadingPartForm({
@@ -92,7 +54,6 @@ export default function ReadingPartForm({
     shouldRerenderOnTransaction: true,
     immediatelyRender: false,
   });
-  const [questionGroups, setQuestionGroups] = useState<QuestionGroup[]>([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [readings, setReadings] = useState<IELTSReading[]>([]);
@@ -125,12 +86,6 @@ export default function ReadingPartForm({
             passageEditor.commands.setContent(passageVal);
           }
           setAnswers(p.answers ? JSON.stringify(p.answers, null, 2) : "");
-          setQuestionGroups(
-            ((p.questions as QuestionGroup[]) || []).map((q) => ({
-              number_of_questions: q.number_of_questions || 0,
-              contents: (q.contents || []).map((c) => ({ ...c })),
-            })),
-          );
         })
         .catch((e: Error) =>
           toaster.error({ title: "Error", description: e.message }),
@@ -158,10 +113,6 @@ export default function ReadingPartForm({
         title: title || null,
         passage: passage || null,
         answers: parsedAnswers,
-        questions: questionGroups.map((q) => ({
-          number_of_questions: q.number_of_questions,
-          contents: q.contents.map(buildContentPayload),
-        })),
       };
 
       if (isEdit) {
@@ -368,30 +319,40 @@ export default function ReadingPartForm({
               />
             </Box>
 
-            <QuestionGroupsBuilder
-              groups={questionGroups}
-              onChange={setQuestionGroups}
-            />
-
-            <HStack gap={2} pt={2}>
-              <Button
-                bg="#10b981"
-                color="white"
-                _hover={{ bg: "#059669" }}
-                onClick={handleSave}
-                loading={saving}
-                size="sm"
-              >
-                <Save size={14} /> {isEdit ? "Update" : "Save Reading Part"}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => onNavigate("reading-parts")}
-                size="sm"
-              >
-                Cancel
-              </Button>
-            </HStack>
+            <Flex justifyContent="space-between" alignItems="center" pt={2}>
+              <HStack gap={2}>
+                <Button
+                  bg="#10b981"
+                  color="white"
+                  _hover={{ bg: "#059669" }}
+                  onClick={handleSave}
+                  loading={saving}
+                  size="sm"
+                >
+                  <Save size={14} /> {isEdit ? "Update" : "Save Reading Part"}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => onNavigate("reading-parts")}
+                  size="sm"
+                >
+                  Cancel
+                </Button>
+              </HStack>
+              {isEdit && (
+                <Button
+                  bg="#4f46e5"
+                  color="white"
+                  _hover={{ bg: "#3730a3" }}
+                  size="sm"
+                  onClick={() =>
+                    onNavigate("reading-part-questions", { partId: editId! })
+                  }
+                >
+                  <Plus size={14} /> Add Questions
+                </Button>
+              )}
+            </Flex>
           </VStack>
         </Box>
       </Box>

@@ -55,6 +55,12 @@ export function pageIdToRoute(
       const lpQs = data?.listeningId ? `?listeningId=${data.listeningId}` : "";
       return `${BASE}/listening-parts/create${lpQs}`;
 
+    case "reading-part-questions":
+      return `${BASE}/reading-parts/${data?.partId}/questions`;
+
+    case "listening-part-questions":
+      return `${BASE}/listening-parts/${data?.partId}/questions`;
+
     case "writings":
       return `${BASE}/writings`;
 

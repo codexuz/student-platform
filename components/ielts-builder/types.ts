@@ -125,4 +125,6 @@ export type PageId =
   | "writings"
   | "writing-form"
   | "writing-tasks"
-  | "writing-task-form";
+  | "writing-task-form"
+  | "reading-part-questions"
+  | "listening-part-questions";
