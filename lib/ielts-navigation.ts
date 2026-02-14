@@ -27,6 +27,7 @@ export function pageIdToRoute(
       return `${BASE}/readings`;
 
     case "reading-form": {
+      if (data?.editId) return `${BASE}/readings/${data.editId}/edit`;
       const qs = data?.testId ? `?testId=${data.testId}` : "";
       return `${BASE}/readings/create${qs}`;
     }
@@ -43,6 +44,7 @@ export function pageIdToRoute(
       return `${BASE}/listenings`;
 
     case "listening-form": {
+      if (data?.editId) return `${BASE}/listenings/${data.editId}/edit`;
       const qs = data?.testId ? `?testId=${data.testId}` : "";
       return `${BASE}/listenings/create${qs}`;
     }
@@ -65,6 +67,7 @@ export function pageIdToRoute(
       return `${BASE}/writings`;
 
     case "writing-form": {
+      if (data?.editId) return `${BASE}/writings/${data.editId}/edit`;
       const qs = data?.testId ? `?testId=${data.testId}` : "";
       return `${BASE}/writings/create${qs}`;
     }
@@ -73,6 +76,7 @@ export function pageIdToRoute(
       return `${BASE}/writing-tasks`;
 
     case "writing-task-form": {
+      if (data?.editId) return `${BASE}/writing-tasks/${data.editId}/edit`;
       const qs = data?.writingId ? `?writingId=${data.writingId}` : "";
       return `${BASE}/writing-tasks/create${qs}`;
     }

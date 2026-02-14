@@ -5,11 +5,13 @@ import {
   Button,
   Flex,
   Heading,
+  HStack,
   Text,
   Badge,
+  IconButton,
   Spinner,
 } from "@chakra-ui/react";
-import { Plus } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { ieltsListeningAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
@@ -38,6 +40,17 @@ export default function ListeningsList({ onNavigate }: ListeningsListProps) {
   useEffect(() => {
     load();
   }, [load]);
+
+  const deleteItem = async (id: string) => {
+    if (!confirm("Delete this listening?")) return;
+    try {
+      await ieltsListeningAPI.delete(id);
+      toaster.success({ title: "Deleted!" });
+      load();
+    } catch (e: unknown) {
+      toaster.error({ title: "Error", description: (e as Error).message });
+    }
+  };
 
   const copyId = (id: string) => {
     navigator.clipboard.writeText(id);
@@ -184,19 +197,41 @@ export default function ListeningsList({ onNavigate }: ListeningsListProps) {
                       borderColor="gray.100"
                       _dark={{ borderColor: "gray.700" }}
                     >
-                      <Button
-                        size="xs"
-                        bg="#4f46e5"
-                        color="white"
-                        _hover={{ bg: "#3730a3" }}
-                        onClick={() =>
-                          onNavigate("listening-part-form", {
-                            listeningId: l.id,
-                          })
-                        }
-                      >
-                        <Plus size={12} /> Part
-                      </Button>
+                      <HStack gap={1}>
+                        <Button
+                          size="xs"
+                          bg="#4f46e5"
+                          color="white"
+                          _hover={{ bg: "#3730a3" }}
+                          onClick={() =>
+                            onNavigate("listening-part-form", {
+                              listeningId: l.id,
+                            })
+                          }
+                        >
+                          <Plus size={12} /> Part
+                        </Button>
+                        <IconButton
+                          size="xs"
+                          colorPalette="blue"
+                          variant="ghost"
+                          onClick={() =>
+                            onNavigate("listening-form", { editId: l.id })
+                          }
+                          aria-label="Edit"
+                        >
+                          <Pencil size={14} />
+                        </IconButton>
+                        <IconButton
+                          size="xs"
+                          colorPalette="red"
+                          variant="ghost"
+                          onClick={() => deleteItem(l.id)}
+                          aria-label="Delete"
+                        >
+                          <Trash2 size={14} />
+                        </IconButton>
+                      </HStack>
                     </Box>
                   </Box>
                 ))}

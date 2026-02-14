@@ -10,6 +10,7 @@ import {
   Text,
   VStack,
   Spinner,
+  Flex,
 } from "@chakra-ui/react";
 import { Save } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -18,17 +19,21 @@ import { toaster } from "@/components/ui/toaster";
 import type { PageId, IELTSTest } from "./types";
 
 interface ReadingFormProps {
+  editId?: string | null;
   prefillTestId?: string;
   onNavigate: (page: PageId, data?: Record<string, string>) => void;
 }
 
 export default function ReadingForm({
+  editId,
   prefillTestId,
   onNavigate,
 }: ReadingFormProps) {
+  const isEdit = !!editId;
   const [title, setTitle] = useState("");
   const [testId, setTestId] = useState(prefillTestId || "");
   const [saving, setSaving] = useState(false);
+  const [loadingData, setLoadingData] = useState(!!editId);
   const [tests, setTests] = useState<IELTSTest[]>([]);
   const [loadingTests, setLoadingTests] = useState(true);
 
@@ -43,11 +48,32 @@ export default function ReadingForm({
       .finally(() => setLoadingTests(false));
   }, []);
 
+  useEffect(() => {
+    if (!editId) return;
+    setLoadingData(true);
+    ieltsReadingAPI
+      .getById(editId)
+      .then((r: { title?: string; test_id?: string }) => {
+        setTitle(r.title || "");
+        setTestId(r.test_id || "");
+      })
+      .catch(() => {
+        toaster.error({ title: "Failed to load reading" });
+      })
+      .finally(() => setLoadingData(false));
+  }, [editId]);
+
   const handleSave = async () => {
     setSaving(true);
     try {
-      const r = await ieltsReadingAPI.create({ title, test_id: testId });
-      toaster.success({ title: `Reading created! ID: ${r.id}` });
+      const body = { title, test_id: testId };
+      if (isEdit) {
+        await ieltsReadingAPI.update(editId, body);
+        toaster.success({ title: "Reading updated!" });
+      } else {
+        const r = await ieltsReadingAPI.create(body);
+        toaster.success({ title: `Reading created! ID: ${r.id}` });
+      }
       onNavigate("readings");
     } catch (e: unknown) {
       toaster.error({ title: "Error", description: (e as Error).message });
@@ -55,6 +81,13 @@ export default function ReadingForm({
       setSaving(false);
     }
   };
+
+  if (loadingData)
+    return (
+      <Flex justifyContent="center" py={12}>
+        <Spinner size="lg" color="#4f46e5" />
+      </Flex>
+    );
 
   return (
     <Box>
@@ -72,7 +105,7 @@ export default function ReadingForm({
         <Text color="gray.300" _dark={{ color: "gray.600" }}>
           /
         </Text>
-        <Text>Create Reading</Text>
+        <Text>{isEdit ? "Edit Reading" : "Create Reading"}</Text>
       </HStack>
 
       <Box
@@ -84,7 +117,7 @@ export default function ReadingForm({
       >
         <Box px={5} py={3.5} borderBottomWidth="1px">
           <Heading size="sm" fontWeight="600">
-            Create Reading Section
+            {isEdit ? "Edit Reading Section" : "Create Reading Section"}
           </Heading>
         </Box>
         <Box px={5} py={5}>
@@ -152,7 +185,7 @@ export default function ReadingForm({
                 loading={saving}
                 size="sm"
               >
-                <Save size={14} /> Save Reading
+                <Save size={14} /> {isEdit ? "Update Reading" : "Save Reading"}
               </Button>
               <Button
                 variant="outline"

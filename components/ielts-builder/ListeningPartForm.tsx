@@ -9,7 +9,6 @@ import {
   Input,
   NativeSelect,
   Text,
-  Textarea,
   VStack,
   Icon,
   Spinner,
@@ -18,7 +17,7 @@ import { Save, Upload, X, Plus } from "lucide-react";
 import { useState, useEffect } from "react";
 import { ieltsListeningPartsAPI, ieltsListeningAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
-import type { PageId, IELTSListening } from "./types";
+import type { PageId, IELTSListening, DifficultyLevel } from "./types";
 import FileUploadModal from "./FileUploadModal";
 import AudioPlayer from "./AudioPlayer";
 
@@ -39,7 +38,10 @@ export default function ListeningPartForm({
   const [audioUrl, setAudioUrl] = useState("");
   const [audioName, setAudioName] = useState("");
   const [audioDuration, setAudioDuration] = useState("");
-  const [answers, setAnswers] = useState("");
+  const [timeLimitMinutes, setTimeLimitMinutes] = useState("");
+  const [difficulty, setDifficulty] = useState<DifficultyLevel>("MEDIUM");
+  const [isActive, setIsActive] = useState(true);
+  const [totalQuestions, setTotalQuestions] = useState("");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [listenings, setListenings] = useState<IELTSListening[]>([]);
@@ -71,7 +73,11 @@ export default function ListeningPartForm({
           setAudioUrl((audio?.url as string) || "");
           setAudioName((audio?.file_name as string) || "");
           setAudioDuration(audio?.duration ? String(audio.duration) : "");
-          setAnswers(p.answers ? JSON.stringify(p.answers, null, 2) : "");
+          if (p.timeLimitMinutes)
+            setTimeLimitMinutes(String(p.timeLimitMinutes));
+          if (p.difficulty) setDifficulty(p.difficulty as DifficultyLevel);
+          if (p.isActive !== undefined) setIsActive(p.isActive as boolean);
+          if (p.totalQuestions) setTotalQuestions(String(p.totalQuestions));
         })
         .catch((e: Error) =>
           toaster.error({ title: "Error", description: e.message }),
@@ -83,21 +89,12 @@ export default function ListeningPartForm({
   const handleSave = async () => {
     setSaving(true);
     try {
-      let parsedAnswers = null;
-      if (answers.trim()) {
-        try {
-          parsedAnswers = JSON.parse(answers);
-        } catch {
-          toaster.error({ title: "Invalid JSON in answers" });
-          setSaving(false);
-          return;
-        }
-      }
-      const body = {
+      const body: Record<string, unknown> = {
         listening_id: listeningId,
         part,
         title: title || null,
-        answers: parsedAnswers,
+        difficulty,
+        isActive,
         audio: audioUrl
           ? {
               url: audioUrl,
@@ -106,6 +103,8 @@ export default function ListeningPartForm({
             }
           : null,
       };
+      if (timeLimitMinutes) body.timeLimitMinutes = parseInt(timeLimitMinutes);
+      if (totalQuestions) body.totalQuestions = parseInt(totalQuestions);
 
       if (isEdit) {
         await ieltsListeningPartsAPI.update(editId!, body);
@@ -289,25 +288,91 @@ export default function ListeningPartForm({
               )}
             </Box>
 
-            <Box>
-              <Text
-                fontSize="xs"
-                fontWeight="600"
-                color="gray.600"
-                _dark={{ color: "gray.400" }}
-                mb={1}
-                textTransform="uppercase"
-                letterSpacing="0.3px"
-              >
-                Answer Key (JSON)
-              </Text>
-              <Textarea
-                placeholder='{"1":"answer1","2":"answer2"}'
-                value={answers}
-                onChange={(e) => setAnswers(e.target.value)}
-                rows={3}
+            <Flex gap={3} direction={{ base: "column", md: "row" }}>
+              <Box flex="1">
+                <Text
+                  fontSize="xs"
+                  fontWeight="600"
+                  color="gray.600"
+                  _dark={{ color: "gray.400" }}
+                  mb={1}
+                  textTransform="uppercase"
+                  letterSpacing="0.3px"
+                >
+                  Time Limit (minutes)
+                </Text>
+                <Input
+                  type="number"
+                  placeholder="e.g. 10"
+                  value={timeLimitMinutes}
+                  onChange={(e) => setTimeLimitMinutes(e.target.value)}
+                />
+              </Box>
+              <Box flex="1">
+                <Text
+                  fontSize="xs"
+                  fontWeight="600"
+                  color="gray.600"
+                  _dark={{ color: "gray.400" }}
+                  mb={1}
+                  textTransform="uppercase"
+                  letterSpacing="0.3px"
+                >
+                  Difficulty
+                </Text>
+                <NativeSelect.Root size="sm" w="full">
+                  <NativeSelect.Field
+                    value={difficulty}
+                    onChange={(e) =>
+                      setDifficulty(e.currentTarget.value as DifficultyLevel)
+                    }
+                  >
+                    <option value="EASY">Easy</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="HARD">Hard</option>
+                  </NativeSelect.Field>
+                  <NativeSelect.Indicator />
+                </NativeSelect.Root>
+              </Box>
+              <Box flex="1">
+                <Text
+                  fontSize="xs"
+                  fontWeight="600"
+                  color="gray.600"
+                  _dark={{ color: "gray.400" }}
+                  mb={1}
+                  textTransform="uppercase"
+                  letterSpacing="0.3px"
+                >
+                  Total Questions
+                </Text>
+                <Input
+                  type="number"
+                  placeholder="e.g. 10"
+                  value={totalQuestions}
+                  onChange={(e) => setTotalQuestions(e.target.value)}
+                />
+              </Box>
+            </Flex>
+
+            <Flex alignItems="center" gap={2}>
+              <input
+                type="checkbox"
+                checked={isActive}
+                onChange={(e) => setIsActive(e.target.checked)}
+                id="is-active"
               />
-            </Box>
+              <label
+                htmlFor="is-active"
+                style={{
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                }}
+              >
+                Active
+              </label>
+            </Flex>
 
             <Flex justifyContent="space-between" alignItems="center" pt={2}>
               <HStack gap={2}>

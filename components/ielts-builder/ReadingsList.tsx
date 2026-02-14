@@ -11,7 +11,7 @@ import {
   Spinner,
   IconButton,
 } from "@chakra-ui/react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Pencil } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { ieltsReadingAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
@@ -214,6 +214,17 @@ export default function ReadingsList({ onNavigate }: ReadingsListProps) {
                         >
                           <Plus size={12} /> Part
                         </Button>
+                        <IconButton
+                          size="xs"
+                          colorPalette="blue"
+                          variant="ghost"
+                          onClick={() =>
+                            onNavigate("reading-form", { editId: r.id })
+                          }
+                          aria-label="Edit"
+                        >
+                          <Pencil size={14} />
+                        </IconButton>
                         <IconButton
                           size="xs"
                           colorPalette="red"

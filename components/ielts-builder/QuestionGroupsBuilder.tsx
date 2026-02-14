@@ -6,7 +6,6 @@ import {
   Flex,
   Heading,
   HStack,
-  Input,
   Text,
   VStack,
   Badge,
@@ -14,78 +13,62 @@ import {
 } from "@chakra-ui/react";
 import { Plus, Trash2, ChevronDown } from "lucide-react";
 import { useState } from "react";
-import type { QuestionGroup, QuestionContent } from "./types";
+import type {
+  IELTSQuestion,
+  IELTSSubQuestion,
+  IELTSQuestionOption,
+} from "./types";
 import QuestionContentModal from "./QuestionContentModal";
 
 const typeColors: Record<string, { bg: string; color: string }> = {
-  completion: { bg: "#dbeafe", color: "#1d4ed8" },
-  "multiple-choice": { bg: "#fce7f3", color: "#be185d" },
-  "multi-select": { bg: "#ede9fe", color: "#6d28d9" },
-  selection: { bg: "#d1fae5", color: "#065f46" },
-  "draggable-selection": { bg: "#fef3c7", color: "#92400e" },
-  "matching-information": { bg: "#fce4ec", color: "#880e4f" },
+  NOTE_COMPLETION: { bg: "#dbeafe", color: "#1d4ed8" },
+  TRUE_FALSE_NOT_GIVEN: { bg: "#d1fae5", color: "#065f46" },
+  YES_NO_NOT_GIVEN: { bg: "#d1fae5", color: "#065f46" },
+  MATCHING_INFORMATION: { bg: "#fce4ec", color: "#880e4f" },
+  MATCHING_HEADINGS: { bg: "#fce4ec", color: "#880e4f" },
+  SUMMARY_COMPLETION: { bg: "#dbeafe", color: "#1d4ed8" },
+  SUMMARY_COMPLETION_DRAG_DROP: { bg: "#fef3c7", color: "#92400e" },
+  MULTIPLE_CHOICE: { bg: "#fce7f3", color: "#be185d" },
+  MULTIPLE_ANSWER: { bg: "#ede9fe", color: "#6d28d9" },
+  SENTENCE_COMPLETION: { bg: "#dbeafe", color: "#1d4ed8" },
+  SHORT_ANSWER: { bg: "#e0f2fe", color: "#0369a1" },
+  TABLE_COMPLETION: { bg: "#ecfdf5", color: "#047857" },
+  FLOW_CHART_COMPLETION: { bg: "#f0fdf4", color: "#15803d" },
+  DIAGRAM_LABELLING: { bg: "#fef9c3", color: "#a16207" },
+  MATCHING_FEATURES: { bg: "#fce4ec", color: "#880e4f" },
+  MATCHING_SENTENCE_ENDINGS: { bg: "#fce4ec", color: "#880e4f" },
+  PLAN_MAP_LABELLING: { bg: "#fef9c3", color: "#a16207" },
 };
 
 interface QuestionGroupsBuilderProps {
-  groups: QuestionGroup[];
-  onChange: (groups: QuestionGroup[]) => void;
+  questions: IELTSQuestion[];
+  onChange: (questions: IELTSQuestion[]) => void;
 }
 
 export default function QuestionGroupsBuilder({
-  groups,
+  questions,
   onChange,
 }: QuestionGroupsBuilderProps) {
   const [collapsed, setCollapsed] = useState<Record<number, boolean>>({});
   const [modalOpen, setModalOpen] = useState(false);
-  const [targetGroupIndex, setTargetGroupIndex] = useState<number | null>(null);
 
-  const addGroup = () => {
-    onChange([...groups, { number_of_questions: 10, contents: [] }]);
+  const removeQuestion = (idx: number) => {
+    onChange(questions.filter((_, i) => i !== idx));
   };
 
-  const removeGroup = (idx: number) => {
-    onChange(groups.filter((_, i) => i !== idx));
-  };
-
-  const updateGroupCount = (idx: number, count: number) => {
-    onChange(
-      groups.map((g, i) =>
-        i === idx ? { ...g, number_of_questions: count } : g,
-      ),
-    );
-  };
-
-  const removeContent = (groupIdx: number, contentIdx: number) => {
-    onChange(
-      groups.map((g, i) =>
-        i === groupIdx
-          ? { ...g, contents: g.contents.filter((_, ci) => ci !== contentIdx) }
-          : g,
-      ),
-    );
-  };
-
-  const openAddContent = (groupIdx: number) => {
-    setTargetGroupIndex(groupIdx);
+  const openAddQuestion = () => {
     setModalOpen(true);
   };
 
-  const handleSaveContent = (content: QuestionContent) => {
-    if (targetGroupIndex === null) return;
-    onChange(
-      groups.map((g, i) =>
-        i === targetGroupIndex
-          ? { ...g, contents: [...g.contents, content] }
-          : g,
-      ),
-    );
+  const handleSaveQuestion = (question: IELTSQuestion) => {
+    onChange([...questions, question]);
   };
 
   const toggleCollapse = (idx: number) => {
     setCollapsed((prev) => ({ ...prev, [idx]: !prev[idx] }));
   };
 
-  const truncate = (s: string, n: number) =>
+  const truncate = (s: string | undefined, n: number) =>
     s && s.length > n ? s.substring(0, n) + "..." : s || "";
 
   return (
@@ -107,194 +90,199 @@ export default function QuestionGroupsBuilder({
           justifyContent="space-between"
         >
           <Heading size="sm" fontWeight="600">
-            Question Groups
+            Questions
           </Heading>
           <Button
             size="xs"
             bg="#4f46e5"
             color="white"
             _hover={{ bg: "#3730a3" }}
-            onClick={addGroup}
+            onClick={openAddQuestion}
           >
-            <Plus size={12} /> Add Group
+            <Plus size={12} /> Add Question
           </Button>
         </Flex>
         <Box p={4}>
-          {groups.length === 0 ? (
+          {questions.length === 0 ? (
             <Text fontSize="sm" color="gray.400" textAlign="center" py={4}>
-              No question groups. Click &quot;+ Add Group&quot;.
+              No questions. Click &quot;+ Add Question&quot;.
             </Text>
           ) : (
             <VStack gap={3} alignItems="stretch">
-              {groups.map((group, gi) => (
-                <Box
-                  key={gi}
-                  borderWidth="1.5px"
-                  borderColor="gray.200"
-                  _dark={{ borderColor: "gray.600" }}
-                  rounded="lg"
-                  overflow="hidden"
-                >
-                  {/* Group Header */}
-                  <Flex
-                    px={3}
-                    py={2.5}
-                    bg="gray.50"
-                    _dark={{ bg: "gray.700" }}
-                    alignItems="center"
-                    justifyContent="space-between"
-                    cursor="pointer"
-                    userSelect="none"
-                    onClick={() => toggleCollapse(gi)}
+              {questions.map((question, qi) => {
+                const qType = question.type || "NOTE_COMPLETION";
+                const tc = typeColors[qType] || {
+                  bg: "#f3f4f6",
+                  color: "#374151",
+                };
+                const subs = question.questions || [];
+                const opts = question.options || [];
+
+                return (
+                  <Box
+                    key={qi}
+                    borderWidth="1.5px"
+                    borderColor="gray.200"
+                    _dark={{ borderColor: "gray.600" }}
+                    rounded="lg"
+                    overflow="hidden"
                   >
-                    <HStack>
-                      <Box
-                        transition="transform 0.2s"
-                        transform={
-                          collapsed[gi] ? "rotate(-90deg)" : "rotate(0)"
-                        }
-                      >
-                        <ChevronDown size={14} />
-                      </Box>
-                      <Text fontSize="sm" fontWeight="600">
-                        Group {gi + 1}
-                      </Text>
-                      <Text fontSize="xs" color="gray.400">
-                        ({group.contents.length} content blocks)
-                      </Text>
-                    </HStack>
-                    <HStack onClick={(e) => e.stopPropagation()}>
-                      <Button
-                        size="xs"
-                        bg="#4f46e5"
-                        color="white"
-                        _hover={{ bg: "#3730a3" }}
-                        onClick={() => openAddContent(gi)}
-                      >
-                        <Plus size={12} /> Content
-                      </Button>
-                      <IconButton
-                        size="xs"
-                        colorPalette="red"
-                        variant="ghost"
-                        onClick={() => removeGroup(gi)}
-                        aria-label="Remove group"
-                      >
-                        <Trash2 size={14} />
-                      </IconButton>
-                    </HStack>
-                  </Flex>
-
-                  {/* Group Body */}
-                  {!collapsed[gi] && (
-                    <Box p={3} borderTopWidth="1px">
-                      <Box mb={3}>
-                        <Text
-                          fontSize="xs"
-                          fontWeight="600"
-                          color="gray.600"
-                          _dark={{ color: "gray.400" }}
-                          mb={1}
-                          textTransform="uppercase"
-                          letterSpacing="0.3px"
-                        >
-                          Number of Questions
-                        </Text>
-                        <Input
-                          size="sm"
-                          type="number"
-                          w="120px"
-                          value={group.number_of_questions}
-                          onChange={(e) =>
-                            updateGroupCount(gi, parseInt(e.target.value) || 0)
+                    {/* Question Header */}
+                    <Flex
+                      px={3}
+                      py={2.5}
+                      bg="gray.50"
+                      _dark={{ bg: "gray.700" }}
+                      alignItems="center"
+                      justifyContent="space-between"
+                      cursor="pointer"
+                      userSelect="none"
+                      onClick={() => toggleCollapse(qi)}
+                    >
+                      <HStack>
+                        <Box
+                          transition="transform 0.2s"
+                          transform={
+                            collapsed[qi] ? "rotate(-90deg)" : "rotate(0)"
                           }
-                        />
-                      </Box>
-
-                      {group.contents.length === 0 ? (
-                        <Text fontSize="sm" color="gray.400" mt={2}>
-                          No content blocks yet.
+                        >
+                          <ChevronDown size={14} />
+                        </Box>
+                        <Badge
+                          bg={tc.bg}
+                          color={tc.color}
+                          fontSize="10px"
+                          fontWeight="700"
+                          textTransform="uppercase"
+                          px={2}
+                          rounded="sm"
+                          variant="plain"
+                        >
+                          {qType.replace(/_/g, " ")}
+                        </Badge>
+                        <Text fontSize="sm" fontWeight="600">
+                          Q{question.questionNumber || qi + 1}
+                          {question.questionText
+                            ? `: ${truncate(question.questionText, 50)}`
+                            : ""}
                         </Text>
-                      ) : (
-                        <VStack gap={2} alignItems="stretch">
-                          {group.contents.map((ct, ci) => {
-                            const tc = typeColors[ct.type] || {
-                              bg: "#f3f4f6",
-                              color: "#374151",
-                            };
-                            return (
-                              <Box
-                                key={ci}
-                                borderWidth="1px"
-                                borderStyle="dashed"
-                                borderColor="gray.300"
-                                _dark={{
-                                  borderColor: "gray.600",
-                                  bg: "gray.700",
-                                }}
-                                rounded="md"
-                                p={3}
-                                bg="gray.50"
-                                position="relative"
-                              >
-                                <Flex
-                                  justifyContent="space-between"
-                                  alignItems="center"
-                                  mb={1}
+                      </HStack>
+                      <HStack onClick={(e) => e.stopPropagation()}>
+                        <IconButton
+                          size="xs"
+                          colorPalette="red"
+                          variant="ghost"
+                          onClick={() => removeQuestion(qi)}
+                          aria-label="Remove question"
+                        >
+                          <Trash2 size={14} />
+                        </IconButton>
+                      </HStack>
+                    </Flex>
+
+                    {/* Question Body */}
+                    {!collapsed[qi] && (
+                      <Box p={3} borderTopWidth="1px">
+                        {question.instruction && (
+                          <Text fontSize="xs" color="gray.500" mb={2}>
+                            <strong>Instruction:</strong>{" "}
+                            {truncate(question.instruction, 200)}
+                          </Text>
+                        )}
+
+                        {/* Sub-Questions */}
+                        {subs.length > 0 && (
+                          <Box mb={2}>
+                            <Text
+                              fontSize="xs"
+                              fontWeight="600"
+                              color="gray.500"
+                              mb={1}
+                            >
+                              Sub-Questions ({subs.length})
+                            </Text>
+                            <VStack gap={1} alignItems="stretch">
+                              {subs.map((sq: IELTSSubQuestion, si: number) => (
+                                <HStack
+                                  key={si}
+                                  fontSize="xs"
+                                  gap={2}
+                                  px={2}
+                                  py={1}
+                                  bg="gray.50"
+                                  _dark={{ bg: "gray.700" }}
+                                  rounded="sm"
                                 >
-                                  <HStack>
-                                    <Badge
-                                      bg={tc.bg}
-                                      color={tc.color}
-                                      fontSize="10px"
-                                      fontWeight="700"
-                                      textTransform="uppercase"
-                                      px={2}
-                                      rounded="sm"
-                                      variant="plain"
-                                    >
-                                      {ct.type}
-                                    </Badge>
-                                    <Text fontSize="sm" fontWeight="600">
-                                      {ct.title || "Untitled"}
-                                    </Text>
-                                  </HStack>
-                                  <IconButton
-                                    size="xs"
-                                    colorPalette="red"
-                                    variant="ghost"
-                                    onClick={() => removeContent(gi, ci)}
-                                    aria-label="Remove content"
+                                  <Text
+                                    fontWeight="600"
+                                    color="gray.600"
+                                    flexShrink={0}
                                   >
-                                    <Trash2 size={14} />
-                                  </IconButton>
-                                </Flex>
-                                {ct.condition && (
-                                  <Text fontSize="xs" color="gray.500">
-                                    {truncate(ct.condition, 120)}
+                                    #{sq.questionNumber || si + 1}
                                   </Text>
-                                )}
-                                {ct.options && ct.options.length > 0 && (
-                                  <Text fontSize="xs" color="gray.400" mt={1}>
-                                    Options:{" "}
-                                    {ct.options.map((o) => o.label).join(", ")}
+                                  <Text
+                                    flex="1"
+                                    color="gray.700"
+                                    _dark={{ color: "gray.300" }}
+                                  >
+                                    {truncate(sq.questionText, 80)}
                                   </Text>
-                                )}
-                                {ct.multipleChoiceQuestions &&
-                                  ct.multipleChoiceQuestions.length > 0 && (
-                                    <Text fontSize="xs" color="gray.400" mt={1}>
-                                      {ct.multipleChoiceQuestions.length} MCQ(s)
-                                    </Text>
+                                  {sq.correctAnswer && (
+                                    <Badge
+                                      colorPalette="green"
+                                      variant="subtle"
+                                      fontSize="10px"
+                                    >
+                                      {truncate(sq.correctAnswer, 30)}
+                                    </Badge>
                                   )}
-                              </Box>
-                            );
-                          })}
-                        </VStack>
-                      )}
-                    </Box>
-                  )}
-                </Box>
-              ))}
+                                </HStack>
+                              ))}
+                            </VStack>
+                          </Box>
+                        )}
+
+                        {/* Options */}
+                        {opts.length > 0 && (
+                          <Box>
+                            <Text
+                              fontSize="xs"
+                              fontWeight="600"
+                              color="gray.500"
+                              mb={1}
+                            >
+                              Options ({opts.length})
+                            </Text>
+                            <HStack gap={2} flexWrap="wrap">
+                              {opts.map(
+                                (opt: IELTSQuestionOption, oi: number) => (
+                                  <Badge
+                                    key={oi}
+                                    colorPalette={
+                                      opt.isCorrect ? "green" : "gray"
+                                    }
+                                    variant="subtle"
+                                    fontSize="10px"
+                                  >
+                                    {opt.optionKey}:{" "}
+                                    {truncate(opt.optionText, 40)}
+                                  </Badge>
+                                ),
+                              )}
+                            </HStack>
+                          </Box>
+                        )}
+
+                        {subs.length === 0 && opts.length === 0 && (
+                          <Text fontSize="sm" color="gray.400" mt={1}>
+                            No sub-questions or options.
+                          </Text>
+                        )}
+                      </Box>
+                    )}
+                  </Box>
+                );
+              })}
             </VStack>
           )}
         </Box>
@@ -303,7 +291,7 @@ export default function QuestionGroupsBuilder({
       <QuestionContentModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        onSave={handleSaveContent}
+        onSave={handleSaveQuestion}
       />
     </>
   );

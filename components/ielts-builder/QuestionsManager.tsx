@@ -7,7 +7,6 @@ import {
   Flex,
   Heading,
   HStack,
-  Input,
   Text,
   VStack,
   Badge,
@@ -17,71 +16,42 @@ import {
 import { Plus, Trash2, ChevronDown } from "lucide-react";
 import {
   ieltsQuestionsAPI,
-  ieltsQuestionContentsAPI,
+  ieltsSubQuestionsAPI,
   ieltsQuestionChoicesAPI,
-  ieltsMultipleChoiceQuestionsAPI,
-  ieltsMultipleChoiceOptionsAPI,
 } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
-import type { PageId, QuestionContent } from "./types";
+import type {
+  PageId,
+  IELTSQuestion,
+  IELTSSubQuestion,
+  IELTSQuestionOption,
+  IELTSQuestionType,
+} from "./types";
 import QuestionContentModal from "./QuestionContentModal";
-
-/* ── Local API entity types ─────────────────────────────────────────────── */
-
-interface APIQuestion {
-  id: string;
-  reading_part_id?: string | null;
-  listening_part_id?: string | null;
-  number_of_questions: number;
-}
-
-interface APIQuestionContent {
-  id: string;
-  question_id: string;
-  type: string;
-  title: string;
-  condition?: string | null;
-  content?: string | null;
-  limit?: number | null;
-  showOptions?: boolean;
-  optionsTitle?: string | null;
-  order: number;
-}
-
-interface APIChoice {
-  id: string;
-  question_content_id: string;
-  value: string;
-  label: string;
-  order: number;
-}
-
-interface APIMCQQuestion {
-  id: string;
-  question_content_id: string;
-  question: string;
-  order: number;
-}
-
-interface QuestionWithContents extends APIQuestion {
-  contents: (APIQuestionContent & {
-    choices?: APIChoice[];
-    mcqQuestions?: APIMCQQuestion[];
-  })[];
-}
 
 /* ── Style helpers ──────────────────────────────────────────────────────── */
 
 const typeColors: Record<string, { bg: string; color: string }> = {
-  completion: { bg: "#dbeafe", color: "#1d4ed8" },
-  "multiple-choice": { bg: "#fce7f3", color: "#be185d" },
-  "multi-select": { bg: "#ede9fe", color: "#6d28d9" },
-  selection: { bg: "#d1fae5", color: "#065f46" },
-  "draggable-selection": { bg: "#fef3c7", color: "#92400e" },
-  "matching-information": { bg: "#fce4ec", color: "#880e4f" },
+  NOTE_COMPLETION: { bg: "#dbeafe", color: "#1d4ed8" },
+  TRUE_FALSE_NOT_GIVEN: { bg: "#d1fae5", color: "#065f46" },
+  YES_NO_NOT_GIVEN: { bg: "#d1fae5", color: "#065f46" },
+  MATCHING_INFORMATION: { bg: "#fce4ec", color: "#880e4f" },
+  MATCHING_HEADINGS: { bg: "#fce4ec", color: "#880e4f" },
+  SUMMARY_COMPLETION: { bg: "#dbeafe", color: "#1d4ed8" },
+  SUMMARY_COMPLETION_DRAG_DROP: { bg: "#fef3c7", color: "#92400e" },
+  MULTIPLE_CHOICE: { bg: "#fce7f3", color: "#be185d" },
+  MULTIPLE_ANSWER: { bg: "#ede9fe", color: "#6d28d9" },
+  SENTENCE_COMPLETION: { bg: "#dbeafe", color: "#1d4ed8" },
+  SHORT_ANSWER: { bg: "#e0f2fe", color: "#0369a1" },
+  TABLE_COMPLETION: { bg: "#ecfdf5", color: "#047857" },
+  FLOW_CHART_COMPLETION: { bg: "#f0fdf4", color: "#15803d" },
+  DIAGRAM_LABELLING: { bg: "#fef9c3", color: "#a16207" },
+  MATCHING_FEATURES: { bg: "#fce4ec", color: "#880e4f" },
+  MATCHING_SENTENCE_ENDINGS: { bg: "#fce4ec", color: "#880e4f" },
+  PLAN_MAP_LABELLING: { bg: "#fef9c3", color: "#a16207" },
 };
 
-const truncate = (s: string, n: number) =>
+const truncate = (s: string | undefined, n: number) =>
   s && s.length > n ? s.substring(0, n) + "..." : s || "";
 
 /* ── Component ──────────────────────────────────────────────────────────── */
@@ -97,11 +67,10 @@ export default function QuestionsManager({
   partType,
   onNavigate,
 }: QuestionsManagerProps) {
-  const [questions, setQuestions] = useState<QuestionWithContents[]>([]);
+  const [questions, setQuestions] = useState<IELTSQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [modalOpen, setModalOpen] = useState(false);
-  const [targetQuestionId, setTargetQuestionId] = useState<string | null>(null);
   const [creatingQuestion, setCreatingQuestion] = useState(false);
 
   const backLabel =
@@ -119,24 +88,8 @@ export default function QuestionsManager({
           ? await ieltsQuestionsAPI.getByReadingPart(partId)
           : await ieltsQuestionsAPI.getByListeningPart(partId);
 
-      const list: APIQuestion[] = Array.isArray(res) ? res : res.data || [];
-
-      // For each question, fetch its content blocks
-      const enriched: QuestionWithContents[] = await Promise.all(
-        list.map(async (q) => {
-          try {
-            const cRes = await ieltsQuestionContentsAPI.getByQuestion(q.id);
-            const contents: APIQuestionContent[] = Array.isArray(cRes)
-              ? cRes
-              : cRes.data || [];
-            return { ...q, contents };
-          } catch {
-            return { ...q, contents: [] };
-          }
-        }),
-      );
-
-      setQuestions(enriched);
+      const list: IELTSQuestion[] = Array.isArray(res) ? res : res.data || [];
+      setQuestions(list);
     } catch {
       toaster.error({ title: "Error loading questions" });
     } finally {
@@ -150,16 +103,37 @@ export default function QuestionsManager({
 
   /* ── Handlers ───────────────────────────────────────────────────────── */
 
-  const handleCreateQuestion = async () => {
+  const openAddQuestion = () => {
+    setModalOpen(true);
+  };
+
+  const handleSaveQuestion = async (questionData: IELTSQuestion) => {
     setCreatingQuestion(true);
     try {
       const body: Record<string, unknown> = {
         [partType === "reading" ? "reading_part_id" : "listening_part_id"]:
           partId,
-        number_of_questions: 10,
+        type: questionData.type,
+        questionText: questionData.questionText || null,
+        instruction: questionData.instruction || null,
+        context: questionData.context || null,
+        questionNumber: questionData.questionNumber,
+        points: questionData.points || 1,
+        explanation: questionData.explanation || null,
+        fromPassage: questionData.fromPassage || null,
+        isActive: true,
       };
+
+      // Support nested creation: include sub-questions and options
+      if (questionData.questions?.length) {
+        body.questions = questionData.questions;
+      }
+      if (questionData.options?.length) {
+        body.options = questionData.options;
+      }
+
       await ieltsQuestionsAPI.create(body);
-      toaster.success({ title: "Question group created!" });
+      toaster.success({ title: "Question created!" });
       fetchQuestions();
     } catch (e) {
       toaster.error({
@@ -178,99 +152,6 @@ export default function QuestionsManager({
       fetchQuestions();
     } catch {
       toaster.error({ title: "Error deleting question" });
-    }
-  };
-
-  const handleUpdateQuestionCount = async (
-    questionId: string,
-    count: number,
-  ) => {
-    try {
-      await ieltsQuestionsAPI.update(questionId, {
-        number_of_questions: count,
-      });
-    } catch {
-      toaster.error({ title: "Error updating question count" });
-    }
-  };
-
-  const openAddContent = (questionId: string) => {
-    setTargetQuestionId(questionId);
-    setModalOpen(true);
-  };
-
-  const handleSaveContent = async (content: QuestionContent) => {
-    if (!targetQuestionId) return;
-    try {
-      // 1. Create the question content
-      const contentBody = {
-        question_id: targetQuestionId,
-        type: content.type,
-        title: content.title,
-        condition: content.condition || null,
-        content: content.content || null,
-        limit: content.limit,
-        showOptions: content.showOptions,
-        optionsTitle: content.optionsTitle || null,
-        order: content.order,
-      };
-      const created = await ieltsQuestionContentsAPI.create(contentBody);
-      const contentId = created.id;
-
-      // 2. Create choices if applicable
-      if (content.options?.length) {
-        await Promise.all(
-          content.options.map((opt) =>
-            ieltsQuestionChoicesAPI.create({
-              question_content_id: contentId,
-              value: opt.value,
-              label: opt.label,
-              order: opt.order,
-            }),
-          ),
-        );
-      }
-
-      // 3. Create MCQ questions + options if applicable
-      if (content.multipleChoiceQuestions?.length) {
-        for (const mcq of content.multipleChoiceQuestions) {
-          const mcqCreated = await ieltsMultipleChoiceQuestionsAPI.create({
-            question_content_id: contentId,
-            question: mcq.question,
-            order: mcq.order,
-          });
-          if (mcq.options?.length) {
-            await Promise.all(
-              mcq.options.map((opt) =>
-                ieltsMultipleChoiceOptionsAPI.create({
-                  multiple_choice_question_id: mcqCreated.id,
-                  value: opt.value,
-                  label: opt.label,
-                  order: opt.order,
-                }),
-              ),
-            );
-          }
-        }
-      }
-
-      toaster.success({ title: "Content block added!" });
-      fetchQuestions();
-    } catch (e) {
-      toaster.error({
-        title: "Error saving content",
-        description: (e as Error).message,
-      });
-    }
-  };
-
-  const handleDeleteContent = async (contentId: string) => {
-    try {
-      await ieltsQuestionContentsAPI.delete(contentId);
-      toaster.success({ title: "Content block deleted" });
-      fetchQuestions();
-    } catch {
-      toaster.error({ title: "Error deleting content" });
     }
   };
 
@@ -351,7 +232,7 @@ export default function QuestionsManager({
             bg="#4f46e5"
             color="white"
             _hover={{ bg: "#3730a3" }}
-            onClick={handleCreateQuestion}
+            onClick={openAddQuestion}
             loading={creatingQuestion}
           >
             <Plus size={14} /> Add Question
@@ -365,186 +246,181 @@ export default function QuestionsManager({
             </Text>
           ) : (
             <VStack gap={3} alignItems="stretch">
-              {questions.map((question, qi) => (
-                <Box
-                  key={question.id}
-                  borderWidth="1.5px"
-                  borderColor="gray.200"
-                  _dark={{ borderColor: "gray.600" }}
-                  rounded="lg"
-                  overflow="hidden"
-                >
-                  {/* Question Header */}
-                  <Flex
-                    px={3}
-                    py={2.5}
-                    bg="gray.50"
-                    _dark={{ bg: "gray.700" }}
-                    alignItems="center"
-                    justifyContent="space-between"
-                    cursor="pointer"
-                    userSelect="none"
-                    onClick={() => toggleCollapse(question.id)}
+              {questions.map((question, qi) => {
+                const qType = question.type || "NOTE_COMPLETION";
+                const tc = typeColors[qType] || {
+                  bg: "#f3f4f6",
+                  color: "#374151",
+                };
+                const qId = question.id || String(qi);
+                const subs = question.questions || [];
+                const opts = question.options || [];
+
+                return (
+                  <Box
+                    key={qId}
+                    borderWidth="1.5px"
+                    borderColor="gray.200"
+                    _dark={{ borderColor: "gray.600" }}
+                    rounded="lg"
+                    overflow="hidden"
                   >
-                    <HStack>
-                      <Box
-                        transition="transform 0.2s"
-                        transform={
-                          collapsed[question.id]
-                            ? "rotate(-90deg)"
-                            : "rotate(0)"
-                        }
-                      >
-                        <ChevronDown size={14} />
-                      </Box>
-                      <Text fontSize="sm" fontWeight="600">
-                        Question Group {qi + 1}
-                      </Text>
-                      <Text fontSize="xs" color="gray.400">
-                        ({question.contents.length} content block
-                        {question.contents.length !== 1 ? "s" : ""})
-                      </Text>
-                    </HStack>
-                    <HStack onClick={(e) => e.stopPropagation()}>
-                      <Button
-                        size="xs"
-                        bg="#4f46e5"
-                        color="white"
-                        _hover={{ bg: "#3730a3" }}
-                        onClick={() => openAddContent(question.id)}
-                      >
-                        <Plus size={12} /> Content
-                      </Button>
-                      <IconButton
-                        size="xs"
-                        colorPalette="red"
-                        variant="ghost"
-                        onClick={() => handleDeleteQuestion(question.id)}
-                        aria-label="Delete question"
-                      >
-                        <Trash2 size={14} />
-                      </IconButton>
-                    </HStack>
-                  </Flex>
-
-                  {/* Question Body */}
-                  {!collapsed[question.id] && (
-                    <Box p={3} borderTopWidth="1px">
-                      <Box mb={3}>
-                        <Text
-                          fontSize="xs"
-                          fontWeight="600"
-                          color="gray.600"
-                          _dark={{ color: "gray.400" }}
-                          mb={1}
-                          textTransform="uppercase"
-                          letterSpacing="0.3px"
+                    {/* Question Header */}
+                    <Flex
+                      px={3}
+                      py={2.5}
+                      bg="gray.50"
+                      _dark={{ bg: "gray.700" }}
+                      alignItems="center"
+                      justifyContent="space-between"
+                      cursor="pointer"
+                      userSelect="none"
+                      onClick={() => toggleCollapse(qId)}
+                    >
+                      <HStack>
+                        <Box
+                          transition="transform 0.2s"
+                          transform={
+                            collapsed[qId] ? "rotate(-90deg)" : "rotate(0)"
+                          }
                         >
-                          Number of Questions
+                          <ChevronDown size={14} />
+                        </Box>
+                        <Badge
+                          bg={tc.bg}
+                          color={tc.color}
+                          fontSize="10px"
+                          fontWeight="700"
+                          textTransform="uppercase"
+                          px={2}
+                          rounded="sm"
+                          variant="plain"
+                        >
+                          {qType.replace(/_/g, " ")}
+                        </Badge>
+                        <Text fontSize="sm" fontWeight="600">
+                          Q{question.questionNumber || qi + 1}
+                          {question.questionText
+                            ? `: ${truncate(question.questionText, 60)}`
+                            : ""}
                         </Text>
-                        <Input
-                          size="sm"
-                          type="number"
-                          w="120px"
-                          value={question.number_of_questions}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value) || 0;
-                            setQuestions((prev) =>
-                              prev.map((q) =>
-                                q.id === question.id
-                                  ? { ...q, number_of_questions: val }
-                                  : q,
-                              ),
-                            );
-                            handleUpdateQuestionCount(question.id, val);
-                          }}
-                        />
-                      </Box>
+                      </HStack>
+                      <HStack onClick={(e) => e.stopPropagation()}>
+                        <IconButton
+                          size="xs"
+                          colorPalette="red"
+                          variant="ghost"
+                          onClick={() => handleDeleteQuestion(qId)}
+                          aria-label="Delete question"
+                        >
+                          <Trash2 size={14} />
+                        </IconButton>
+                      </HStack>
+                    </Flex>
 
-                      {question.contents.length === 0 ? (
-                        <Text fontSize="sm" color="gray.400" mt={2}>
-                          No content blocks yet.
-                        </Text>
-                      ) : (
-                        <VStack gap={2} alignItems="stretch">
-                          {question.contents.map((ct) => {
-                            const tc = typeColors[ct.type] || {
-                              bg: "#f3f4f6",
-                              color: "#374151",
-                            };
-                            return (
-                              <Box
-                                key={ct.id}
-                                borderWidth="1px"
-                                borderStyle="dashed"
-                                borderColor="gray.300"
-                                _dark={{
-                                  borderColor: "gray.600",
-                                  bg: "gray.700",
-                                }}
-                                rounded="md"
-                                p={3}
-                                bg="gray.50"
-                                position="relative"
-                              >
-                                <Flex
-                                  justifyContent="space-between"
-                                  alignItems="center"
-                                  mb={1}
+                    {/* Question Body */}
+                    {!collapsed[qId] && (
+                      <Box p={3} borderTopWidth="1px">
+                        {question.instruction && (
+                          <Text fontSize="xs" color="gray.500" mb={2}>
+                            <strong>Instruction:</strong>{" "}
+                            {truncate(question.instruction, 200)}
+                          </Text>
+                        )}
+
+                        {/* Sub-Questions */}
+                        {subs.length > 0 && (
+                          <Box mb={2}>
+                            <Text
+                              fontSize="xs"
+                              fontWeight="600"
+                              color="gray.500"
+                              mb={1}
+                            >
+                              Sub-Questions ({subs.length})
+                            </Text>
+                            <VStack gap={1} alignItems="stretch">
+                              {subs.map((sq: IELTSSubQuestion, si: number) => (
+                                <HStack
+                                  key={sq.id || si}
+                                  fontSize="xs"
+                                  gap={2}
+                                  px={2}
+                                  py={1}
+                                  bg="gray.50"
+                                  _dark={{ bg: "gray.700" }}
+                                  rounded="sm"
                                 >
-                                  <HStack>
-                                    <Badge
-                                      bg={tc.bg}
-                                      color={tc.color}
-                                      fontSize="10px"
-                                      fontWeight="700"
-                                      textTransform="uppercase"
-                                      px={2}
-                                      rounded="sm"
-                                      variant="plain"
-                                    >
-                                      {ct.type}
-                                    </Badge>
-                                    <Text fontSize="sm" fontWeight="600">
-                                      {ct.title || "Untitled"}
-                                    </Text>
-                                  </HStack>
-                                  <IconButton
-                                    size="xs"
-                                    colorPalette="red"
-                                    variant="ghost"
-                                    onClick={() => handleDeleteContent(ct.id)}
-                                    aria-label="Remove content"
+                                  <Text
+                                    fontWeight="600"
+                                    color="gray.600"
+                                    flexShrink={0}
                                   >
-                                    <Trash2 size={14} />
-                                  </IconButton>
-                                </Flex>
-                                {ct.condition && (
-                                  <Text fontSize="xs" color="gray.500">
-                                    {truncate(ct.condition, 120)}
+                                    #{sq.questionNumber || si + 1}
                                   </Text>
-                                )}
-                                {ct.choices && ct.choices.length > 0 && (
-                                  <Text fontSize="xs" color="gray.400" mt={1}>
-                                    Options:{" "}
-                                    {ct.choices.map((o) => o.label).join(", ")}
+                                  <Text
+                                    flex="1"
+                                    color="gray.700"
+                                    _dark={{ color: "gray.300" }}
+                                  >
+                                    {truncate(sq.questionText, 80)}
                                   </Text>
-                                )}
-                                {ct.mcqQuestions &&
-                                  ct.mcqQuestions.length > 0 && (
-                                    <Text fontSize="xs" color="gray.400" mt={1}>
-                                      {ct.mcqQuestions.length} MCQ(s)
-                                    </Text>
+                                  {sq.correctAnswer && (
+                                    <Badge
+                                      colorPalette="green"
+                                      variant="subtle"
+                                      fontSize="10px"
+                                    >
+                                      {truncate(sq.correctAnswer, 30)}
+                                    </Badge>
                                   )}
-                              </Box>
-                            );
-                          })}
-                        </VStack>
-                      )}
-                    </Box>
-                  )}
-                </Box>
-              ))}
+                                </HStack>
+                              ))}
+                            </VStack>
+                          </Box>
+                        )}
+
+                        {/* Options */}
+                        {opts.length > 0 && (
+                          <Box>
+                            <Text
+                              fontSize="xs"
+                              fontWeight="600"
+                              color="gray.500"
+                              mb={1}
+                            >
+                              Options ({opts.length})
+                            </Text>
+                            <HStack gap={2} flexWrap="wrap">
+                              {opts.map(
+                                (opt: IELTSQuestionOption, oi: number) => (
+                                  <Badge
+                                    key={opt.id || oi}
+                                    colorPalette={
+                                      opt.isCorrect ? "green" : "gray"
+                                    }
+                                    variant="subtle"
+                                    fontSize="10px"
+                                  >
+                                    {opt.optionKey}:{" "}
+                                    {truncate(opt.optionText, 40)}
+                                  </Badge>
+                                ),
+                              )}
+                            </HStack>
+                          </Box>
+                        )}
+
+                        {subs.length === 0 && opts.length === 0 && (
+                          <Text fontSize="sm" color="gray.400" mt={1}>
+                            No sub-questions or options.
+                          </Text>
+                        )}
+                      </Box>
+                    )}
+                  </Box>
+                );
+              })}
             </VStack>
           )}
         </Box>
@@ -554,9 +430,8 @@ export default function QuestionsManager({
         isOpen={modalOpen}
         onClose={() => {
           setModalOpen(false);
-          setTargetQuestionId(null);
         }}
-        onSave={handleSaveContent}
+        onSave={handleSaveQuestion}
       />
     </Box>
   );

@@ -3,6 +3,7 @@
 import {
   Box,
   Button,
+  Flex,
   Heading,
   HStack,
   Input,
@@ -22,14 +23,17 @@ import { toaster } from "@/components/ui/toaster";
 import type { PageId, IELTSTest } from "./types";
 
 interface WritingFormProps {
+  editId?: string | null;
   prefillTestId?: string;
   onNavigate: (page: PageId, data?: Record<string, string>) => void;
 }
 
 export default function WritingForm({
+  editId,
   prefillTestId,
   onNavigate,
 }: WritingFormProps) {
+  const isEdit = !!editId;
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
@@ -45,6 +49,7 @@ export default function WritingForm({
 
   const [testId, setTestId] = useState(prefillTestId || "");
   const [saving, setSaving] = useState(false);
+  const [loadingData, setLoadingData] = useState(!!editId);
   const [tests, setTests] = useState<IELTSTest[]>([]);
   const [loadingTests, setLoadingTests] = useState(true);
 
@@ -59,6 +64,24 @@ export default function WritingForm({
       .finally(() => setLoadingTests(false));
   }, []);
 
+  useEffect(() => {
+    if (!editId) return;
+    setLoadingData(true);
+    ieltsWritingAPI
+      .getById(editId)
+      .then((r: { title?: string; description?: string; test_id?: string }) => {
+        setTitle(r.title || "");
+        setDescription(r.description || "");
+        descriptionEditor?.commands.setContent(r.description || "");
+        setTestId(r.test_id || "");
+      })
+      .catch(() => {
+        toaster.error({ title: "Failed to load writing" });
+      })
+      .finally(() => setLoadingData(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editId]);
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -67,8 +90,13 @@ export default function WritingForm({
         description: description || undefined,
         test_id: testId || undefined,
       };
-      const r = await ieltsWritingAPI.create(body);
-      toaster.success({ title: `Writing created! ID: ${r.id}` });
+      if (isEdit) {
+        await ieltsWritingAPI.update(editId, body);
+        toaster.success({ title: "Writing updated!" });
+      } else {
+        const r = await ieltsWritingAPI.create(body);
+        toaster.success({ title: `Writing created! ID: ${r.id}` });
+      }
       onNavigate("writings");
     } catch (e: unknown) {
       toaster.error({ title: "Error", description: (e as Error).message });
@@ -76,6 +104,13 @@ export default function WritingForm({
       setSaving(false);
     }
   };
+
+  if (loadingData)
+    return (
+      <Flex justifyContent="center" py={12}>
+        <Spinner size="lg" color="#4f46e5" />
+      </Flex>
+    );
 
   return (
     <Box>
@@ -93,7 +128,7 @@ export default function WritingForm({
         <Text color="gray.300" _dark={{ color: "gray.600" }}>
           /
         </Text>
-        <Text>Create Writing</Text>
+        <Text>{isEdit ? "Edit Writing" : "Create Writing"}</Text>
       </HStack>
 
       <Box
@@ -105,7 +140,7 @@ export default function WritingForm({
       >
         <Box px={5} py={3.5} borderBottomWidth="1px">
           <Heading size="sm" fontWeight="600">
-            Create Writing Section
+            {isEdit ? "Edit Writing Section" : "Create Writing Section"}
           </Heading>
         </Box>
         <Box px={5} py={5}>
@@ -140,7 +175,10 @@ export default function WritingForm({
               >
                 Description
               </Text>
-              <RichTextEditor.Root editor={descriptionEditor} css={{ "--content-min-height": "60px" }}>
+              <RichTextEditor.Root
+                editor={descriptionEditor}
+                css={{ "--content-min-height": "60px" }}
+              >
                 <RichTextEditor.Toolbar>
                   <RichTextEditor.ControlGroup>
                     <Control.Bold />
@@ -204,7 +242,7 @@ export default function WritingForm({
                 loading={saving}
                 size="sm"
               >
-                <Save size={14} /> Save Writing
+                <Save size={14} /> {isEdit ? "Update Writing" : "Save Writing"}
               </Button>
               <Button
                 variant="outline"

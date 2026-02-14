@@ -9,7 +9,6 @@ import {
   Input,
   NativeSelect,
   Text,
-  Textarea,
   VStack,
   Spinner,
 } from "@chakra-ui/react";
@@ -22,7 +21,7 @@ import TextAlign from "@tiptap/extension-text-align";
 import { Control, RichTextEditor } from "@/components/ui/rich-text-editor";
 import { ieltsReadingPartsAPI, ieltsReadingAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
-import type { PageId, IELTSReading } from "./types";
+import type { PageId, IELTSReading, DifficultyLevel } from "./types";
 
 interface ReadingPartFormProps {
   editId?: string | null;
@@ -38,18 +37,21 @@ export default function ReadingPartForm({
   const [readingId, setReadingId] = useState(prefillReadingId || "");
   const [part, setPart] = useState("PART_1");
   const [title, setTitle] = useState("");
-  const [passage, setPassage] = useState("");
-  const [answers, setAnswers] = useState("");
+  const [content, setContent] = useState("");
+  const [timeLimitMinutes, setTimeLimitMinutes] = useState("");
+  const [difficulty, setDifficulty] = useState<DifficultyLevel>("MEDIUM");
+  const [isActive, setIsActive] = useState(true);
+  const [totalQuestions, setTotalQuestions] = useState("");
 
-  const passageEditor = useEditor({
+  const contentEditor = useEditor({
     extensions: [
       StarterKit,
       Underline,
       TextAlign.configure({ types: ["paragraph", "heading"] }),
     ],
-    content: passage,
+    content: content,
     onUpdate({ editor }) {
-      setPassage(editor.getHTML());
+      setContent(editor.getHTML());
     },
     shouldRerenderOnTransaction: true,
     immediatelyRender: false,
@@ -80,12 +82,16 @@ export default function ReadingPartForm({
           setReadingId((p.reading_id as string) || "");
           setPart((p.part as string) || "PART_1");
           setTitle((p.title as string) || "");
-          const passageVal = (p.passage as string) || "";
-          setPassage(passageVal);
-          if (passageEditor) {
-            passageEditor.commands.setContent(passageVal);
+          const contentVal = (p.content as string) || "";
+          setContent(contentVal);
+          if (contentEditor) {
+            contentEditor.commands.setContent(contentVal);
           }
-          setAnswers(p.answers ? JSON.stringify(p.answers, null, 2) : "");
+          if (p.timeLimitMinutes)
+            setTimeLimitMinutes(String(p.timeLimitMinutes));
+          if (p.difficulty) setDifficulty(p.difficulty as DifficultyLevel);
+          if (p.isActive !== undefined) setIsActive(p.isActive as boolean);
+          if (p.totalQuestions) setTotalQuestions(String(p.totalQuestions));
         })
         .catch((e: Error) =>
           toaster.error({ title: "Error", description: e.message }),
@@ -97,23 +103,16 @@ export default function ReadingPartForm({
   const handleSave = async () => {
     setSaving(true);
     try {
-      let parsedAnswers = null;
-      if (answers.trim()) {
-        try {
-          parsedAnswers = JSON.parse(answers);
-        } catch {
-          toaster.error({ title: "Invalid JSON in answers" });
-          setSaving(false);
-          return;
-        }
-      }
-      const body = {
+      const body: Record<string, unknown> = {
         reading_id: readingId,
         part,
         title: title || null,
-        passage: passage || null,
-        answers: parsedAnswers,
+        content: content || null,
+        difficulty,
+        isActive,
       };
+      if (timeLimitMinutes) body.timeLimitMinutes = parseInt(timeLimitMinutes);
+      if (totalQuestions) body.totalQuestions = parseInt(totalQuestions);
 
       if (isEdit) {
         await ieltsReadingPartsAPI.update(editId!, body);
@@ -262,10 +261,10 @@ export default function ReadingPartForm({
                 textTransform="uppercase"
                 letterSpacing="0.3px"
               >
-                Passage
+                Content (Passage)
               </Text>
               <RichTextEditor.Root
-                editor={passageEditor}
+                editor={contentEditor}
                 css={{ "--content-min-height": "200px" }}
               >
                 <RichTextEditor.Toolbar>
@@ -299,25 +298,91 @@ export default function ReadingPartForm({
               </RichTextEditor.Root>
             </Box>
 
-            <Box>
-              <Text
-                fontSize="xs"
-                fontWeight="600"
-                color="gray.600"
-                _dark={{ color: "gray.400" }}
-                mb={1}
-                textTransform="uppercase"
-                letterSpacing="0.3px"
-              >
-                Answer Key (JSON)
-              </Text>
-              <Textarea
-                placeholder='{"1":"answer1","2":"answer2"}'
-                value={answers}
-                onChange={(e) => setAnswers(e.target.value)}
-                rows={3}
+            <Flex gap={3} direction={{ base: "column", md: "row" }}>
+              <Box flex="1">
+                <Text
+                  fontSize="xs"
+                  fontWeight="600"
+                  color="gray.600"
+                  _dark={{ color: "gray.400" }}
+                  mb={1}
+                  textTransform="uppercase"
+                  letterSpacing="0.3px"
+                >
+                  Time Limit (minutes)
+                </Text>
+                <Input
+                  type="number"
+                  placeholder="e.g. 20"
+                  value={timeLimitMinutes}
+                  onChange={(e) => setTimeLimitMinutes(e.target.value)}
+                />
+              </Box>
+              <Box flex="1">
+                <Text
+                  fontSize="xs"
+                  fontWeight="600"
+                  color="gray.600"
+                  _dark={{ color: "gray.400" }}
+                  mb={1}
+                  textTransform="uppercase"
+                  letterSpacing="0.3px"
+                >
+                  Difficulty
+                </Text>
+                <NativeSelect.Root size="sm" w="full">
+                  <NativeSelect.Field
+                    value={difficulty}
+                    onChange={(e) =>
+                      setDifficulty(e.currentTarget.value as DifficultyLevel)
+                    }
+                  >
+                    <option value="EASY">Easy</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="HARD">Hard</option>
+                  </NativeSelect.Field>
+                  <NativeSelect.Indicator />
+                </NativeSelect.Root>
+              </Box>
+              <Box flex="1">
+                <Text
+                  fontSize="xs"
+                  fontWeight="600"
+                  color="gray.600"
+                  _dark={{ color: "gray.400" }}
+                  mb={1}
+                  textTransform="uppercase"
+                  letterSpacing="0.3px"
+                >
+                  Total Questions
+                </Text>
+                <Input
+                  type="number"
+                  placeholder="e.g. 13"
+                  value={totalQuestions}
+                  onChange={(e) => setTotalQuestions(e.target.value)}
+                />
+              </Box>
+            </Flex>
+
+            <Flex alignItems="center" gap={2}>
+              <input
+                type="checkbox"
+                checked={isActive}
+                onChange={(e) => setIsActive(e.target.checked)}
+                id="is-active"
               />
-            </Box>
+              <label
+                htmlFor="is-active"
+                style={{
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                }}
+              >
+                Active
+              </label>
+            </Flex>
 
             <Flex justifyContent="space-between" alignItems="center" pt={2}>
               <HStack gap={2}>

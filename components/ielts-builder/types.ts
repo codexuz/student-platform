@@ -1,42 +1,87 @@
-// IELTS Test Builder Types
+// IELTS Test Builder Types — aligned with backend API
 
-export type QuestionType =
-  | "completion"
-  | "multiple-choice"
-  | "multi-select"
-  | "selection"
-  | "draggable-selection"
-  | "matching-information";
+// ─── Question Types (17 IELTS question types) ─────────────────────────────
 
-export interface QuestionOption {
-  value: string;
-  label: string;
-  order: number;
+export type IELTSQuestionType =
+  | "NOTE_COMPLETION"
+  | "TRUE_FALSE_NOT_GIVEN"
+  | "YES_NO_NOT_GIVEN"
+  | "MATCHING_INFORMATION"
+  | "MATCHING_HEADINGS"
+  | "SUMMARY_COMPLETION"
+  | "SUMMARY_COMPLETION_DRAG_DROP"
+  | "MULTIPLE_CHOICE"
+  | "SENTENCE_COMPLETION"
+  | "SHORT_ANSWER"
+  | "TABLE_COMPLETION"
+  | "FLOW_CHART_COMPLETION"
+  | "DIAGRAM_LABELLING"
+  | "MATCHING_FEATURES"
+  | "MATCHING_SENTENCE_ENDINGS"
+  | "PLAN_MAP_LABELLING"
+  | "MULTIPLE_ANSWER";
+
+export type DifficultyLevel = "EASY" | "MEDIUM" | "HARD";
+
+// ─── Question Option (Choice) ──────────────────────────────────────────────
+
+export interface IELTSQuestionOption {
+  id?: string;
+  question_id?: string;
+  optionKey: string; // e.g. "A", "B", "C", "D"
+  optionText: string;
+  isCorrect: boolean;
+  orderIndex: number;
+  explanation?: string;
+  fromPassage?: string;
 }
 
-export interface MCQQuestion {
-  question: string;
-  order: number;
-  options: QuestionOption[];
+// ─── Sub Question ──────────────────────────────────────────────────────────
+
+export interface IELTSSubQuestion {
+  id?: string;
+  question_id?: string;
+  questionNumber?: number;
+  questionText?: string;
+  points?: number;
+  correctAnswer?: string;
+  explanation?: string;
+  fromPassage?: string;
+  order?: number;
 }
 
-export interface QuestionContent {
-  type: QuestionType;
-  title: string;
-  condition: string | null;
-  content: string | null;
-  limit: number | null;
-  showOptions: boolean;
-  optionsTitle: string | null;
-  order: number;
-  options: QuestionOption[];
-  multipleChoiceQuestions: MCQQuestion[];
+// ─── Question (group-level) ────────────────────────────────────────────────
+
+export interface IELTSQuestion {
+  id?: string;
+  reading_part_id?: string;
+  listening_part_id?: string;
+  questionNumber?: number;
+  type?: IELTSQuestionType;
+  questionText?: string;
+  instruction?: string;
+  context?: string;
+  headingOptions?: Record<string, string>;
+  tableData?: { headers: string[]; rows: string[][] };
+  points?: number;
+  isActive?: boolean;
+  explanation?: string;
+  fromPassage?: string;
+  // Nested relations
+  questions?: IELTSSubQuestion[]; // sub-questions
+  options?: IELTSQuestionOption[]; // choices
 }
 
-export interface QuestionGroup {
-  number_of_questions: number;
-  contents: QuestionContent[];
+// ─── Audio ─────────────────────────────────────────────────────────────────
+
+export interface AudioInfo {
+  id?: string;
+  url: string;
+  file_name?: string;
+  duration?: number;
 }
+
+// ─── Test ──────────────────────────────────────────────────────────────────
 
 export interface IELTSTest {
   id: string;
@@ -44,10 +89,15 @@ export interface IELTSTest {
   mode: "practice" | "mock";
   status: "draft" | "published";
   category?: string;
+  created_by?: string;
+  createdAt?: string;
+  updatedAt?: string;
   readings?: IELTSReading[];
   listenings?: IELTSListening[];
   writings?: IELTSWriting[];
 }
+
+// ─── Reading ───────────────────────────────────────────────────────────────
 
 export interface IELTSReading {
   id: string;
@@ -61,16 +111,15 @@ export interface IELTSReadingPart {
   reading_id: string;
   part: "PART_1" | "PART_2" | "PART_3";
   title?: string;
-  passage?: string;
-  answers?: Record<string, string>;
-  questions?: QuestionGroup[];
+  content?: string; // reading passage (HTML)
+  timeLimitMinutes?: number;
+  difficulty?: DifficultyLevel;
+  isActive?: boolean;
+  totalQuestions?: number;
+  questions?: IELTSQuestion[];
 }
 
-export interface AudioInfo {
-  url: string;
-  file_name?: string;
-  duration?: number;
-}
+// ─── Listening ─────────────────────────────────────────────────────────────
 
 export interface IELTSListening {
   id: string;
@@ -78,6 +127,7 @@ export interface IELTSListening {
   description?: string;
   test_id: string;
   full_audio_url?: string;
+  is_active?: boolean;
   parts?: IELTSListeningPart[];
 }
 
@@ -86,16 +136,23 @@ export interface IELTSListeningPart {
   listening_id: string;
   part: "PART_1" | "PART_2" | "PART_3" | "PART_4";
   title?: string;
+  audio_id?: string;
   audio?: AudioInfo;
-  answers?: Record<string, string>;
-  questions?: QuestionGroup[];
+  timeLimitMinutes?: number;
+  difficulty?: DifficultyLevel;
+  isActive?: boolean;
+  totalQuestions?: number;
+  questions?: IELTSQuestion[];
 }
+
+// ─── Writing ───────────────────────────────────────────────────────────────
 
 export interface IELTSWriting {
   id: string;
   title: string;
   description?: string;
   test_id: string;
+  is_active?: boolean;
   tasks?: IELTSWritingTask[];
 }
 
@@ -104,12 +161,13 @@ export interface IELTSWritingTask {
   writing_id: string;
   task: "TASK_1" | "TASK_2";
   prompt?: string;
-  instructions?: string;
+  image_url?: string;
   min_words?: number;
   suggested_time?: number;
 }
 
-// Navigation page IDs
+// ─── Navigation page IDs ──────────────────────────────────────────────────
+
 export type PageId =
   | "tests"
   | "test-form"

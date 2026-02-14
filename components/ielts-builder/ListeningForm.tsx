@@ -27,14 +27,17 @@ import FileUploadModal from "./FileUploadModal";
 import AudioPlayer from "./AudioPlayer";
 
 interface ListeningFormProps {
+  editId?: string | null;
   prefillTestId?: string;
   onNavigate: (page: PageId, data?: Record<string, string>) => void;
 }
 
 export default function ListeningForm({
+  editId,
   prefillTestId,
   onNavigate,
 }: ListeningFormProps) {
+  const isEdit = !!editId;
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
@@ -51,6 +54,7 @@ export default function ListeningForm({
   const [testId, setTestId] = useState(prefillTestId || "");
   const [fullAudio, setFullAudio] = useState("");
   const [saving, setSaving] = useState(false);
+  const [loadingData, setLoadingData] = useState(!!editId);
   const [tests, setTests] = useState<IELTSTest[]>([]);
   const [loadingTests, setLoadingTests] = useState(true);
   const [showAudioUpload, setShowAudioUpload] = useState(false);
@@ -66,6 +70,32 @@ export default function ListeningForm({
       .finally(() => setLoadingTests(false));
   }, []);
 
+  useEffect(() => {
+    if (!editId) return;
+    setLoadingData(true);
+    ieltsListeningAPI
+      .getById(editId)
+      .then(
+        (r: {
+          title?: string;
+          description?: string;
+          test_id?: string;
+          full_audio_url?: string;
+        }) => {
+          setTitle(r.title || "");
+          setDescription(r.description || "");
+          descriptionEditor?.commands.setContent(r.description || "");
+          setTestId(r.test_id || "");
+          setFullAudio(r.full_audio_url || "");
+        },
+      )
+      .catch(() => {
+        toaster.error({ title: "Failed to load listening" });
+      })
+      .finally(() => setLoadingData(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editId]);
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -75,8 +105,13 @@ export default function ListeningForm({
         description: description || undefined,
         full_audio_url: fullAudio || undefined,
       };
-      const r = await ieltsListeningAPI.create(body);
-      toaster.success({ title: `Listening created! ID: ${r.id}` });
+      if (isEdit) {
+        await ieltsListeningAPI.update(editId, body);
+        toaster.success({ title: "Listening updated!" });
+      } else {
+        const r = await ieltsListeningAPI.create(body);
+        toaster.success({ title: `Listening created! ID: ${r.id}` });
+      }
       onNavigate("listenings");
     } catch (e: unknown) {
       toaster.error({ title: "Error", description: (e as Error).message });
@@ -84,6 +119,13 @@ export default function ListeningForm({
       setSaving(false);
     }
   };
+
+  if (loadingData)
+    return (
+      <Flex justifyContent="center" py={12}>
+        <Spinner size="lg" color="#4f46e5" />
+      </Flex>
+    );
 
   return (
     <Box>
@@ -101,7 +143,7 @@ export default function ListeningForm({
         <Text color="gray.300" _dark={{ color: "gray.600" }}>
           /
         </Text>
-        <Text>Create Listening</Text>
+        <Text>{isEdit ? "Edit Listening" : "Create Listening"}</Text>
       </HStack>
 
       <Box
@@ -113,7 +155,7 @@ export default function ListeningForm({
       >
         <Box px={5} py={3.5} borderBottomWidth="1px">
           <Heading size="sm" fontWeight="600">
-            Create Listening Section
+            {isEdit ? "Edit Listening Section" : "Create Listening Section"}
           </Heading>
         </Box>
         <Box px={5} py={5}>
@@ -254,7 +296,8 @@ export default function ListeningForm({
                 loading={saving}
                 size="sm"
               >
-                <Save size={14} /> Save Listening
+                <Save size={14} />{" "}
+                {isEdit ? "Update Listening" : "Save Listening"}
               </Button>
               <Button
                 variant="outline"
