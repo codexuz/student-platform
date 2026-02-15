@@ -25,14 +25,17 @@ export default function SentenceCompletion({
       </Heading>
 
       {question.instruction && (
-        <Text
+        <Box
           fontSize="sm"
           mb={4}
           color="gray.700"
           _dark={{ color: "gray.300" }}
-        >
-          {question.instruction}
-        </Text>
+          dangerouslySetInnerHTML={{ __html: question.instruction }}
+          css={{
+            "& p": { marginBottom: "0.25rem" },
+            "& strong": { fontWeight: "bold" },
+          }}
+        />
       )}
 
       <VStack align="stretch" gap={4}>

@@ -36,14 +36,17 @@ export default function MatchingHeadings({
       </Heading>
 
       {question.instruction && (
-        <Text
+        <Box
           fontSize="sm"
           mb={4}
           color="gray.700"
           _dark={{ color: "gray.300" }}
-        >
-          {question.instruction}
-        </Text>
+          dangerouslySetInnerHTML={{ __html: question.instruction }}
+          css={{
+            "& p": { marginBottom: "0.25rem" },
+            "& strong": { fontWeight: "bold" },
+          }}
+        />
       )}
 
       {/* Heading list */}
@@ -126,12 +129,24 @@ export default function MatchingHeadings({
   );
 }
 
+function romanToInt(roman: string): number {
+  const map: Record<string, number> = { i: 1, v: 5, x: 10, l: 50, c: 100 };
+  const s = roman.toLowerCase();
+  let total = 0;
+  for (let i = 0; i < s.length; i++) {
+    const curr = map[s[i]] ?? 0;
+    const next = map[s[i + 1]] ?? 0;
+    total += curr < next ? -curr : curr;
+  }
+  return total;
+}
+
 function deriveHeadings(
   question: QuestionComponentProps["question"],
 ): [string, string][] {
   if (question.headingOptions) {
-    return Object.entries(question.headingOptions).sort(([a], [b]) =>
-      a.localeCompare(b),
+    return Object.entries(question.headingOptions).sort(
+      ([a], [b]) => romanToInt(a) - romanToInt(b),
     );
   }
   if (question.options?.length) {

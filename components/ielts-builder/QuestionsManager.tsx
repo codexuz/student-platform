@@ -130,6 +130,12 @@ export default function QuestionsManager({
       if (questionData.options?.length) {
         body.options = questionData.options;
       }
+      if (questionData.headingOptions) {
+        body.headingOptions = questionData.headingOptions;
+      }
+      if (questionData.tableData) {
+        body.tableData = questionData.tableData;
+      }
 
       if (editingQuestion?.id) {
         await ieltsQuestionsAPI.update(editingQuestion.id, body);
