@@ -12,7 +12,7 @@ import {
   VStack,
   Icon,
   Spinner,
-  Image,
+  Image as ChakraImage,
 } from "@chakra-ui/react";
 import { Save, Upload, X } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -287,7 +287,7 @@ export default function WritingTaskForm({
                 </Text>
                 {imageUrl ? (
                   <Box position="relative" display="inline-block">
-                    <Image
+                    <ChakraImage
                       src={imageUrl}
                       alt="Task image"
                       maxH="150px"
