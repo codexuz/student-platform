@@ -61,9 +61,15 @@ export default function YesNoNotGiven({
                 >
                   {qNum}
                 </Circle>
-                <Text fontSize="sm" lineHeight="tall">
-                  {sub.questionText}
-                </Text>
+                <Box
+                  fontSize="sm"
+                  lineHeight="tall"
+                  dangerouslySetInnerHTML={{ __html: sub.questionText ?? "" }}
+                  css={{
+                    "& p": { marginBottom: "0.25rem" },
+                    "& strong": { fontWeight: "bold" },
+                  }}
+                />
               </HStack>
 
               <VStack align="stretch" gap={2} pl={10}>

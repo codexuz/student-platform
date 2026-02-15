@@ -124,9 +124,15 @@ function SingleQuestion({
         >
           {questionNumber}
         </Circle>
-        <Text fontSize="sm" lineHeight="tall">
-          {questionText}
-        </Text>
+        <Box
+          fontSize="sm"
+          lineHeight="tall"
+          dangerouslySetInnerHTML={{ __html: questionText }}
+          css={{
+            "& p": { marginBottom: "0.25rem" },
+            "& strong": { fontWeight: "bold" },
+          }}
+        />
       </HStack>
 
       {/* Options */}

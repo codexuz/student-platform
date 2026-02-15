@@ -103,9 +103,17 @@ export default function MultipleAnswer({
       )}
 
       {questionText && (
-        <Text fontSize="sm" mb={3} lineHeight="tall" fontWeight="medium">
-          {questionText}
-        </Text>
+        <Box
+          fontSize="sm"
+          mb={3}
+          lineHeight="tall"
+          fontWeight="medium"
+          dangerouslySetInnerHTML={{ __html: questionText }}
+          css={{
+            "& p": { marginBottom: "0.25rem" },
+            "& strong": { fontWeight: "bold" },
+          }}
+        />
       )}
 
       <VStack align="stretch" gap={0}>
@@ -199,7 +207,7 @@ export default function MultipleAnswer({
 
                 {/* label */}
                 <Text fontSize="sm" lineHeight="tall">
-                  {opt.optionText || opt.optionKey}
+                  {opt.optionKey} {opt.optionText}
                 </Text>
               </HStack>
             );

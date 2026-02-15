@@ -77,9 +77,15 @@ export default function ShortAnswer({
               </Circle>
               <Box flex={1}>
                 {sub.questionText && (
-                  <Text fontSize="sm" mb={2}>
-                    {sub.questionText}
-                  </Text>
+                  <Box
+                    fontSize="sm"
+                    mb={2}
+                    dangerouslySetInnerHTML={{ __html: sub.questionText }}
+                    css={{
+                      "& p": { marginBottom: "0.25rem" },
+                      "& strong": { fontWeight: "bold" },
+                    }}
+                  />
                 )}
                 <Input
                   size="sm"
