@@ -18,6 +18,7 @@ import { useState, useEffect } from "react";
 import { useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
+import Image from "@tiptap/extension-image";
 import { Control, RichTextEditor } from "@/components/ui/rich-text-editor";
 import { ieltsListeningAPI } from "@/lib/ielts-api";
 import { ieltsTestsAPI } from "@/lib/ielts-api";
@@ -42,7 +43,7 @@ export default function ListeningForm({
   const [description, setDescription] = useState("");
 
   const descriptionEditor = useEditor({
-    extensions: [StarterKit, Underline],
+    extensions: [StarterKit, Underline, Image],
     content: description,
     onUpdate({ editor }) {
       setDescription(editor.getHTML());
@@ -207,6 +208,9 @@ export default function ListeningForm({
                   <RichTextEditor.ControlGroup>
                     <Control.Undo />
                     <Control.Redo />
+                  </RichTextEditor.ControlGroup>
+                  <RichTextEditor.ControlGroup>
+                    <Control.ImageControl />
                   </RichTextEditor.ControlGroup>
                 </RichTextEditor.Toolbar>
                 <RichTextEditor.Content />

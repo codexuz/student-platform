@@ -20,6 +20,7 @@ import { useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
+import Image from "@tiptap/extension-image";
 import { Control, RichTextEditor } from "@/components/ui/rich-text-editor";
 import { ieltsWritingTasksAPI, ieltsWritingAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
@@ -46,6 +47,7 @@ export default function WritingTaskForm({
     extensions: [
       StarterKit,
       Underline,
+      Image,
       TextAlign.configure({ types: ["paragraph", "heading"] }),
     ],
     content: prompt,
@@ -261,6 +263,9 @@ export default function WritingTaskForm({
                     <RichTextEditor.ControlGroup>
                       <Control.Undo />
                       <Control.Redo />
+                    </RichTextEditor.ControlGroup>
+                    <RichTextEditor.ControlGroup>
+                      <Control.ImageControl />
                     </RichTextEditor.ControlGroup>
                   </RichTextEditor.Toolbar>
                   <RichTextEditor.Content />

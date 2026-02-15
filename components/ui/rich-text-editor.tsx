@@ -31,6 +31,13 @@ const proseMirrorBaseCss = defineStyle({
     px: "var(--content-padding-x)",
     py: "var(--content-padding-y)",
     "& > * + *": { marginTop: "0.75em" },
+    "& img": {
+      maxWidth: "100%",
+      height: "auto",
+      borderRadius: "8px",
+      marginBlock: "0.5em",
+      cursor: "default",
+    },
     "& h1": {
       fontSize: "2.15em",
       letterSpacing: "-0.02em",

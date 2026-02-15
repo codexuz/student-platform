@@ -29,6 +29,7 @@ import {
   LuHeading3,
   LuHeading4,
   LuHighlighter,
+  LuImage,
   LuItalic,
   LuLink,
   LuLink2,
@@ -564,4 +565,26 @@ export const Highlight = createSwatchControl({
   icon: LuHighlighter,
   showRemove: true,
   onRemove: (editor) => editor.chain().focus().unsetMark("highlight").run(),
+});
+
+export const ImageControl = createBooleanControl({
+  label: "Image",
+  icon: LuImage,
+  command: (editor) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const src = reader.result as string;
+        editor.chain().focus().setImage({ src }).run();
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  },
+  getVariant: () => "ghost",
 });

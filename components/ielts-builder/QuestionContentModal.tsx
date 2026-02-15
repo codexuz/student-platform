@@ -18,6 +18,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
+import Image from "@tiptap/extension-image";
 import { Control, RichTextEditor } from "@/components/ui/rich-text-editor";
 import type {
   IELTSQuestionType,
@@ -259,7 +260,7 @@ export default function QuestionContentModal({
   );
 
   const instructionEditor = useEditor({
-    extensions: [StarterKit, Underline],
+    extensions: [StarterKit, Underline, Image],
     content: instruction,
     onUpdate({ editor }) {
       setInstruction(editor.getHTML());
@@ -269,7 +270,7 @@ export default function QuestionContentModal({
   });
 
   const questionTextEditor = useEditor({
-    extensions: [StarterKit, Underline],
+    extensions: [StarterKit, Underline, Image],
     content: questionText,
     onUpdate({ editor }) {
       setQuestionText(editor.getHTML());
@@ -732,6 +733,9 @@ export default function QuestionContentModal({
                     <Control.Undo />
                     <Control.Redo />
                   </RichTextEditor.ControlGroup>
+                  <RichTextEditor.ControlGroup>
+                    <Control.ImageControl />
+                  </RichTextEditor.ControlGroup>
                 </RichTextEditor.Toolbar>
                 <RichTextEditor.Content />
               </RichTextEditor.Root>
@@ -767,6 +771,9 @@ export default function QuestionContentModal({
                   <RichTextEditor.ControlGroup>
                     <Control.Undo />
                     <Control.Redo />
+                  </RichTextEditor.ControlGroup>
+                  <RichTextEditor.ControlGroup>
+                    <Control.ImageControl />
                   </RichTextEditor.ControlGroup>
                 </RichTextEditor.Toolbar>
                 <RichTextEditor.Content />
