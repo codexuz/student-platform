@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 
+import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
@@ -74,6 +75,7 @@ function PracticeContent() {
   const [readingPart, setReadingPart] = useState<string>("");
   const [testCategory, setTestCategory] = useState<string>("");
   const { user } = useAuth();
+  const router = useRouter();
   const userName = user?.first_name
     ? `${user.first_name}`.trim()
     : user?.username || "User";
@@ -280,13 +282,25 @@ function PracticeContent() {
                 gap={6}
                 mt={8}
               >
-                {items.map((item) => (
+                {items.map((item) => {
+                  const itemId = item.id || item._id;
+                  const handleClick = () => {
+                    if (activeCategory === "full-tests") {
+                      router.push(`/practice/test/${itemId}`);
+                    } else if (activeCategory === "reading") {
+                      router.push(`/practice/reading/${itemId}`);
+                    }
+                    // TODO: listening, writing routes
+                  };
+
+                  return (
                   <Card.Root
-                    key={item.id || item._id}
+                    key={itemId}
                     cursor="pointer"
                     transition="all 0.2s"
                     borderRadius="2xl"
                     overflow="hidden"
+                    onClick={handleClick}
                     _hover={{
                       transform: "translateY(-4px)",
                       shadow: "lg",
@@ -339,7 +353,8 @@ function PracticeContent() {
                       </VStack>
                     </Card.Body>
                   </Card.Root>
-                ))}
+                  );
+                })}
               </Grid>
 
               {/* Pagination */}

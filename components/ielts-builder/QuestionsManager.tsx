@@ -13,19 +13,14 @@ import {
   IconButton,
   Spinner,
 } from "@chakra-ui/react";
-import { Plus, Trash2, ChevronDown } from "lucide-react";
-import {
-  ieltsQuestionsAPI,
-  ieltsSubQuestionsAPI,
-  ieltsQuestionChoicesAPI,
-} from "@/lib/ielts-api";
+import { Plus, Trash2, ChevronDown, Pencil } from "lucide-react";
+import { ieltsQuestionsAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
 import type {
   PageId,
   IELTSQuestion,
   IELTSSubQuestion,
   IELTSQuestionOption,
-  IELTSQuestionType,
 } from "./types";
 import QuestionContentModal from "./QuestionContentModal";
 
@@ -71,6 +66,9 @@ export default function QuestionsManager({
   const [loading, setLoading] = useState(true);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState<IELTSQuestion | null>(
+    null,
+  );
   const [creatingQuestion, setCreatingQuestion] = useState(false);
 
   const backLabel =
@@ -104,6 +102,7 @@ export default function QuestionsManager({
   /* ── Handlers ───────────────────────────────────────────────────────── */
 
   const openAddQuestion = () => {
+    setEditingQuestion(null);
     setModalOpen(true);
   };
 
@@ -132,12 +131,20 @@ export default function QuestionsManager({
         body.options = questionData.options;
       }
 
-      await ieltsQuestionsAPI.create(body);
-      toaster.success({ title: "Question created!" });
+      if (editingQuestion?.id) {
+        await ieltsQuestionsAPI.update(editingQuestion.id, body);
+        toaster.success({ title: "Question updated!" });
+      } else {
+        await ieltsQuestionsAPI.create(body);
+        toaster.success({ title: "Question created!" });
+      }
+      setEditingQuestion(null);
       fetchQuestions();
     } catch (e) {
       toaster.error({
-        title: "Error creating question",
+        title: editingQuestion?.id
+          ? "Error updating question"
+          : "Error creating question",
         description: (e as Error).message,
       });
     } finally {
@@ -152,6 +159,14 @@ export default function QuestionsManager({
       fetchQuestions();
     } catch {
       toaster.error({ title: "Error deleting question" });
+    }
+  };
+
+  const handleEditQuestion = (questionId: string) => {
+    const q = questions.find((q) => q.id === questionId);
+    if (q) {
+      setEditingQuestion(q);
+      setModalOpen(true);
     }
   };
 
@@ -308,6 +323,15 @@ export default function QuestionsManager({
                       <HStack onClick={(e) => e.stopPropagation()}>
                         <IconButton
                           size="xs"
+                          variant="ghost"
+                          colorPalette="blue"
+                          onClick={() => handleEditQuestion(qId)}
+                          aria-label="Edit question"
+                        >
+                          <Pencil size={14} />
+                        </IconButton>
+                        <IconButton
+                          size="xs"
                           colorPalette="red"
                           variant="ghost"
                           onClick={() => handleDeleteQuestion(qId)}
@@ -321,11 +345,80 @@ export default function QuestionsManager({
                     {/* Question Body */}
                     {!collapsed[qId] && (
                       <Box p={3} borderTopWidth="1px">
+                        {/* Instruction */}
                         {question.instruction && (
-                          <Text fontSize="xs" color="gray.500" mb={2}>
-                            <strong>Instruction:</strong>{" "}
-                            {truncate(question.instruction, 200)}
-                          </Text>
+                          <Box mb={3}>
+                            <Text
+                              fontSize="xs"
+                              fontWeight="700"
+                              color="gray.500"
+                              textTransform="uppercase"
+                              letterSpacing="0.3px"
+                              mb={1}
+                            >
+                              Instruction
+                            </Text>
+                            <Box
+                              fontSize="sm"
+                              color="gray.700"
+                              _dark={{ color: "gray.300", bg: "gray.700" }}
+                              lineHeight="1.6"
+                              px={3}
+                              py={2}
+                              bg="blue.50"
+                              rounded="md"
+                              borderLeftWidth="3px"
+                              borderLeftColor="blue.400"
+                              css={{
+                                "& p": { margin: "0.15em 0" },
+                                "& strong": { fontWeight: 700 },
+                              }}
+                              dangerouslySetInnerHTML={{
+                                __html: question.instruction,
+                              }}
+                            />
+                          </Box>
+                        )}
+
+                        {/* Question Text */}
+                        {question.questionText && (
+                          <Box mb={3}>
+                            <Text
+                              fontSize="xs"
+                              fontWeight="700"
+                              color="gray.500"
+                              textTransform="uppercase"
+                              letterSpacing="0.3px"
+                              mb={1}
+                            >
+                              Question Text
+                            </Text>
+                            <Box
+                              fontSize="sm"
+                              color="gray.700"
+                              _dark={{ color: "gray.300", bg: "gray.700" }}
+                              lineHeight="1.7"
+                              px={3}
+                              py={2}
+                              bg="gray.50"
+                              rounded="md"
+                              borderWidth="1px"
+                              borderColor="gray.200"
+                              css={{
+                                "& p": { margin: "0.25em 0" },
+                                "& ul": {
+                                  paddingLeft: "1.5em",
+                                  margin: "0.25em 0",
+                                },
+                                "& li": { margin: "0.15em 0" },
+                                "& strong": { fontWeight: 700 },
+                                "& em": { fontStyle: "italic" },
+                              }}
+                              dangerouslySetInnerHTML={{
+                                __html: question.questionText,
+                              }}
+                            />
+                          </Box>
                         )}
 
                         {/* Sub-Questions */}
@@ -333,28 +426,36 @@ export default function QuestionsManager({
                           <Box mb={2}>
                             <Text
                               fontSize="xs"
-                              fontWeight="600"
+                              fontWeight="700"
                               color="gray.500"
-                              mb={1}
+                              textTransform="uppercase"
+                              letterSpacing="0.3px"
+                              mb={1.5}
                             >
                               Sub-Questions ({subs.length})
                             </Text>
-                            <VStack gap={1} alignItems="stretch">
+                            <VStack gap={1.5} alignItems="stretch">
                               {subs.map((sq: IELTSSubQuestion, si: number) => (
-                                <HStack
+                                <Flex
                                   key={sq.id || si}
-                                  fontSize="xs"
-                                  gap={2}
-                                  px={2}
-                                  py={1}
+                                  fontSize="sm"
+                                  gap={3}
+                                  px={3}
+                                  py={2}
                                   bg="gray.50"
                                   _dark={{ bg: "gray.700" }}
-                                  rounded="sm"
+                                  rounded="md"
+                                  alignItems="center"
+                                  borderWidth="1px"
+                                  borderColor="gray.100"
                                 >
                                   <Text
-                                    fontWeight="600"
-                                    color="gray.600"
+                                    fontWeight="700"
+                                    color="gray.500"
+                                    fontSize="xs"
                                     flexShrink={0}
+                                    w="28px"
+                                    textAlign="center"
                                   >
                                     #{sq.questionNumber || si + 1}
                                   </Text>
@@ -362,19 +463,32 @@ export default function QuestionsManager({
                                     flex="1"
                                     color="gray.700"
                                     _dark={{ color: "gray.300" }}
+                                    fontSize="sm"
                                   >
-                                    {truncate(sq.questionText, 80)}
+                                    {sq.questionText || "—"}
                                   </Text>
                                   {sq.correctAnswer && (
                                     <Badge
-                                      colorPalette="green"
+                                      colorPalette={
+                                        sq.correctAnswer === "TRUE" ||
+                                        sq.correctAnswer === "YES"
+                                          ? "green"
+                                          : sq.correctAnswer === "FALSE" ||
+                                              sq.correctAnswer === "NO"
+                                            ? "red"
+                                            : sq.correctAnswer === "NOT GIVEN"
+                                              ? "orange"
+                                              : "teal"
+                                      }
                                       variant="subtle"
-                                      fontSize="10px"
+                                      fontSize="11px"
+                                      fontWeight="600"
+                                      px={2}
                                     >
-                                      {truncate(sq.correctAnswer, 30)}
+                                      {sq.correctAnswer}
                                     </Badge>
                                   )}
-                                </HStack>
+                                </Flex>
                               ))}
                             </VStack>
                           </Box>
@@ -385,8 +499,10 @@ export default function QuestionsManager({
                           <Box>
                             <Text
                               fontSize="xs"
-                              fontWeight="600"
+                              fontWeight="700"
                               color="gray.500"
+                              textTransform="uppercase"
+                              letterSpacing="0.3px"
                               mb={1}
                             >
                               Options ({opts.length})
@@ -400,7 +516,8 @@ export default function QuestionsManager({
                                       opt.isCorrect ? "green" : "gray"
                                     }
                                     variant="subtle"
-                                    fontSize="10px"
+                                    fontSize="11px"
+                                    px={2}
                                   >
                                     {opt.optionKey}:{" "}
                                     {truncate(opt.optionText, 40)}
@@ -426,13 +543,17 @@ export default function QuestionsManager({
         </Box>
       </Box>
 
-      <QuestionContentModal
-        isOpen={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-        }}
-        onSave={handleSaveQuestion}
-      />
+      {modalOpen && (
+        <QuestionContentModal
+          isOpen={modalOpen}
+          onClose={() => {
+            setModalOpen(false);
+            setEditingQuestion(null);
+          }}
+          onSave={handleSaveQuestion}
+          editData={editingQuestion}
+        />
+      )}
     </Box>
   );
 }

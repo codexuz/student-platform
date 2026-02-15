@@ -10,7 +10,6 @@ import {
   Input,
   NativeSelect,
   Text,
-  Textarea,
   VStack,
   IconButton,
 } from "@chakra-ui/react";
@@ -31,6 +30,7 @@ interface QuestionContentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (question: IELTSQuestion) => void;
+  editData?: IELTSQuestion | null;
 }
 
 const questionTypes: { value: IELTSQuestionType; label: string }[] = [
@@ -188,24 +188,75 @@ export default function QuestionContentModal({
   isOpen,
   onClose,
   onSave,
+  editData,
 }: QuestionContentModalProps) {
-  const [type, setType] = useState<IELTSQuestionType>("TRUE_FALSE_NOT_GIVEN");
-  const [questionText, setQuestionText] = useState("");
-  const [instruction, setInstruction] = useState(
-    defaultInstructions["TRUE_FALSE_NOT_GIVEN"],
+  const isEdit = !!editData;
+  const [type, setType] = useState<IELTSQuestionType>(
+    editData?.type || "TRUE_FALSE_NOT_GIVEN",
   );
-  const [context, setContext] = useState("");
-  const [questionNumber, setQuestionNumber] = useState("");
-  const [points, setPoints] = useState("1");
-  const [explanation, setExplanation] = useState("");
-  const [fromPassage, setFromPassage] = useState("");
+  const [questionText, setQuestionText] = useState(
+    editData?.questionText || "",
+  );
+  const [instruction, setInstruction] = useState(
+    editData?.instruction ||
+      defaultInstructions[editData?.type || "TRUE_FALSE_NOT_GIVEN"],
+  );
+  const [questionNumber, setQuestionNumber] = useState(
+    editData?.questionNumber ? String(editData.questionNumber) : "",
+  );
+  const [points, setPoints] = useState(
+    editData?.points ? String(editData.points) : "1",
+  );
+  const [explanation, setExplanation] = useState(editData?.explanation || "");
+  const [fromPassage, setFromPassage] = useState(editData?.fromPassage || "");
 
   // Special fields
   const [headingOptions, setHeadingOptions] = useState<
     { key: string; text: string }[]
-  >([]);
-  const [tableHeaders, setTableHeaders] = useState<string[]>([""]);
-  const [tableRows, setTableRows] = useState<string[][]>([[""]]);
+  >(
+    editData?.headingOptions
+      ? Object.entries(editData.headingOptions).map(([key, text]) => ({
+          key,
+          text: text as string,
+        }))
+      : [],
+  );
+  const [tableHeaders, setTableHeaders] = useState<string[]>(
+    editData?.tableData?.headers || [""],
+  );
+  const [tableRows, setTableRows] = useState<string[][]>(
+    editData?.tableData?.rows || [[""]],
+  );
+
+  // Sub-questions
+  const [subQuestions, setSubQuestions] = useState<IELTSSubQuestion[]>(
+    editData?.questions?.length
+      ? editData.questions.map((sq) => ({
+          questionNumber: sq.questionNumber,
+          questionText: sq.questionText || "",
+          correctAnswer: sq.correctAnswer || "",
+          explanation: sq.explanation || "",
+          fromPassage: sq.fromPassage || "",
+          points: sq.points
+            ? typeof sq.points === "string"
+              ? parseFloat(sq.points)
+              : sq.points
+            : 1,
+          order: sq.order || 1,
+        }))
+      : [],
+  );
+  // Options (choices)
+  const [options, setOptions] = useState<IELTSQuestionOption[]>(
+    editData?.options?.length
+      ? editData.options.map((o) => ({
+          optionKey: o.optionKey,
+          optionText: o.optionText,
+          isCorrect: o.isCorrect || false,
+          orderIndex: o.orderIndex || 0,
+        }))
+      : [],
+  );
 
   const instructionEditor = useEditor({
     extensions: [StarterKit, Underline],
@@ -217,11 +268,11 @@ export default function QuestionContentModal({
     immediatelyRender: false,
   });
 
-  const contextEditor = useEditor({
+  const questionTextEditor = useEditor({
     extensions: [StarterKit, Underline],
-    content: context,
+    content: questionText,
     onUpdate({ editor }) {
-      setContext(editor.getHTML());
+      setQuestionText(editor.getHTML());
     },
     shouldRerenderOnTransaction: true,
     immediatelyRender: false,
@@ -245,25 +296,21 @@ export default function QuestionContentModal({
     [instructionEditor],
   );
 
+  // Sync TipTap editors with initial content once they're ready
   useEffect(() => {
     if (isOpen) {
-      const defInst = defaultInstructions["TRUE_FALSE_NOT_GIVEN"];
-      instructionEditor?.commands.setContent(defInst);
-      contextEditor?.commands.setContent("");
+      instructionEditor?.commands.setContent(instruction);
+      questionTextEditor?.commands.setContent(questionText);
     }
-  }, [isOpen, instructionEditor, contextEditor]);
-
-  // Sub-questions
-  const [subQuestions, setSubQuestions] = useState<IELTSSubQuestion[]>([]);
-  // Options (choices)
-  const [options, setOptions] = useState<IELTSQuestionOption[]>([]);
+  }, [isOpen, instructionEditor, questionTextEditor]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── Sub-question helpers ─────────────────────────── */
   const addSubQuestion = useCallback(() => {
+    const base = questionNumber ? parseInt(questionNumber) : 1;
     setSubQuestions((prev) => [
       ...prev,
       {
-        questionNumber: prev.length + 1,
+        questionNumber: base + prev.length,
         questionText: "",
         correctAnswer: "",
         explanation: "",
@@ -272,7 +319,7 @@ export default function QuestionContentModal({
         order: prev.length + 1,
       },
     ]);
-  }, []);
+  }, [questionNumber]);
 
   const removeSubQuestion = useCallback((idx: number) => {
     setSubQuestions((prev) => prev.filter((_, i) => i !== idx));
@@ -393,7 +440,6 @@ export default function QuestionContentModal({
       type,
       questionText: questionText || undefined,
       instruction: instruction || undefined,
-      context: context || undefined,
       questionNumber: questionNumber ? parseInt(questionNumber) : undefined,
       points: points ? parseInt(points) : 1,
       explanation: explanation || undefined,
@@ -429,19 +475,6 @@ export default function QuestionContentModal({
   };
 
   const handleClose = () => {
-    setType("TRUE_FALSE_NOT_GIVEN");
-    setQuestionText("");
-    setInstruction(defaultInstructions["TRUE_FALSE_NOT_GIVEN"]);
-    setContext("");
-    setQuestionNumber("");
-    setPoints("1");
-    setExplanation("");
-    setFromPassage("");
-    setSubQuestions([]);
-    setOptions([]);
-    setHeadingOptions([]);
-    setTableHeaders([""]);
-    setTableRows([[""]]);
     onClose();
   };
 
@@ -578,7 +611,7 @@ export default function QuestionContentModal({
           flexShrink={0}
         >
           <Heading size="sm" fontWeight="700">
-            Add Question
+            {isEdit ? "Edit Question" : "Add Question"}
           </Heading>
           <IconButton
             size="sm"
@@ -678,34 +711,6 @@ export default function QuestionContentModal({
               </Box>
             </Flex>
 
-            {/* Question Text */}
-            <Box>
-              <FieldLabel>
-                {type === "NOTE_COMPLETION" ||
-                type === "SUMMARY_COMPLETION" ||
-                type === "SUMMARY_COMPLETION_DRAG_DROP" ||
-                type === "FLOW_CHART_COMPLETION"
-                  ? "Question Text (HTML with ____ blanks)"
-                  : type === "DIAGRAM_LABELLING" ||
-                      type === "PLAN_MAP_LABELLING"
-                    ? "Question Text (image/diagram HTML)"
-                    : "Question Text"}
-              </FieldLabel>
-              <Textarea
-                size="sm"
-                rows={3}
-                placeholder={
-                  type === "NOTE_COMPLETION"
-                    ? "<ul><li>Location: ____ (1)</li><li>Duration: ____ weeks (2)</li></ul>"
-                    : type === "DIAGRAM_LABELLING"
-                      ? '<img src="..." alt="Diagram" />'
-                      : "Main question text"
-                }
-                value={questionText}
-                onChange={(e) => setQuestionText(e.target.value)}
-              />
-            </Box>
-
             {/* Instruction */}
             <Box>
               <FieldLabel>Instruction</FieldLabel>
@@ -732,40 +737,44 @@ export default function QuestionContentModal({
               </RichTextEditor.Root>
             </Box>
 
-            {/* Context – shown only for types that typically use it */}
-            {(type === "NOTE_COMPLETION" ||
-              type === "SUMMARY_COMPLETION" ||
-              type === "SUMMARY_COMPLETION_DRAG_DROP" ||
-              type === "FLOW_CHART_COMPLETION" ||
-              type === "TABLE_COMPLETION") && (
-              <Box>
-                <FieldLabel>Context (HTML)</FieldLabel>
-                <RichTextEditor.Root
-                  editor={contextEditor}
-                  css={{ "--content-min-height": "60px" }}
-                >
-                  <RichTextEditor.Toolbar>
-                    <RichTextEditor.ControlGroup>
-                      <Control.Bold />
-                      <Control.Italic />
-                      <Control.Underline />
-                    </RichTextEditor.ControlGroup>
-                    <RichTextEditor.ControlGroup>
-                      <Control.H3 />
-                      <Control.H4 />
-                    </RichTextEditor.ControlGroup>
-                    <RichTextEditor.ControlGroup>
-                      <Control.Undo />
-                      <Control.Redo />
-                    </RichTextEditor.ControlGroup>
-                  </RichTextEditor.Toolbar>
-                  <RichTextEditor.Content />
-                </RichTextEditor.Root>
-              </Box>
-            )}
+            {/* Question Text */}
+            <Box>
+              <FieldLabel>
+                {type === "NOTE_COMPLETION" ||
+                type === "SUMMARY_COMPLETION" ||
+                type === "SUMMARY_COMPLETION_DRAG_DROP" ||
+                type === "FLOW_CHART_COMPLETION"
+                  ? "Question Text (HTML with ____ blanks)"
+                  : type === "DIAGRAM_LABELLING" ||
+                      type === "PLAN_MAP_LABELLING"
+                    ? "Question Text (image/diagram HTML)"
+                    : "Question Text"}
+              </FieldLabel>
+              <RichTextEditor.Root
+                editor={questionTextEditor}
+                css={{ "--content-min-height": "80px" }}
+              >
+                <RichTextEditor.Toolbar>
+                  <RichTextEditor.ControlGroup>
+                    <Control.Bold />
+                    <Control.Italic />
+                    <Control.Underline />
+                  </RichTextEditor.ControlGroup>
+                  <RichTextEditor.ControlGroup>
+                    <Control.BulletList />
+                    <Control.OrderedList />
+                  </RichTextEditor.ControlGroup>
+                  <RichTextEditor.ControlGroup>
+                    <Control.Undo />
+                    <Control.Redo />
+                  </RichTextEditor.ControlGroup>
+                </RichTextEditor.Toolbar>
+                <RichTextEditor.Content />
+              </RichTextEditor.Root>
+            </Box>
 
             {/* Explanation & From Passage (question-level) */}
-            <Flex gap={3}>
+            {/* <Flex gap={3}>
               <Box flex="1">
                 <FieldLabel>Explanation</FieldLabel>
                 <Input
@@ -784,7 +793,7 @@ export default function QuestionContentModal({
                   onChange={(e) => setFromPassage(e.target.value)}
                 />
               </Box>
-            </Flex>
+            </Flex> */}
 
             {/* ── MATCHING_HEADINGS: Heading Options ────────── */}
             {type === "MATCHING_HEADINGS" && (
@@ -1163,6 +1172,20 @@ export default function QuestionContentModal({
                             size="sm"
                             w="60px"
                             type="number"
+                            placeholder="Order"
+                            value={sq.order || ""}
+                            onChange={(e) =>
+                              updateSubQuestion(
+                                si,
+                                "order",
+                                parseInt(e.target.value) || 1,
+                              )
+                            }
+                          />
+                          <Input
+                            size="sm"
+                            w="60px"
+                            type="number"
                             placeholder="Pts"
                             value={sq.points || ""}
                             onChange={(e) =>
@@ -1207,7 +1230,7 @@ export default function QuestionContentModal({
             onClick={handleSave}
             size="sm"
           >
-            Add Question
+            {isEdit ? "Update Question" : "Add Question"}
           </Button>
         </Flex>
       </Box>

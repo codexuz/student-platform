@@ -100,6 +100,16 @@ export default function ReadingPartForm({
     }
   }, [editId]);
 
+  // Sync editor content when editor becomes ready after data fetch
+  useEffect(() => {
+    if (contentEditor && content && !contentEditor.isDestroyed) {
+      const currentContent = contentEditor.getHTML();
+      if (currentContent !== content && currentContent === "<p></p>") {
+        contentEditor.commands.setContent(content);
+      }
+    }
+  }, [contentEditor, content]);
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -117,11 +127,12 @@ export default function ReadingPartForm({
       if (isEdit) {
         await ieltsReadingPartsAPI.update(editId!, body);
         toaster.success({ title: "Reading part updated!" });
+        onNavigate("reading-parts");
       } else {
         const r = await ieltsReadingPartsAPI.create(body);
-        toaster.success({ title: `Reading part created! ID: ${r.id}` });
+        toaster.success({ title: `Reading part created!` });
+        onNavigate("reading-part-form", { editId: r.id });
       }
-      onNavigate("reading-parts");
     } catch (e: unknown) {
       toaster.error({ title: "Error", description: (e as Error).message });
     } finally {
@@ -261,7 +272,7 @@ export default function ReadingPartForm({
                 textTransform="uppercase"
                 letterSpacing="0.3px"
               >
-                Content (Passage)
+                Passage
               </Text>
               <RichTextEditor.Root
                 editor={contentEditor}
