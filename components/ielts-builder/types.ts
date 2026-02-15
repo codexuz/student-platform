@@ -72,15 +72,6 @@ export interface IELTSQuestion {
   options?: IELTSQuestionOption[]; // choices
 }
 
-// ─── Audio ─────────────────────────────────────────────────────────────────
-
-export interface AudioInfo {
-  id?: string;
-  url: string;
-  file_name?: string;
-  duration?: number;
-}
-
 // ─── Test ──────────────────────────────────────────────────────────────────
 
 export interface IELTSTest {
@@ -136,8 +127,7 @@ export interface IELTSListeningPart {
   listening_id: string;
   part: "PART_1" | "PART_2" | "PART_3" | "PART_4";
   title?: string;
-  audio_id?: string;
-  audio?: AudioInfo;
+  audio_url?: string;
   timeLimitMinutes?: number;
   difficulty?: DifficultyLevel;
   isActive?: boolean;

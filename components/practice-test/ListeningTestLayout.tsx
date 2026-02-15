@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Box, Flex, Text } from "@chakra-ui/react";
+import { Box, Flex, Text, Badge } from "@chakra-ui/react";
 import TestHeader from "./TestHeader";
 import PartNavigation from "./PartNavigation";
 import QuestionPanel from "./QuestionPanel";
@@ -13,10 +13,11 @@ import { getAllQuestionNumbers } from "./types";
 
 export interface ListeningTestLayoutProps {
   parts: PartData[];
-  timerMinutes?: number; // default 30
-  /** URL for the full listening audio */
+  /** Review time in minutes after audio finishes (default 2) */
+  reviewMinutes?: number;
+  /** URL for the full listening audio (full test) */
   audioUrl?: string;
-  /** Per-part audio URLs (fallback when no full audio) */
+  /** Per-part audio URLs (single part practice) */
   partAudioUrls?: Record<number, string>;
   onSubmit?: (answers: AnswerMap) => void;
 }
@@ -38,7 +39,7 @@ export default function ListeningTestLayout(props: ListeningTestLayoutProps) {
 
 function ListeningTestLayoutInner({
   parts,
-  timerMinutes = 30,
+  reviewMinutes = 2,
   audioUrl,
   partAudioUrls,
   onSubmit,
@@ -47,17 +48,19 @@ function ListeningTestLayoutInner({
     answers: {},
     currentPartIndex: 0,
     currentQuestionNumber: null,
-    timerSeconds: timerMinutes * 60,
+    timerSeconds: reviewMinutes * 60,
     isTimerRunning: false,
     isStarted: false,
     isSubmitted: false,
   });
 
+  // Audio is playing (before review timer starts)
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [showOverlay, setShowOverlay] = useState(true);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // ─── Timer ──────────────────────────────────────────────────────────────
+  // ─── Timer (starts only after audio ends) ───────────────────────────────
 
   useEffect(() => {
     if (state.isTimerRunning && state.timerSeconds > 0) {
@@ -90,7 +93,6 @@ function ListeningTestLayoutInner({
   // ─── Audio helpers ──────────────────────────────────────────────────────
 
   const getCurrentAudioUrl = useCallback(() => {
-    // Prefer full audio, fallback to per-part audio
     if (audioUrl) return audioUrl;
     if (partAudioUrls && partAudioUrls[state.currentPartIndex] != null) {
       return partAudioUrls[state.currentPartIndex];
@@ -100,7 +102,15 @@ function ListeningTestLayoutInner({
 
   const playAudio = useCallback(() => {
     const url = getCurrentAudioUrl();
-    if (!url) return;
+    if (!url) {
+      // No audio — start review timer immediately
+      setState((prev) => ({
+        ...prev,
+        timerSeconds: reviewMinutes * 60,
+        isTimerRunning: true,
+      }));
+      return;
+    }
 
     if (audioRef.current) {
       audioRef.current.pause();
@@ -108,8 +118,20 @@ function ListeningTestLayoutInner({
 
     const audio = new Audio(url);
     audioRef.current = audio;
+    setIsAudioPlaying(true);
+
+    // When audio finishes → start the review timer
+    audio.addEventListener("ended", () => {
+      setIsAudioPlaying(false);
+      setState((prev) => ({
+        ...prev,
+        timerSeconds: reviewMinutes * 60,
+        isTimerRunning: true,
+      }));
+    });
+
     audio.play().catch(console.error);
-  }, [getCurrentAudioUrl]);
+  }, [getCurrentAudioUrl, reviewMinutes]);
 
   // ─── Handlers ───────────────────────────────────────────────────────────
 
@@ -119,19 +141,17 @@ function ListeningTestLayoutInner({
     setState((prev) => ({
       ...prev,
       isStarted: true,
-      isTimerRunning: true,
+      // Timer does NOT start yet — it starts after audio ends
     }));
-    // Start audio playback
     playAudio();
   }, [playAudio]);
 
-  /** Fallback Start button in header (if overlay was dismissed) */
+  /** Fallback Start button in header */
   const handleStart = useCallback(() => {
     setShowOverlay(false);
     setState((prev) => ({
       ...prev,
       isStarted: true,
-      isTimerRunning: true,
     }));
     playAudio();
   }, [playAudio]);
@@ -293,9 +313,35 @@ function ListeningTestLayoutInner({
         borderColor={colors.border}
         flexShrink={0}
       >
-        <Text fontWeight="bold" fontSize="sm" color={colors.text}>
-          {currentPart.partLabel}
-        </Text>
+        <Flex align="center" gap={2}>
+          <Text fontWeight="bold" fontSize="sm" color={colors.text}>
+            {currentPart.partLabel}
+          </Text>
+          {isAudioPlaying && (
+            <Badge
+              colorPalette="red"
+              variant="subtle"
+              fontSize="xs"
+              px={2}
+              py={0.5}
+              borderRadius="full"
+            >
+              ● Audio Playing
+            </Badge>
+          )}
+          {!isAudioPlaying && state.isTimerRunning && (
+            <Badge
+              colorPalette="orange"
+              variant="subtle"
+              fontSize="xs"
+              px={2}
+              py={0.5}
+              borderRadius="full"
+            >
+              Review Time
+            </Badge>
+          )}
+        </Flex>
         {currentPart.instruction && (
           <Text fontSize="sm" color={colors.textSecondary}>
             {currentPart.instruction}

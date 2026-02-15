@@ -31,7 +31,6 @@ function ListeningPracticeContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [parts, setParts] = useState<PartData[]>([]);
-  const [timerMinutes, setTimerMinutes] = useState(10);
   const [audioUrl, setAudioUrl] = useState<string | undefined>();
 
   useEffect(() => {
@@ -52,13 +51,12 @@ function ListeningPracticeContent() {
         const partData = transformListeningPart(part);
         setParts([partData]);
 
-        // Set audio URL from part
-        if (part.audio?.url) {
-          setAudioUrl(part.audio.url);
+        // Set audio URL from part or parent listening
+        if (part.audio_url) {
+          setAudioUrl(part.audio_url);
+        } else if (part.listening?.full_audio_url) {
+          setAudioUrl(part.listening.full_audio_url);
         }
-
-        // Timer from part (fallback 10 min)
-        setTimerMinutes(part.timeLimitMinutes ?? 10);
       } catch (err: unknown) {
         console.error("Failed to load listening part:", err);
         setError("Failed to load listening part. Please try again.");
@@ -114,7 +112,6 @@ function ListeningPracticeContent() {
   return (
     <ListeningTestLayout
       parts={parts}
-      timerMinutes={timerMinutes}
       audioUrl={audioUrl}
       onSubmit={handleSubmit}
     />

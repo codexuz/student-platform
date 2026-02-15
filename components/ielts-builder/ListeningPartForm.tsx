@@ -69,10 +69,9 @@ export default function ListeningPartForm({
           setListeningId((p.listening_id as string) || "");
           setPart((p.part as string) || "PART_1");
           setTitle((p.title as string) || "");
-          const audio = p.audio as Record<string, unknown> | null;
-          setAudioUrl((audio?.url as string) || "");
-          setAudioName((audio?.file_name as string) || "");
-          setAudioDuration(audio?.duration ? String(audio.duration) : "");
+          setAudioUrl((p.audio_url as string) || "");
+          setAudioName("");
+          setAudioDuration("");
           if (p.timeLimitMinutes)
             setTimeLimitMinutes(String(p.timeLimitMinutes));
           if (p.difficulty) setDifficulty(p.difficulty as DifficultyLevel);
@@ -95,13 +94,7 @@ export default function ListeningPartForm({
         title: title || null,
         difficulty,
         isActive,
-        audio: audioUrl
-          ? {
-              url: audioUrl,
-              file_name: audioName || null,
-              duration: audioDuration ? parseInt(audioDuration) : null,
-            }
-          : null,
+        audio_url: audioUrl || null,
       };
       if (timeLimitMinutes) body.timeLimitMinutes = parseInt(timeLimitMinutes);
       if (totalQuestions) body.totalQuestions = parseInt(totalQuestions);

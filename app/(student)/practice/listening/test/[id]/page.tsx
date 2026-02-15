@@ -31,7 +31,6 @@ function ListeningTestPracticeContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [parts, setParts] = useState<PartData[]>([]);
-  const [timerMinutes, setTimerMinutes] = useState(30);
   const [audioUrl, setAudioUrl] = useState<string | undefined>();
   const [partAudioUrls, setPartAudioUrls] = useState<
     Record<number, string> | undefined
@@ -63,8 +62,8 @@ function ListeningTestPracticeContent() {
           for (let i = 0; i < listening.parts.length; i++) {
             const part = listening.parts[i];
             allParts.push(transformListeningPart(part));
-            if (part.audio?.url) {
-              perPartAudio[i] = part.audio.url;
+            if (part.audio_url) {
+              perPartAudio[i] = part.audio_url;
             }
           }
         }
@@ -74,14 +73,6 @@ function ListeningTestPracticeContent() {
         if (!listening.full_audio_url && Object.keys(perPartAudio).length > 0) {
           setPartAudioUrls(perPartAudio);
         }
-
-        const totalMinutes =
-          listening.parts?.reduce(
-            (sum: number, p: IELTSListeningPart) =>
-              sum + (p.timeLimitMinutes ?? 8),
-            0,
-          ) ?? 30;
-        setTimerMinutes(totalMinutes);
 
         setParts(allParts);
       } catch (err: unknown) {
@@ -138,7 +129,6 @@ function ListeningTestPracticeContent() {
   return (
     <ListeningTestLayout
       parts={parts}
-      timerMinutes={timerMinutes}
       audioUrl={audioUrl}
       partAudioUrls={partAudioUrls}
       onSubmit={handleSubmit}
