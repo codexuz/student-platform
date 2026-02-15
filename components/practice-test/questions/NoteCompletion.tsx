@@ -20,8 +20,8 @@ function htmlToLines(html: string): string[] {
   s = s.replace(/<\/p>/gi, "\n");
   s = s.replace(/<br\s*\/?>/gi, "\n");
 
-  // Strip block-level tags but KEEP inline formatting tags (<strong>, <b>, <em>, <i>)
-  s = s.replace(/<(?!\/?(strong|b|em|i)\b)[^>]+>/gi, "");
+  // Strip block-level tags but KEEP inline formatting and heading tags
+  s = s.replace(/<(?!\/?(strong|b|em|i|h[1-6])\b)[^>]+>/gi, "");
 
   // Decode &nbsp; to space (keep other entities — they render fine in HTML)
   s = s.replace(/&nbsp;/gi, " ");
@@ -115,12 +115,90 @@ export default function NoteCompletion({
           css={{
             "& p": { marginBottom: "0.25rem" },
             "& strong": { fontWeight: "bold" },
+            "& h1": {
+              fontSize: "1.5rem",
+              fontWeight: "bold",
+              marginBottom: "0.5rem",
+            },
+            "& h2": {
+              fontSize: "1.25rem",
+              fontWeight: "bold",
+              marginBottom: "0.5rem",
+            },
+            "& h3": {
+              fontSize: "1.1rem",
+              fontWeight: "bold",
+              marginBottom: "0.25rem",
+            },
+            "& h4": {
+              fontSize: "1rem",
+              fontWeight: "bold",
+              marginBottom: "0.25rem",
+            },
+            "& h5": {
+              fontSize: "0.9rem",
+              fontWeight: "bold",
+              marginBottom: "0.25rem",
+            },
+            "& h6": {
+              fontSize: "0.85rem",
+              fontWeight: "bold",
+              marginBottom: "0.25rem",
+            },
           }}
         />
       )}
 
       {/* Lines of notes with inline inputs */}
-      <Box display="flex" flexDirection="column" gap={1}>
+      <Box
+        display="flex"
+        flexDirection="column"
+        gap={1}
+        css={{
+          "& h1": {
+            fontSize: "1.5rem",
+            fontWeight: "bold",
+            marginBottom: "0.25rem",
+            display: "block",
+            width: "100%",
+          },
+          "& h2": {
+            fontSize: "1.25rem",
+            fontWeight: "bold",
+            marginBottom: "0.25rem",
+            display: "block",
+            width: "100%",
+          },
+          "& h3": {
+            fontSize: "1.1rem",
+            fontWeight: "bold",
+            marginBottom: "0.15rem",
+            display: "block",
+            width: "100%",
+          },
+          "& h4": {
+            fontSize: "1rem",
+            fontWeight: "bold",
+            marginBottom: "0.15rem",
+            display: "block",
+            width: "100%",
+          },
+          "& h5": {
+            fontSize: "0.9rem",
+            fontWeight: "bold",
+            marginBottom: "0.15rem",
+            display: "block",
+            width: "100%",
+          },
+          "& h6": {
+            fontSize: "0.85rem",
+            fontWeight: "bold",
+            marginBottom: "0.15rem",
+            display: "block",
+            width: "100%",
+          },
+        }}
+      >
         {linesWithSegments.map(({ parts, qNums }, lineIdx) => (
           <Box
             key={lineIdx}

@@ -4,26 +4,26 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Flex, Spinner, Text, Button } from "@chakra-ui/react";
 import { ArrowLeft } from "lucide-react";
-import ReadingTestLayout from "@/components/practice-test/ReadingTestLayout";
+import ListeningTestLayout from "@/components/practice-test/ListeningTestLayout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { ieltsAPI } from "@/lib/api";
 import type { PartData, AnswerMap } from "@/components/practice-test/types";
-import type { IELTSReadingPart } from "@/components/ielts-builder/types";
+import type { IELTSListeningPart } from "@/components/ielts-builder/types";
 
 /**
- * Full test practice page.
- * Route: /practice/test/[id]
- * Loads a reading by ID and renders all its parts.
+ * Practice page for a listening test.
+ * Route: /practice/listening/[id]
+ * Loads a listening by ID and renders all its parts.
  */
-export default function TestPracticePage() {
+export default function ListeningPracticePage() {
   return (
     <ProtectedRoute>
-      <TestPracticeContent />
+      <ListeningPracticeContent />
     </ProtectedRoute>
   );
 }
 
-function TestPracticeContent() {
+function ListeningPracticeContent() {
   const params = useParams();
   const router = useRouter();
   const id = params?.id as string;
@@ -31,8 +31,11 @@ function TestPracticeContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [parts, setParts] = useState<PartData[]>([]);
-  const [testId, setTestId] = useState<string>("");
-  const [timerMinutes, setTimerMinutes] = useState(60);
+  const [timerMinutes, setTimerMinutes] = useState(30);
+  const [audioUrl, setAudioUrl] = useState<string | undefined>();
+  const [partAudioUrls, setPartAudioUrls] = useState<
+    Record<number, string> | undefined
+  >();
 
   useEffect(() => {
     if (!id) return;
@@ -41,41 +44,56 @@ function TestPracticeContent() {
       setLoading(true);
       setError(null);
       try {
-        const data = await ieltsAPI.getReadingTestById(id);
-        const reading = data?.data ?? data;
+        const data = await ieltsAPI.getListeningTestById(id);
+        const listening = data?.data ?? data;
 
-        if (!reading) {
-          setError("Reading not found");
+        if (!listening) {
+          setError("Listening test not found");
           return;
         }
 
-        setTestId(reading.id || id);
+        // Full audio URL (single audio for entire test)
+        if (listening.full_audio_url) {
+          setAudioUrl(listening.full_audio_url);
+        }
 
-        // Build parts directly from reading.parts
+        // Build parts
         const allParts: PartData[] = [];
+        const perPartAudio: Record<number, string> = {};
 
-        if (reading.parts?.length) {
-          for (const part of reading.parts) {
-            allParts.push(transformReadingPart(part));
+        if (listening.parts?.length) {
+          for (let i = 0; i < listening.parts.length; i++) {
+            const part = listening.parts[i];
+            allParts.push(transformListeningPart(part));
+
+            // Collect per-part audio URLs
+            if (part.audio?.url) {
+              perPartAudio[i] = part.audio.url;
+            }
           }
         }
 
         // Sort by part label
         allParts.sort((a, b) => a.partLabel.localeCompare(b.partLabel));
 
-        // Calculate total timer from parts (fallback 60 min)
+        // Set per-part audio if no full audio
+        if (!listening.full_audio_url && Object.keys(perPartAudio).length > 0) {
+          setPartAudioUrls(perPartAudio);
+        }
+
+        // Calculate total timer from parts (fallback 30 min)
         const totalMinutes =
-          reading.parts?.reduce(
-            (sum: number, p: IELTSReadingPart) =>
-              sum + (p.timeLimitMinutes ?? 20),
+          listening.parts?.reduce(
+            (sum: number, p: IELTSListeningPart) =>
+              sum + (p.timeLimitMinutes ?? 8),
             0,
-          ) ?? 60;
+          ) ?? 30;
         setTimerMinutes(totalMinutes);
 
         setParts(allParts);
       } catch (err: unknown) {
-        console.error("Failed to load test:", err);
-        setError("Failed to load test. Please try again.");
+        console.error("Failed to load listening test:", err);
+        setError("Failed to load listening test. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -115,7 +133,7 @@ function TestPracticeContent() {
         _dark={{ bg: "gray.900" }}
       >
         <Text color="red.500" fontSize="lg">
-          {error || "No reading parts found in this test."}
+          {error || "No listening parts found in this test."}
         </Text>
         <Button variant="outline" onClick={() => router.back()}>
           <ArrowLeft size={16} />
@@ -126,9 +144,11 @@ function TestPracticeContent() {
   }
 
   return (
-    <ReadingTestLayout
+    <ListeningTestLayout
       parts={parts}
       timerMinutes={timerMinutes}
+      audioUrl={audioUrl}
+      partAudioUrls={partAudioUrls}
       onSubmit={handleSubmit}
     />
   );
@@ -136,7 +156,7 @@ function TestPracticeContent() {
 
 // ─── Transform API data to PartData ─────────────────────────────────────
 
-function transformReadingPart(part: IELTSReadingPart): PartData {
+function transformListeningPart(part: IELTSListeningPart): PartData {
   const questions = part.questions ?? [];
   const allNums: number[] = [];
 
@@ -162,11 +182,10 @@ function transformReadingPart(part: IELTSReadingPart): PartData {
     id: part.id,
     partLabel,
     title: part.title ?? "",
-    content: part.content ?? "",
     instruction:
       range[0] > 0
-        ? `Read the text and answer questions ${range[0]}-${range[1]}.`
-        : "Read the text and answer the questions.",
+        ? `Listen and answer questions ${range[0]}-${range[1]}.`
+        : "Listen and answer the questions.",
     questions,
     totalQuestions: allNums.length,
     questionRange: range,

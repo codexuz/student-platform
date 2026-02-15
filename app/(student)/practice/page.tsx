@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Box,
   Heading,
-  Text,
   Grid,
   Card,
   Badge,
@@ -13,7 +12,7 @@ import {
   Button,
   Icon,
   Flex,
-  Image,
+  Input,
   Spinner,
   ButtonGroup,
   IconButton,
@@ -25,8 +24,8 @@ import {
   Headphones,
   BookOpen,
   PenTool,
-  MessageSquare,
   ClipboardList,
+  Search,
 } from "lucide-react";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 
@@ -35,7 +34,6 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
 import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
-import { useAuth } from "@/contexts/AuthContext";
 import { ieltsAPI } from "@/lib/api";
 
 const PAGE_SIZE = 9;
@@ -49,6 +47,45 @@ interface PracticeItem {
   total?: number;
   types?: string[];
   part?: string;
+  type?: string;
+}
+
+const skillMeta: Record<
+  string,
+  { icon: typeof BookOpen; bg: string; color: string; label: string }
+> = {
+  reading: {
+    icon: BookOpen,
+    bg: "#EEF2FF",
+    color: "#4F46E5",
+    label: "Reading",
+  },
+  listening: {
+    icon: Headphones,
+    bg: "#FEF3C7",
+    color: "#D97706",
+    label: "Listening",
+  },
+  writing: {
+    icon: PenTool,
+    bg: "#ECFDF5",
+    color: "#059669",
+    label: "Writing",
+  },
+  default: {
+    icon: ClipboardList,
+    bg: "#F0F4FF",
+    color: "#3B82F6",
+    label: "Test",
+  },
+};
+
+function getSkillMeta(type?: string, category?: string) {
+  if (type && skillMeta[type.toLowerCase()])
+    return skillMeta[type.toLowerCase()];
+  if (category && skillMeta[category.toLowerCase()])
+    return skillMeta[category.toLowerCase()];
+  return skillMeta.default;
 }
 
 const categories = [
@@ -74,11 +111,23 @@ function PracticeContent() {
   const [totalCount, setTotalCount] = useState(0);
   const [readingPart, setReadingPart] = useState<string>("");
   const [testCategory, setTestCategory] = useState<string>("");
-  const { user } = useAuth();
+  const [skillType, setSkillType] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [debouncedSearch, setDebouncedSearch] = useState<string>("");
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
-  const userName = user?.first_name
-    ? `${user.first_name}`.trim()
-    : user?.username || "User";
+
+  /* debounce search input */
+  useEffect(() => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1);
+    }, 400);
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+  }, [searchQuery]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -88,8 +137,11 @@ function PracticeContent() {
 
       switch (activeCategory) {
         case "full-tests":
-          response = await ieltsAPI.getTests({
-            ...params,
+          response = await ieltsAPI.getSkills({
+            page,
+            limit: PAGE_SIZE,
+            ...(debouncedSearch && { search: debouncedSearch }),
+            ...(skillType && { type: skillType }),
             ...(testCategory && { category: testCategory }),
           });
           break;
@@ -121,7 +173,14 @@ function PracticeContent() {
     } finally {
       setLoading(false);
     }
-  }, [activeCategory, page, readingPart, testCategory]);
+  }, [
+    activeCategory,
+    page,
+    readingPart,
+    testCategory,
+    skillType,
+    debouncedSearch,
+  ]);
 
   useEffect(() => {
     fetchData();
@@ -131,13 +190,23 @@ function PracticeContent() {
     setActiveCategory(category);
     setPage(1);
     if (category !== "reading") setReadingPart("");
-    if (category !== "full-tests") setTestCategory("");
+    if (category !== "full-tests") {
+      setTestCategory("");
+      setSkillType("");
+      setSearchQuery("");
+      setDebouncedSearch("");
+    }
   };
 
   const handleTestCategoryChange = (
     e: React.ChangeEvent<HTMLSelectElement>,
   ) => {
     setTestCategory(e.target.value);
+    setPage(1);
+  };
+
+  const handleSkillTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSkillType(e.target.value);
     setPage(1);
   };
 
@@ -211,10 +280,60 @@ function PracticeContent() {
             })}
           </HStack>
 
-          {/* Full Tests Category Filter */}
+          {/* Full Tests Filters */}
           {activeCategory === "full-tests" && (
-            <Box mb={4}>
-              <NativeSelect.Root size="sm" width="200px">
+            <Flex
+              mb={4}
+              gap={3}
+              direction={{ base: "column", md: "row" }}
+              align={{ base: "stretch", md: "center" }}
+              flexWrap="wrap"
+            >
+              {/* Search */}
+              <Box position="relative" width={{ base: "100%", md: "280px" }}>
+                <Box
+                  position="absolute"
+                  left="10px"
+                  top="50%"
+                  transform="translateY(-50%)"
+                  color="gray.400"
+                  zIndex={1}
+                  pointerEvents="none"
+                >
+                  <Search size={16} />
+                </Box>
+                <Input
+                  size="sm"
+                  pl="34px"
+                  placeholder="Search by title..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  borderRadius="md"
+                />
+              </Box>
+
+              {/* Type filter */}
+              <NativeSelect.Root
+                size="sm"
+                width={{ base: "100%", md: "160px" }}
+              >
+                <NativeSelect.Field
+                  value={skillType}
+                  onChange={handleSkillTypeChange}
+                >
+                  <option value="">All Types</option>
+                  <option value="reading">Reading</option>
+                  <option value="listening">Listening</option>
+                  <option value="writing">Writing</option>
+                </NativeSelect.Field>
+                <NativeSelect.Indicator />
+              </NativeSelect.Root>
+
+              {/* Category filter */}
+              <NativeSelect.Root
+                size="sm"
+                width={{ base: "100%", md: "180px" }}
+              >
                 <NativeSelect.Field
                   value={testCategory}
                   onChange={handleTestCategoryChange}
@@ -226,7 +345,7 @@ function PracticeContent() {
                 </NativeSelect.Field>
                 <NativeSelect.Indicator />
               </NativeSelect.Root>
-            </Box>
+            </Flex>
           )}
 
           {/* Reading Part Filter */}
@@ -265,7 +384,9 @@ function PracticeContent() {
             <EmptyState.Root>
               <EmptyState.Content>
                 <EmptyState.Indicator />
-                <EmptyState.Title>No {activeCategory} tests found</EmptyState.Title>
+                <EmptyState.Title>
+                  No {activeCategory} tests found
+                </EmptyState.Title>
                 <EmptyState.Description>
                   There are no tests available in this category at the moment.
                 </EmptyState.Description>
@@ -289,70 +410,93 @@ function PracticeContent() {
                       router.push(`/practice/test/${itemId}`);
                     } else if (activeCategory === "reading") {
                       router.push(`/practice/reading/${itemId}`);
+                    } else if (activeCategory === "listening") {
+                      router.push(`/practice/listening/${itemId}`);
                     }
-                    // TODO: listening, writing routes
+                    // TODO: writing routes
                   };
 
+                  const meta = getSkillMeta(item.type, activeCategory);
+                  const SkillIcon = meta.icon;
+
                   return (
-                  <Card.Root
-                    key={itemId}
-                    cursor="pointer"
-                    transition="all 0.2s"
-                    borderRadius="2xl"
-                    overflow="hidden"
-                    onClick={handleClick}
-                    _hover={{
-                      transform: "translateY(-4px)",
-                      shadow: "lg",
-                    }}
-                  >
-                    <Card.Body>
-                      <VStack align="stretch" gap={4}>
-                        <Flex justify="space-between" align="start">
-                          <Heading size="md" flex="1">
+                    <Card.Root
+                      key={itemId}
+                      cursor="pointer"
+                      transition="all 0.2s"
+                      borderRadius="2xl"
+                      overflow="hidden"
+                      onClick={handleClick}
+                      _hover={{
+                        transform: "translateY(-4px)",
+                        shadow: "lg",
+                      }}
+                    >
+                      {/* Icon banner */}
+                      <Flex align="center" justify="center" bg={meta.bg} py={6}>
+                        <Flex
+                          align="center"
+                          justify="center"
+                          w="56px"
+                          h="56px"
+                          borderRadius="xl"
+                          bg="white"
+                          shadow="sm"
+                        >
+                          <SkillIcon size={28} color={meta.color} />
+                        </Flex>
+                      </Flex>
+
+                      <Card.Body pt={3}>
+                        <VStack align="stretch" gap={3}>
+                          <Heading size="sm" lineClamp={2}>
                             {item.title || item.name}
                           </Heading>
-                          {item.total != null && (
-                            <Badge
-                              colorPalette="gray"
-                              fontSize="sm"
-                              px={2}
-                              py={1}
-                              borderRadius="md"
-                            >
-                              {item.completed || 0}/{item.total}
-                            </Badge>
-                          )}
-                        </Flex>
 
-                        <HStack gap={2} flexWrap="wrap">
-                          {activeCategory === "reading" && item.part && (
+                          <HStack gap={2} flexWrap="wrap">
                             <Badge
-                              colorPalette="blue"
-                              variant="subtle"
                               fontSize="xs"
                               px={2}
-                              py={1}
+                              py={0.5}
+                              borderRadius="full"
+                              bg={meta.bg}
+                              color={meta.color}
+                              fontWeight="semibold"
                             >
-                              {item.part.replace("_", " ")}
+                              {item.type
+                                ? item.type.charAt(0).toUpperCase() +
+                                  item.type.slice(1).toLowerCase()
+                                : meta.label}
                             </Badge>
-                          )}
-                          {item.types?.map((type: string, idx: number) => (
-                            <Badge
-                              key={idx}
-                              colorPalette="gray"
-                              variant="subtle"
-                              fontSize="xs"
-                              px={2}
-                              py={1}
-                            >
-                              {type}
-                            </Badge>
-                          ))}
-                        </HStack>
-                      </VStack>
-                    </Card.Body>
-                  </Card.Root>
+                            {activeCategory === "reading" && item.part && (
+                              <Badge
+                                colorPalette="blue"
+                                variant="subtle"
+                                fontSize="xs"
+                                px={2}
+                                py={0.5}
+                                borderRadius="full"
+                              >
+                                {item.part.replace("_", " ")}
+                              </Badge>
+                            )}
+                            {item.types?.map((type: string, idx: number) => (
+                              <Badge
+                                key={idx}
+                                colorPalette="gray"
+                                variant="subtle"
+                                fontSize="xs"
+                                px={2}
+                                py={0.5}
+                                borderRadius="full"
+                              >
+                                {type}
+                              </Badge>
+                            ))}
+                          </HStack>
+                        </VStack>
+                      </Card.Body>
+                    </Card.Root>
                   );
                 })}
               </Grid>
