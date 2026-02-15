@@ -47,7 +47,9 @@ interface PracticeItem {
   total?: number;
   types?: string[];
   part?: string;
+  task?: string;
   type?: string;
+  skill?: string;
 }
 
 const skillMeta: Record<
@@ -110,6 +112,8 @@ function PracticeContent() {
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [readingPart, setReadingPart] = useState<string>("");
+  const [listeningPart, setListeningPart] = useState<string>("");
+  const [writingTask, setWritingTask] = useState<string>("");
   const [testCategory, setTestCategory] = useState<string>("");
   const [skillType, setSkillType] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -133,7 +137,6 @@ function PracticeContent() {
     setLoading(true);
     try {
       let response;
-      const params = { page, limit: PAGE_SIZE, mode: "practice" as const };
 
       switch (activeCategory) {
         case "full-tests":
@@ -146,7 +149,11 @@ function PracticeContent() {
           });
           break;
         case "listening":
-          response = await ieltsAPI.getListeningTests(params);
+          response = await ieltsAPI.getListeningParts({
+            page,
+            limit: PAGE_SIZE,
+            ...(listeningPart && { part: listeningPart }),
+          });
           break;
         case "reading":
           response = await ieltsAPI.getReadingParts({
@@ -156,7 +163,11 @@ function PracticeContent() {
           });
           break;
         case "writing":
-          response = await ieltsAPI.getWritingTests(params);
+          response = await ieltsAPI.getWritingTasks({
+            page,
+            limit: PAGE_SIZE,
+            ...(writingTask && { task: writingTask }),
+          });
           break;
       }
 
@@ -177,6 +188,8 @@ function PracticeContent() {
     activeCategory,
     page,
     readingPart,
+    listeningPart,
+    writingTask,
     testCategory,
     skillType,
     debouncedSearch,
@@ -190,6 +203,8 @@ function PracticeContent() {
     setActiveCategory(category);
     setPage(1);
     if (category !== "reading") setReadingPart("");
+    if (category !== "listening") setListeningPart("");
+    if (category !== "writing") setWritingTask("");
     if (category !== "full-tests") {
       setTestCategory("");
       setSkillType("");
@@ -212,6 +227,18 @@ function PracticeContent() {
 
   const handleReadingPartChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setReadingPart(e.target.value);
+    setPage(1);
+  };
+
+  const handleListeningPartChange = (
+    e: React.ChangeEvent<HTMLSelectElement>,
+  ) => {
+    setListeningPart(e.target.value);
+    setPage(1);
+  };
+
+  const handleWritingTaskChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setWritingTask(e.target.value);
     setPage(1);
   };
 
@@ -348,6 +375,25 @@ function PracticeContent() {
             </Flex>
           )}
 
+          {/* Listening Part Filter */}
+          {activeCategory === "listening" && (
+            <Box mb={4}>
+              <NativeSelect.Root size="sm" width="200px">
+                <NativeSelect.Field
+                  value={listeningPart}
+                  onChange={handleListeningPartChange}
+                >
+                  <option value="">All Parts</option>
+                  <option value="PART_1">Part 1</option>
+                  <option value="PART_2">Part 2</option>
+                  <option value="PART_3">Part 3</option>
+                  <option value="PART_4">Part 4</option>
+                </NativeSelect.Field>
+                <NativeSelect.Indicator />
+              </NativeSelect.Root>
+            </Box>
+          )}
+
           {/* Reading Part Filter */}
           {activeCategory === "reading" && (
             <Box mb={4}>
@@ -360,6 +406,23 @@ function PracticeContent() {
                   <option value="PART_1">Part 1</option>
                   <option value="PART_2">Part 2</option>
                   <option value="PART_3">Part 3</option>
+                </NativeSelect.Field>
+                <NativeSelect.Indicator />
+              </NativeSelect.Root>
+            </Box>
+          )}
+
+          {/* Writing Task Filter */}
+          {activeCategory === "writing" && (
+            <Box mb={4}>
+              <NativeSelect.Root size="sm" width="200px">
+                <NativeSelect.Field
+                  value={writingTask}
+                  onChange={handleWritingTaskChange}
+                >
+                  <option value="">All Tasks</option>
+                  <option value="TASK_1">Task 1</option>
+                  <option value="TASK_2">Task 2</option>
                 </NativeSelect.Field>
                 <NativeSelect.Indicator />
               </NativeSelect.Root>
@@ -407,16 +470,27 @@ function PracticeContent() {
                   const itemId = item.id || item._id;
                   const handleClick = () => {
                     if (activeCategory === "full-tests") {
-                      router.push(`/practice/test/${itemId}`);
+                      const skill = item.skill?.toLowerCase();
+                      if (skill === "reading") {
+                        router.push(`/practice/reading/test/${itemId}`);
+                      } else if (skill === "listening") {
+                        router.push(`/practice/listening/test/${itemId}`);
+                      } else if (skill === "writing") {
+                        router.push(`/practice/writing/test/${itemId}`);
+                      }
                     } else if (activeCategory === "reading") {
                       router.push(`/practice/reading/${itemId}`);
                     } else if (activeCategory === "listening") {
                       router.push(`/practice/listening/${itemId}`);
+                    } else if (activeCategory === "writing") {
+                      router.push(`/practice/writing/${itemId}`);
                     }
-                    // TODO: writing routes
                   };
 
-                  const meta = getSkillMeta(item.type, activeCategory);
+                  const meta = getSkillMeta(
+                    item.skill || item.type,
+                    activeCategory,
+                  );
                   const SkillIcon = meta.icon;
 
                   return (
@@ -463,21 +537,38 @@ function PracticeContent() {
                               color={meta.color}
                               fontWeight="semibold"
                             >
-                              {item.type
-                                ? item.type.charAt(0).toUpperCase() +
-                                  item.type.slice(1).toLowerCase()
-                                : meta.label}
+                              {(() => {
+                                const label = item.skill || item.type;
+                                return label
+                                  ? label.charAt(0).toUpperCase() +
+                                      label.slice(1).toLowerCase()
+                                  : meta.label;
+                              })()}
                             </Badge>
-                            {activeCategory === "reading" && item.part && (
+                            {(activeCategory === "reading" ||
+                              activeCategory === "listening") &&
+                              item.part && (
+                                <Badge
+                                  colorPalette="blue"
+                                  variant="subtle"
+                                  fontSize="xs"
+                                  px={2}
+                                  py={0.5}
+                                  borderRadius="full"
+                                >
+                                  {item.part.replace("_", " ")}
+                                </Badge>
+                              )}
+                            {activeCategory === "writing" && item.task && (
                               <Badge
-                                colorPalette="blue"
+                                colorPalette="green"
                                 variant="subtle"
                                 fontSize="xs"
                                 px={2}
                                 py={0.5}
                                 borderRadius="full"
                               >
-                                {item.part.replace("_", " ")}
+                                {item.task.replace("_", " ")}
                               </Badge>
                             )}
                             {item.types?.map((type: string, idx: number) => (

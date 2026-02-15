@@ -11,19 +11,19 @@ import type { PartData, AnswerMap } from "@/components/practice-test/types";
 import type { IELTSReadingPart } from "@/components/ielts-builder/types";
 
 /**
- * Full test practice page.
- * Route: /practice/test/[id]
+ * Full reading test practice page.
+ * Route: /practice/reading/test/[id]
  * Loads a reading by ID and renders all its parts.
  */
-export default function TestPracticePage() {
+export default function ReadingTestPracticePage() {
   return (
     <ProtectedRoute>
-      <TestPracticeContent />
+      <ReadingTestPracticeContent />
     </ProtectedRoute>
   );
 }
 
-function TestPracticeContent() {
+function ReadingTestPracticeContent() {
   const params = useParams();
   const router = useRouter();
   const id = params?.id as string;
@@ -31,7 +31,6 @@ function TestPracticeContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [parts, setParts] = useState<PartData[]>([]);
-  const [testId, setTestId] = useState<string>("");
   const [timerMinutes, setTimerMinutes] = useState(60);
 
   useEffect(() => {
@@ -49,9 +48,6 @@ function TestPracticeContent() {
           return;
         }
 
-        setTestId(reading.id || id);
-
-        // Build parts directly from reading.parts
         const allParts: PartData[] = [];
 
         if (reading.parts?.length) {
@@ -60,10 +56,8 @@ function TestPracticeContent() {
           }
         }
 
-        // Sort by part label
         allParts.sort((a, b) => a.partLabel.localeCompare(b.partLabel));
 
-        // Calculate total timer from parts (fallback 60 min)
         const totalMinutes =
           reading.parts?.reduce(
             (sum: number, p: IELTSReadingPart) =>
@@ -74,8 +68,8 @@ function TestPracticeContent() {
 
         setParts(allParts);
       } catch (err: unknown) {
-        console.error("Failed to load test:", err);
-        setError("Failed to load test. Please try again.");
+        console.error("Failed to load reading test:", err);
+        setError("Failed to load reading test. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -86,7 +80,6 @@ function TestPracticeContent() {
 
   const handleSubmit = (answers: AnswerMap) => {
     console.log("Submitted answers:", answers);
-    // TODO: Submit answers to API for grading
   };
 
   if (loading) {
@@ -133,8 +126,6 @@ function TestPracticeContent() {
     />
   );
 }
-
-// ─── Transform API data to PartData ─────────────────────────────────────
 
 function transformReadingPart(part: IELTSReadingPart): PartData {
   const questions = part.questions ?? [];

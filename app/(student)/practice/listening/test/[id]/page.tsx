@@ -7,23 +7,23 @@ import { ArrowLeft } from "lucide-react";
 import ListeningTestLayout from "@/components/practice-test/ListeningTestLayout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { ieltsAPI } from "@/lib/api";
-import type { PartData } from "@/components/practice-test/types";
+import type { PartData, AnswerMap } from "@/components/practice-test/types";
 import type { IELTSListeningPart } from "@/components/ielts-builder/types";
 
 /**
- * Practice page for a single listening part.
- * Route: /practice/listening/[id]
- * Loads a listening part by ID and renders it in the test layout.
+ * Full listening test practice page.
+ * Route: /practice/listening/test/[id]
+ * Loads a listening by ID and renders all its parts.
  */
-export default function ListeningPracticePage() {
+export default function ListeningTestPracticePage() {
   return (
     <ProtectedRoute>
-      <ListeningPracticeContent />
+      <ListeningTestPracticeContent />
     </ProtectedRoute>
   );
 }
 
-function ListeningPracticeContent() {
+function ListeningTestPracticeContent() {
   const params = useParams();
   const router = useRouter();
   const id = params?.id as string;
@@ -31,8 +31,11 @@ function ListeningPracticeContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [parts, setParts] = useState<PartData[]>([]);
-  const [timerMinutes, setTimerMinutes] = useState(10);
+  const [timerMinutes, setTimerMinutes] = useState(30);
   const [audioUrl, setAudioUrl] = useState<string | undefined>();
+  const [partAudioUrls, setPartAudioUrls] = useState<
+    Record<number, string> | undefined
+  >();
 
   useEffect(() => {
     if (!id) return;
@@ -41,27 +44,49 @@ function ListeningPracticeContent() {
       setLoading(true);
       setError(null);
       try {
-        const data = await ieltsAPI.getListeningPartById(id);
-        const part = data?.data ?? data;
+        const data = await ieltsAPI.getListeningTestById(id);
+        const listening = data?.data ?? data;
 
-        if (!part) {
-          setError("Listening part not found");
+        if (!listening) {
+          setError("Listening test not found");
           return;
         }
 
-        const partData = transformListeningPart(part);
-        setParts([partData]);
-
-        // Set audio URL from part
-        if (part.audio?.url) {
-          setAudioUrl(part.audio.url);
+        if (listening.full_audio_url) {
+          setAudioUrl(listening.full_audio_url);
         }
 
-        // Timer from part (fallback 10 min)
-        setTimerMinutes(part.timeLimitMinutes ?? 10);
+        const allParts: PartData[] = [];
+        const perPartAudio: Record<number, string> = {};
+
+        if (listening.parts?.length) {
+          for (let i = 0; i < listening.parts.length; i++) {
+            const part = listening.parts[i];
+            allParts.push(transformListeningPart(part));
+            if (part.audio?.url) {
+              perPartAudio[i] = part.audio.url;
+            }
+          }
+        }
+
+        allParts.sort((a, b) => a.partLabel.localeCompare(b.partLabel));
+
+        if (!listening.full_audio_url && Object.keys(perPartAudio).length > 0) {
+          setPartAudioUrls(perPartAudio);
+        }
+
+        const totalMinutes =
+          listening.parts?.reduce(
+            (sum: number, p: IELTSListeningPart) =>
+              sum + (p.timeLimitMinutes ?? 8),
+            0,
+          ) ?? 30;
+        setTimerMinutes(totalMinutes);
+
+        setParts(allParts);
       } catch (err: unknown) {
-        console.error("Failed to load listening part:", err);
-        setError("Failed to load listening part. Please try again.");
+        console.error("Failed to load listening test:", err);
+        setError("Failed to load listening test. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -70,9 +95,8 @@ function ListeningPracticeContent() {
     fetchData();
   }, [id]);
 
-  const handleSubmit = (answers: Record<number, string>) => {
+  const handleSubmit = (answers: AnswerMap) => {
     console.log("Submitted answers:", answers);
-    // TODO: Submit answers to API for grading
   };
 
   if (loading) {
@@ -101,7 +125,7 @@ function ListeningPracticeContent() {
         _dark={{ bg: "gray.900" }}
       >
         <Text color="red.500" fontSize="lg">
-          {error || "No listening part found."}
+          {error || "No listening parts found in this test."}
         </Text>
         <Button variant="outline" onClick={() => router.back()}>
           <ArrowLeft size={16} />
@@ -116,12 +140,11 @@ function ListeningPracticeContent() {
       parts={parts}
       timerMinutes={timerMinutes}
       audioUrl={audioUrl}
+      partAudioUrls={partAudioUrls}
       onSubmit={handleSubmit}
     />
   );
 }
-
-// ─── Transform API data to PartData ─────────────────────────────────────
 
 function transformListeningPart(part: IELTSListeningPart): PartData {
   const questions = part.questions ?? [];
