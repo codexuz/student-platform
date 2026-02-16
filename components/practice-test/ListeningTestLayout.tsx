@@ -20,6 +20,10 @@ export interface ListeningTestLayoutProps {
   /** Per-part audio URLs (single part practice) */
   partAudioUrls?: Record<number, string>;
   onSubmit?: (answers: AnswerMap) => void;
+  /** Called when answers change (for auto-save tracking) */
+  onAnswerChange?: (answers: AnswerMap) => void;
+  /** Called when user switches parts (good moment to save progress) */
+  onSaveProgress?: (answers: AnswerMap) => void;
 }
 
 /**
@@ -43,6 +47,8 @@ function ListeningTestLayoutInner({
   audioUrl,
   partAudioUrls,
   onSubmit,
+  onAnswerChange,
+  onSaveProgress,
 }: ListeningTestLayoutProps) {
   const [state, setState] = useState<TestSessionState>({
     answers: {},
@@ -156,13 +162,20 @@ function ListeningTestLayoutInner({
     playAudio();
   }, [playAudio]);
 
-  const handleAnswer = useCallback((questionNumber: number, answer: string) => {
-    setState((prev) => ({
-      ...prev,
-      answers: { ...prev.answers, [questionNumber]: answer },
-      currentQuestionNumber: questionNumber,
-    }));
-  }, []);
+  const handleAnswer = useCallback(
+    (questionNumber: number, answer: string) => {
+      setState((prev) => {
+        const newAnswers = { ...prev.answers, [questionNumber]: answer };
+        onAnswerChange?.(newAnswers);
+        return {
+          ...prev,
+          answers: newAnswers,
+          currentQuestionNumber: questionNumber,
+        };
+      });
+    },
+    [onAnswerChange],
+  );
 
   const handlePartChange = useCallback((index: number) => {
     setState((prev) => ({

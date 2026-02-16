@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Flex, Spinner, Text, Button } from "@chakra-ui/react";
 import { ArrowLeft } from "lucide-react";
@@ -9,11 +9,16 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { ieltsAPI } from "@/lib/api";
 import type { PartData, AnswerMap } from "@/components/practice-test/types";
 import type { IELTSListeningPart } from "@/components/ielts-builder/types";
+import {
+  useIeltsAttempt,
+  buildPartMappings,
+  type PartQuestionMapping,
+} from "@/hooks/useIeltsAttempt";
 
 /**
  * Full listening test practice page.
  * Route: /practice/listening/test/[id]
- * Loads a listening by ID and renders all its parts.
+ * Scope: MODULE — saves answers for all parts in a listening module.
  */
 export default function ListeningTestPracticePage() {
   return (
@@ -35,6 +40,12 @@ function ListeningTestPracticeContent() {
   const [partAudioUrls, setPartAudioUrls] = useState<
     Record<number, string> | undefined
   >();
+  const [partMappings, setPartMappings] = useState<PartQuestionMapping[]>([]);
+
+  const { attempt, createAttempt, saveListeningAnswers, submitAttempt } =
+    useIeltsAttempt({ scope: "MODULE", entityId: id });
+
+  const attemptCreatedRef = useRef(false);
 
   useEffect(() => {
     if (!id) return;
@@ -75,6 +86,7 @@ function ListeningTestPracticeContent() {
         }
 
         setParts(allParts);
+        setPartMappings(buildPartMappings(allParts));
       } catch (err: unknown) {
         console.error("Failed to load listening test:", err);
         setError("Failed to load listening test. Please try again.");
@@ -86,9 +98,32 @@ function ListeningTestPracticeContent() {
     fetchData();
   }, [id]);
 
-  const handleSubmit = (answers: AnswerMap) => {
-    console.log("Submitted answers:", answers);
-  };
+  // Create attempt once data is loaded
+  useEffect(() => {
+    if (parts.length > 0 && !attemptCreatedRef.current) {
+      attemptCreatedRef.current = true;
+      createAttempt();
+    }
+  }, [parts, createAttempt]);
+
+  const handleSaveProgress = useCallback(
+    async (answers: AnswerMap) => {
+      if (partMappings.length > 0) {
+        await saveListeningAnswers(answers, partMappings);
+      }
+    },
+    [saveListeningAnswers, partMappings],
+  );
+
+  const handleSubmit = useCallback(
+    async (answers: AnswerMap) => {
+      if (partMappings.length > 0) {
+        await saveListeningAnswers(answers, partMappings);
+      }
+      await submitAttempt();
+    },
+    [saveListeningAnswers, submitAttempt, partMappings],
+  );
 
   if (loading) {
     return (
@@ -132,6 +167,7 @@ function ListeningTestPracticeContent() {
       audioUrl={audioUrl}
       partAudioUrls={partAudioUrls}
       onSubmit={handleSubmit}
+      onSaveProgress={handleSaveProgress}
     />
   );
 }

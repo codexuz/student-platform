@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Flex, Text, Button, Spinner } from "@chakra-ui/react";
 import { ArrowLeft } from "lucide-react";
@@ -8,11 +8,12 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import WritingTestLayout from "@/components/practice-test/WritingTestLayout";
 import type { WritingPartData } from "@/components/practice-test/WritingTestLayout";
 import { ieltsAPI } from "@/lib/api";
+import { useIeltsAttempt } from "@/hooks/useIeltsAttempt";
 
 /**
  * Full writing test practice page.
  * Route: /practice/writing/test/[id]
- * Loads a writing test by ID and renders all tasks in WritingTestLayout.
+ * Scope: MODULE — saves answers for all tasks in a writing module.
  */
 export default function WritingTestPracticePage() {
   return (
@@ -30,6 +31,11 @@ function WritingTestPracticeContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [parts, setParts] = useState<WritingPartData[]>([]);
+
+  const { attempt, createAttempt, saveWritingAnswers, submitAttempt } =
+    useIeltsAttempt({ scope: "MODULE", entityId: id });
+
+  const attemptCreatedRef = useRef(false);
 
   useEffect(() => {
     if (!id) return;
@@ -86,9 +92,28 @@ function WritingTestPracticeContent() {
     fetchData();
   }, [id]);
 
-  const handleSubmit = (essays: Record<string, string>) => {
-    console.log("Submitted essays:", { writingId: id, essays });
-  };
+  // Create attempt once data is loaded
+  useEffect(() => {
+    if (parts.length > 0 && !attemptCreatedRef.current) {
+      attemptCreatedRef.current = true;
+      createAttempt();
+    }
+  }, [parts, createAttempt]);
+
+  const handleSaveProgress = useCallback(
+    async (essays: Record<string, string>) => {
+      await saveWritingAnswers(essays);
+    },
+    [saveWritingAnswers],
+  );
+
+  const handleSubmit = useCallback(
+    async (essays: Record<string, string>) => {
+      await saveWritingAnswers(essays);
+      await submitAttempt();
+    },
+    [saveWritingAnswers, submitAttempt],
+  );
 
   if (loading) {
     return (
@@ -124,6 +149,7 @@ function WritingTestPracticeContent() {
       parts={parts}
       timerMinutes={60}
       onSubmit={handleSubmit}
+      onSaveProgress={handleSaveProgress}
     />
   );
 }

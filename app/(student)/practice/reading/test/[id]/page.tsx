@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Flex, Spinner, Text, Button } from "@chakra-ui/react";
 import { ArrowLeft } from "lucide-react";
@@ -9,11 +9,16 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { ieltsAPI } from "@/lib/api";
 import type { PartData, AnswerMap } from "@/components/practice-test/types";
 import type { IELTSReadingPart } from "@/components/ielts-builder/types";
+import {
+  useIeltsAttempt,
+  buildPartMappings,
+  type PartQuestionMapping,
+} from "@/hooks/useIeltsAttempt";
 
 /**
  * Full reading test practice page.
  * Route: /practice/reading/test/[id]
- * Loads a reading by ID and renders all its parts.
+ * Scope: MODULE — saves answers for all parts in a reading module.
  */
 export default function ReadingTestPracticePage() {
   return (
@@ -32,6 +37,17 @@ function ReadingTestPracticeContent() {
   const [error, setError] = useState<string | null>(null);
   const [parts, setParts] = useState<PartData[]>([]);
   const [timerMinutes, setTimerMinutes] = useState(60);
+  const [partMappings, setPartMappings] = useState<PartQuestionMapping[]>([]);
+
+  const {
+    attempt,
+    isSaving,
+    createAttempt,
+    saveReadingAnswers,
+    submitAttempt,
+  } = useIeltsAttempt({ scope: "MODULE", entityId: id });
+
+  const attemptCreatedRef = useRef(false);
 
   useEffect(() => {
     if (!id) return;
@@ -67,6 +83,7 @@ function ReadingTestPracticeContent() {
         setTimerMinutes(totalMinutes);
 
         setParts(allParts);
+        setPartMappings(buildPartMappings(allParts));
       } catch (err: unknown) {
         console.error("Failed to load reading test:", err);
         setError("Failed to load reading test. Please try again.");
@@ -78,9 +95,32 @@ function ReadingTestPracticeContent() {
     fetchData();
   }, [id]);
 
-  const handleSubmit = (answers: AnswerMap) => {
-    console.log("Submitted answers:", answers);
-  };
+  // Create attempt once data is loaded
+  useEffect(() => {
+    if (parts.length > 0 && !attemptCreatedRef.current) {
+      attemptCreatedRef.current = true;
+      createAttempt();
+    }
+  }, [parts, createAttempt]);
+
+  const handleSaveProgress = useCallback(
+    async (answers: AnswerMap) => {
+      if (partMappings.length > 0) {
+        await saveReadingAnswers(answers, partMappings);
+      }
+    },
+    [saveReadingAnswers, partMappings],
+  );
+
+  const handleSubmit = useCallback(
+    async (answers: AnswerMap) => {
+      if (partMappings.length > 0) {
+        await saveReadingAnswers(answers, partMappings);
+      }
+      await submitAttempt();
+    },
+    [saveReadingAnswers, submitAttempt, partMappings],
+  );
 
   if (loading) {
     return (
@@ -123,6 +163,7 @@ function ReadingTestPracticeContent() {
       parts={parts}
       timerMinutes={timerMinutes}
       onSubmit={handleSubmit}
+      onSaveProgress={handleSaveProgress}
     />
   );
 }

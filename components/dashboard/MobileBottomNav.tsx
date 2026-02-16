@@ -20,6 +20,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const studentMenuItems = [
   { icon: Home, label: "Home", href: "/home" },
   { icon: Target, label: "Practice", href: "/practice" },
+  { icon: ClipboardCheck, label: "Mock Tests", href: "/mock-tests" },
   { icon: BookOpen, label: "Courses", href: "/courses" },
   { icon: BookMarked, label: "Resources", href: "/resources" },
 ];

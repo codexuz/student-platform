@@ -33,6 +33,10 @@ interface WritingTestLayoutProps {
   parts: WritingPartData[];
   timerMinutes?: number; // default 60
   onSubmit?: (essays: Record<string, string>) => void;
+  /** Called when essays change (for auto-save tracking) */
+  onEssayChange?: (essays: Record<string, string>) => void;
+  /** Called when user switches parts (good moment to save progress) */
+  onSaveProgress?: (essays: Record<string, string>) => void;
 }
 
 /** Essay state per part */
@@ -56,6 +60,8 @@ function WritingTestLayoutInner({
   parts,
   timerMinutes = 60,
   onSubmit,
+  onEssayChange,
+  onSaveProgress,
 }: WritingTestLayoutProps) {
   const [currentPartIndex, setCurrentPartIndex] = useState(0);
   const [essays, setEssays] = useState<EssayMap>({});
@@ -98,10 +104,14 @@ function WritingTestLayoutInner({
       const text = e.target.value;
       const partId = parts[currentPartIndex]?.id;
       if (partId) {
-        setEssays((prev) => ({ ...prev, [partId]: text }));
+        setEssays((prev) => {
+          const newEssays = { ...prev, [partId]: text };
+          onEssayChange?.(newEssays);
+          return newEssays;
+        });
       }
     },
-    [currentPartIndex, parts],
+    [currentPartIndex, parts, onEssayChange],
   );
 
   const handlePartChange = useCallback((index: number) => {

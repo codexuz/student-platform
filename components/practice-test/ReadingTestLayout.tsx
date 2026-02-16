@@ -15,6 +15,10 @@ interface ReadingTestLayoutProps {
   parts: PartData[];
   timerMinutes?: number; // default 60
   onSubmit?: (answers: AnswerMap) => void;
+  /** Called when answers change (for auto-save tracking) */
+  onAnswerChange?: (answers: AnswerMap) => void;
+  /** Called when user switches parts (good moment to save progress) */
+  onSaveProgress?: (answers: AnswerMap) => void;
 }
 
 /**
@@ -35,6 +39,8 @@ function ReadingTestLayoutInner({
   parts,
   timerMinutes = 60,
   onSubmit,
+  onAnswerChange,
+  onSaveProgress,
 }: ReadingTestLayoutProps) {
   const [state, setState] = useState<TestSessionState>({
     answers: {},
@@ -78,13 +84,20 @@ function ReadingTestLayoutInner({
     }));
   }, []);
 
-  const handleAnswer = useCallback((questionNumber: number, answer: string) => {
-    setState((prev) => ({
-      ...prev,
-      answers: { ...prev.answers, [questionNumber]: answer },
-      currentQuestionNumber: questionNumber,
-    }));
-  }, []);
+  const handleAnswer = useCallback(
+    (questionNumber: number, answer: string) => {
+      setState((prev) => {
+        const newAnswers = { ...prev.answers, [questionNumber]: answer };
+        onAnswerChange?.(newAnswers);
+        return {
+          ...prev,
+          answers: newAnswers,
+          currentQuestionNumber: questionNumber,
+        };
+      });
+    },
+    [onAnswerChange],
+  );
 
   const handlePartChange = useCallback((index: number) => {
     setState((prev) => ({

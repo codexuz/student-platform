@@ -1,19 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Flex, Spinner, Text, Button } from "@chakra-ui/react";
 import { ArrowLeft } from "lucide-react";
 import ListeningTestLayout from "@/components/practice-test/ListeningTestLayout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { ieltsAPI } from "@/lib/api";
-import type { PartData } from "@/components/practice-test/types";
+import type { PartData, AnswerMap } from "@/components/practice-test/types";
 import type { IELTSListeningPart } from "@/components/ielts-builder/types";
+import {
+  useIeltsAttempt,
+  buildPartMappings,
+  type PartQuestionMapping,
+} from "@/hooks/useIeltsAttempt";
 
 /**
  * Practice page for a single listening part.
  * Route: /practice/listening/[id]
- * Loads a listening part by ID and renders it in the test layout.
+ * Scope: PART — saves answers for a single listening part.
  */
 export default function ListeningPracticePage() {
   return (
@@ -32,6 +37,12 @@ function ListeningPracticeContent() {
   const [error, setError] = useState<string | null>(null);
   const [parts, setParts] = useState<PartData[]>([]);
   const [audioUrl, setAudioUrl] = useState<string | undefined>();
+  const [partMappings, setPartMappings] = useState<PartQuestionMapping[]>([]);
+
+  const { attempt, createAttempt, saveListeningAnswers, submitAttempt } =
+    useIeltsAttempt({ scope: "PART", entityId: id });
+
+  const attemptCreatedRef = useRef(false);
 
   useEffect(() => {
     if (!id) return;
@@ -50,8 +61,8 @@ function ListeningPracticeContent() {
 
         const partData = transformListeningPart(part);
         setParts([partData]);
+        setPartMappings(buildPartMappings([partData]));
 
-        // Set audio URL from part or parent listening
         if (part.audio_url) {
           setAudioUrl(part.audio_url);
         } else if (part.listening?.full_audio_url) {
@@ -68,10 +79,32 @@ function ListeningPracticeContent() {
     fetchData();
   }, [id]);
 
-  const handleSubmit = (answers: Record<number, string>) => {
-    console.log("Submitted answers:", answers);
-    // TODO: Submit answers to API for grading
-  };
+  // Create attempt once data is loaded
+  useEffect(() => {
+    if (parts.length > 0 && !attemptCreatedRef.current) {
+      attemptCreatedRef.current = true;
+      createAttempt();
+    }
+  }, [parts, createAttempt]);
+
+  const handleSaveProgress = useCallback(
+    async (answers: AnswerMap) => {
+      if (partMappings.length > 0) {
+        await saveListeningAnswers(answers, partMappings);
+      }
+    },
+    [saveListeningAnswers, partMappings],
+  );
+
+  const handleSubmit = useCallback(
+    async (answers: AnswerMap) => {
+      if (partMappings.length > 0) {
+        await saveListeningAnswers(answers, partMappings);
+      }
+      await submitAttempt();
+    },
+    [saveListeningAnswers, submitAttempt, partMappings],
+  );
 
   if (loading) {
     return (
@@ -114,6 +147,7 @@ function ListeningPracticeContent() {
       parts={parts}
       audioUrl={audioUrl}
       onSubmit={handleSubmit}
+      onSaveProgress={handleSaveProgress}
     />
   );
 }

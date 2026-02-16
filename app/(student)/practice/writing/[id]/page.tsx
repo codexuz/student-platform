@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Flex, Text, Button, Spinner } from "@chakra-ui/react";
 import { ArrowLeft } from "lucide-react";
@@ -8,11 +8,12 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import WritingTestLayout from "@/components/practice-test/WritingTestLayout";
 import type { WritingPartData } from "@/components/practice-test/WritingTestLayout";
 import { ieltsAPI } from "@/lib/api";
+import { useIeltsAttempt } from "@/hooks/useIeltsAttempt";
 
 /**
  * Single writing task practice page.
  * Route: /practice/writing/[id]
- * Loads a writing task by ID and renders it in WritingTestLayout.
+ * Scope: TASK — saves answers for a single writing task.
  */
 export default function WritingTaskPracticePage() {
   return (
@@ -31,6 +32,11 @@ function WritingTaskPracticeContent() {
   const [error, setError] = useState<string | null>(null);
   const [parts, setParts] = useState<WritingPartData[]>([]);
   const [timerMinutes, setTimerMinutes] = useState(20);
+
+  const { attempt, createAttempt, saveWritingAnswers, submitAttempt } =
+    useIeltsAttempt({ scope: "TASK", entityId: id });
+
+  const attemptCreatedRef = useRef(false);
 
   useEffect(() => {
     if (!id) return;
@@ -72,9 +78,28 @@ function WritingTaskPracticeContent() {
     fetchData();
   }, [id]);
 
-  const handleSubmit = (essays: Record<string, string>) => {
-    console.log("Submitted essay:", { taskId: id, essays });
-  };
+  // Create attempt once data is loaded
+  useEffect(() => {
+    if (parts.length > 0 && !attemptCreatedRef.current) {
+      attemptCreatedRef.current = true;
+      createAttempt();
+    }
+  }, [parts, createAttempt]);
+
+  const handleSaveProgress = useCallback(
+    async (essays: Record<string, string>) => {
+      await saveWritingAnswers(essays);
+    },
+    [saveWritingAnswers],
+  );
+
+  const handleSubmit = useCallback(
+    async (essays: Record<string, string>) => {
+      await saveWritingAnswers(essays);
+      await submitAttempt();
+    },
+    [saveWritingAnswers, submitAttempt],
+  );
 
   if (loading) {
     return (
@@ -110,6 +135,7 @@ function WritingTaskPracticeContent() {
       parts={parts}
       timerMinutes={timerMinutes}
       onSubmit={handleSubmit}
+      onSaveProgress={handleSaveProgress}
     />
   );
 }
