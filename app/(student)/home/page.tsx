@@ -13,58 +13,78 @@ import {
   Card,
   Badge,
   Spinner,
-  Image,
 } from "@chakra-ui/react";
-import { LuFlame, LuCoins, LuTrophy, LuTarget } from "react-icons/lu";
+import {
+  LuBookOpen,
+  LuHeadphones,
+  LuPenLine,
+  LuClock,
+  LuTrophy,
+  LuChartBarBig,
+  LuCircleCheck,
+} from "react-icons/lu";
 import { useState, useEffect } from "react";
+import { Chart, useChart } from "@chakra-ui/charts";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Legend,
+  Tooltip,
+  XAxis,
+} from "recharts";
 import Sidebar from "@/components/dashboard/Sidebar";
 import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
-import SectionProgressRadar from "@/components/dashboard/SectionProgressRadar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
-import { progressAPI } from "@/lib/api";
+import { ieltsAnswersAPI } from "@/lib/ielts-api";
 
-interface ProgressProfile {
-  id: string;
-  user_id: string;
-  points: number;
-  coins: number;
-  streaks: number;
-  level: number;
-  last_active_date: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface ProgressData {
-  rank: number;
-  profile: ProgressProfile;
-}
-
-interface SectionStats {
-  average: number;
-  submissions: number;
-  trend: number[];
-}
-
-interface StatsData {
-  overall: number;
-  sections: {
-    reading: SectionStats;
-    listening: SectionStats;
-    grammar: SectionStats;
-    writing: SectionStats;
-    speaking: SectionStats;
+interface IeltsStatistics {
+  overview: {
+    totalSubmitted: number;
+    totalInProgress: number;
+    totalAbandoned: number;
+    totalAttempts: number;
   };
+  scores: {
+    averageBandScore: number | null;
+    bestBandScore: number | null;
+  };
+  reading: {
+    totalQuestions: number;
+    correctAnswers: number;
+    accuracy: number;
+  };
+  listening: {
+    totalQuestions: number;
+    correctAnswers: number;
+    accuracy: number;
+  };
+  writing: {
+    totalAnswers: number;
+    averageWordCount: number;
+    averageScores: {
+      task_response: number;
+      lexical_resources: number;
+      grammar_range_and_accuracy: number;
+      coherence_and_cohesion: number;
+      overall: number;
+    } | null;
+    scoredCount: number;
+  };
+  time: {
+    averageTimeSpentMinutes: number;
+    totalTimeSpentMinutes: number;
+  };
+  recentScores: number[];
 }
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const userName = user?.first_name || user?.username || "Student";
   const [loading, setLoading] = useState(true);
-  const [progressData, setProgressData] = useState<ProgressData | null>(null);
-  const [statsData, setStatsData] = useState<StatsData | null>(null);
+  const [stats, setStats] = useState<IeltsStatistics | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -75,17 +95,10 @@ export default function DashboardPage() {
 
       try {
         setLoading(true);
-
-        // Small delay to ensure userStore is set in AuthContext
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        const rankData = await progressAPI.getCurrentUserRank(user.id);
-
-        const sectionStats = await progressAPI.getOverallSectionsProgress();
-
-        setProgressData(rankData);
-        setStatsData(sectionStats);
+        const data = await ieltsAnswersAPI.getStatistics();
+        setStats(data);
       } catch (error) {
+        console.error("Failed to fetch IELTS statistics", error);
       } finally {
         setLoading(false);
       }
@@ -94,36 +107,29 @@ export default function DashboardPage() {
     fetchData();
   }, [user]);
 
-  const userStats = {
-    overallProgress: Math.round(statsData?.overall || 0),
-    coins: progressData?.profile?.coins || 0,
-    points: progressData?.profile?.points || 0,
-    streak: progressData?.profile?.streaks || 0,
-    ranking: progressData?.rank || 0,
-    level: progressData?.profile?.level || 0,
-  };
+  const writingGraphScore = stats?.writing.averageScores?.overall
+    ? Math.round(stats.writing.averageScores.overall * 10)
+    : 0;
 
-  const sectionData = statsData?.sections
+  const sectionData = stats
     ? [
         {
           section: "Listening",
-          score: Math.round(statsData.sections.listening?.average || 0),
+          reading: Math.round(stats.reading.accuracy),
+          listening: Math.round(stats.listening.accuracy),
+          writing: writingGraphScore,
         },
         {
           section: "Reading",
-          score: Math.round(statsData.sections.reading?.average || 0),
+          reading: Math.round(stats.reading.accuracy),
+          listening: Math.round(stats.listening.accuracy),
+          writing: writingGraphScore,
         },
         {
           section: "Writing",
-          score: Math.round(statsData.sections.writing?.average || 0),
-        },
-        {
-          section: "Speaking",
-          score: Math.round(statsData.sections.speaking?.average || 0),
-        },
-        {
-          section: "Grammar",
-          score: Math.round(statsData.sections.grammar?.average || 0),
+          reading: Math.round(stats.reading.accuracy),
+          listening: Math.round(stats.listening.accuracy),
+          writing: writingGraphScore,
         },
       ]
     : [];
@@ -190,17 +196,17 @@ export default function DashboardPage() {
                 </Text>
               </Box>
 
-              {/* Stats Cards */}
+              {/* IELTS Stats Cards */}
               <Grid
                 templateColumns={{
                   base: "1fr",
                   sm: "repeat(2, 1fr)",
                   md: "repeat(3, 1fr)",
-                  lg: "repeat(5, 1fr)",
+                  lg: "repeat(4, 1fr)",
                 }}
                 gap={{ base: 3, md: 4 }}
               >
-                {/* Overall Progress */}
+                {/* Best Band Score */}
                 <Card.Root borderRadius="2xl" overflow="hidden">
                   <Card.Body p={{ base: 4, md: 6 }}>
                     <VStack gap={2} alignItems="flex-start">
@@ -210,92 +216,26 @@ export default function DashboardPage() {
                           color="gray.600"
                           _dark={{ color: "gray.400" }}
                         >
-                          Overall Progress
-                        </Text>
-                        <Icon
-                          color="blue.500"
-                          fontSize={{ base: "md", md: "lg" }}
-                        >
-                          <LuTarget />
-                        </Icon>
-                      </HStack>
-                      <Heading size={{ base: "xl", md: "2xl" }}>
-                        {userStats.overallProgress}%
-                      </Heading>
-                      <Badge colorPalette="blue" size="sm">
-                        Pro Learner
-                      </Badge>
-                    </VStack>
-                  </Card.Body>
-                </Card.Root>
-
-                {/* Coins */}
-                <Card.Root borderRadius="2xl" overflow="hidden">
-                  <Card.Body p={{ base: 4, md: 6 }}>
-                    <VStack gap={2} alignItems="flex-start">
-                      <HStack justify="space-between" w="full">
-                        <Text
-                          fontSize={{ base: "xs", md: "sm" }}
-                          color="gray.600"
-                          _dark={{ color: "gray.400" }}
-                        >
-                          Coins
+                          Best Band Score
                         </Text>
                         <Icon
                           color="yellow.500"
                           fontSize={{ base: "md", md: "lg" }}
                         >
-                          <LuCoins />
-                        </Icon>
-                      </HStack>
-                      <Heading size={{ base: "xl", md: "2xl" }}>
-                        {userStats.coins}
-                      </Heading>
-                      <Text
-                        fontSize="xs"
-                        color="gray.500"
-                        _dark={{ color: "gray.400" }}
-                      >
-                        Keep earning!
-                      </Text>
-                    </VStack>
-                  </Card.Body>
-                </Card.Root>
-
-                {/* Points */}
-                <Card.Root borderRadius="2xl" overflow="hidden">
-                  <Card.Body p={{ base: 4, md: 6 }}>
-                    <VStack gap={2} alignItems="flex-start">
-                      <HStack justify="space-between" w="full">
-                        <Text
-                          fontSize={{ base: "xs", md: "sm" }}
-                          color="gray.600"
-                          _dark={{ color: "gray.400" }}
-                        >
-                          Points
-                        </Text>
-                        <Icon
-                          color="purple.500"
-                          fontSize={{ base: "md", md: "lg" }}
-                        >
                           <LuTrophy />
                         </Icon>
                       </HStack>
                       <Heading size={{ base: "xl", md: "2xl" }}>
-                        {userStats.points}
+                        {stats?.scores.bestBandScore ?? "—"}
                       </Heading>
-                      <Text
-                        fontSize="xs"
-                        color="gray.500"
-                        _dark={{ color: "gray.400" }}
-                      >
-                        Level {userStats.level}
-                      </Text>
+                      <Badge colorPalette="yellow" size="sm">
+                        Avg: {stats?.scores.averageBandScore ?? "—"}
+                      </Badge>
                     </VStack>
                   </Card.Body>
                 </Card.Root>
 
-                {/* Streak */}
+                {/* Total Attempts */}
                 <Card.Root borderRadius="2xl" overflow="hidden">
                   <Card.Body p={{ base: 4, md: 6 }}>
                     <VStack gap={2} alignItems="flex-start">
@@ -305,30 +245,31 @@ export default function DashboardPage() {
                           color="gray.600"
                           _dark={{ color: "gray.400" }}
                         >
-                          Day Streak
+                          Total Attempts
                         </Text>
                         <Icon
-                          color="orange.500"
+                          color="blue.500"
                           fontSize={{ base: "md", md: "lg" }}
                         >
-                          <LuFlame />
+                          <LuChartBarBig />
                         </Icon>
                       </HStack>
                       <Heading size={{ base: "xl", md: "2xl" }}>
-                        {userStats.streak}
+                        {stats?.overview.totalAttempts ?? 0}
                       </Heading>
-                      <Text
-                        fontSize="xs"
-                        color="gray.500"
-                        _dark={{ color: "gray.400" }}
-                      >
-                        Days in a row
-                      </Text>
+                      <HStack gap={2}>
+                        <Badge colorPalette="green" size="sm">
+                          {stats?.overview.totalSubmitted ?? 0} submitted
+                        </Badge>
+                        <Badge colorPalette="orange" size="sm">
+                          {stats?.overview.totalInProgress ?? 0} in progress
+                        </Badge>
+                      </HStack>
                     </VStack>
                   </Card.Body>
                 </Card.Root>
 
-                {/* Ranking */}
+                {/* Reading Accuracy */}
                 <Card.Root borderRadius="2xl" overflow="hidden">
                   <Card.Body p={{ base: 4, md: 6 }}>
                     <VStack gap={2} alignItems="flex-start">
@@ -338,41 +279,205 @@ export default function DashboardPage() {
                           color="gray.600"
                           _dark={{ color: "gray.400" }}
                         >
-                          Ranking
+                          Reading Accuracy
                         </Text>
                         <Icon
                           color="green.500"
                           fontSize={{ base: "md", md: "lg" }}
                         >
-                          <LuTrophy />
+                          <LuBookOpen />
                         </Icon>
                       </HStack>
                       <Heading size={{ base: "xl", md: "2xl" }}>
-                        #{userStats.ranking}
+                        {stats?.reading.accuracy ?? 0}%
                       </Heading>
                       <Text
                         fontSize="xs"
                         color="gray.500"
                         _dark={{ color: "gray.400" }}
                       >
-                        In your class
+                        {stats?.reading.correctAnswers ?? 0}/
+                        {stats?.reading.totalQuestions ?? 0} correct
+                      </Text>
+                    </VStack>
+                  </Card.Body>
+                </Card.Root>
+
+                {/* Listening Accuracy */}
+                <Card.Root borderRadius="2xl" overflow="hidden">
+                  <Card.Body p={{ base: 4, md: 6 }}>
+                    <VStack gap={2} alignItems="flex-start">
+                      <HStack justify="space-between" w="full">
+                        <Text
+                          fontSize={{ base: "xs", md: "sm" }}
+                          color="gray.600"
+                          _dark={{ color: "gray.400" }}
+                        >
+                          Listening Accuracy
+                        </Text>
+                        <Icon
+                          color="purple.500"
+                          fontSize={{ base: "md", md: "lg" }}
+                        >
+                          <LuHeadphones />
+                        </Icon>
+                      </HStack>
+                      <Heading size={{ base: "xl", md: "2xl" }}>
+                        {stats?.listening.accuracy ?? 0}%
+                      </Heading>
+                      <Text
+                        fontSize="xs"
+                        color="gray.500"
+                        _dark={{ color: "gray.400" }}
+                      >
+                        {stats?.listening.correctAnswers ?? 0}/
+                        {stats?.listening.totalQuestions ?? 0} correct
                       </Text>
                     </VStack>
                   </Card.Body>
                 </Card.Root>
               </Grid>
 
-              {/* Section Progress Radar Chart */}
+              {/* Secondary Stats Row */}
+              <Grid
+                templateColumns={{
+                  base: "1fr",
+                  sm: "repeat(2, 1fr)",
+                  md: "repeat(3, 1fr)",
+                }}
+                gap={{ base: 3, md: 4 }}
+              >
+                {/* Writing */}
+                <Card.Root borderRadius="2xl" overflow="hidden">
+                  <Card.Body p={{ base: 4, md: 6 }}>
+                    <VStack gap={2} alignItems="flex-start">
+                      <HStack justify="space-between" w="full">
+                        <Text
+                          fontSize={{ base: "xs", md: "sm" }}
+                          color="gray.600"
+                          _dark={{ color: "gray.400" }}
+                        >
+                          Writing
+                        </Text>
+                        <Icon
+                          color="teal.500"
+                          fontSize={{ base: "md", md: "lg" }}
+                        >
+                          <LuPenLine />
+                        </Icon>
+                      </HStack>
+                      <Heading size={{ base: "xl", md: "2xl" }}>
+                        {stats?.writing.totalAnswers ?? 0}
+                      </Heading>
+                      <Text
+                        fontSize="xs"
+                        color="gray.500"
+                        _dark={{ color: "gray.400" }}
+                      >
+                        {stats?.writing.totalAnswers
+                          ? `Avg ${stats.writing.averageWordCount} words`
+                          : "No answers yet"}
+                      </Text>
+                    </VStack>
+                  </Card.Body>
+                </Card.Root>
+
+                {/* Time Spent */}
+                <Card.Root borderRadius="2xl" overflow="hidden">
+                  <Card.Body p={{ base: 4, md: 6 }}>
+                    <VStack gap={2} alignItems="flex-start">
+                      <HStack justify="space-between" w="full">
+                        <Text
+                          fontSize={{ base: "xs", md: "sm" }}
+                          color="gray.600"
+                          _dark={{ color: "gray.400" }}
+                        >
+                          Time Spent
+                        </Text>
+                        <Icon
+                          color="orange.500"
+                          fontSize={{ base: "md", md: "lg" }}
+                        >
+                          <LuClock />
+                        </Icon>
+                      </HStack>
+                      <Heading size={{ base: "xl", md: "2xl" }}>
+                        {stats?.time.totalTimeSpentMinutes?.toFixed(1) ?? 0} min
+                      </Heading>
+                      <Text
+                        fontSize="xs"
+                        color="gray.500"
+                        _dark={{ color: "gray.400" }}
+                      >
+                        Avg{" "}
+                        {stats?.time.averageTimeSpentMinutes?.toFixed(1) ?? 0}{" "}
+                        min per test
+                      </Text>
+                    </VStack>
+                  </Card.Body>
+                </Card.Root>
+
+                {/* Recent Scores */}
+                <Card.Root borderRadius="2xl" overflow="hidden">
+                  <Card.Body p={{ base: 4, md: 6 }}>
+                    <VStack gap={2} alignItems="flex-start">
+                      <HStack justify="space-between" w="full">
+                        <Text
+                          fontSize={{ base: "xs", md: "sm" }}
+                          color="gray.600"
+                          _dark={{ color: "gray.400" }}
+                        >
+                          Recent Scores
+                        </Text>
+                        <Icon
+                          color="blue.500"
+                          fontSize={{ base: "md", md: "lg" }}
+                        >
+                          <LuCircleCheck />
+                        </Icon>
+                      </HStack>
+                      <HStack gap={2} flexWrap="wrap">
+                        {stats?.recentScores?.length ? (
+                          stats.recentScores.map((score, i) => (
+                            <Badge
+                              key={i}
+                              colorPalette={
+                                score >= 7
+                                  ? "green"
+                                  : score >= 5
+                                    ? "yellow"
+                                    : "red"
+                              }
+                              size="lg"
+                              fontSize="lg"
+                              px={3}
+                              py={1}
+                            >
+                              {score}
+                            </Badge>
+                          ))
+                        ) : (
+                          <Text fontSize="sm" color="gray.500">
+                            No scores yet
+                          </Text>
+                        )}
+                      </HStack>
+                    </VStack>
+                  </Card.Body>
+                </Card.Root>
+              </Grid>
+
+              {/* Section Accuracy Area Chart */}
               {loading ? (
                 <Card.Root borderRadius="2xl" overflow="hidden">
                   <Card.Body p={{ base: 4, md: 6 }}>
-                    <Flex justifyContent="center" alignItems="center" h="400px">
+                    <Flex justifyContent="center" alignItems="center" h="200px">
                       <Spinner size="xl" color="brand.500" />
                     </Flex>
                   </Card.Body>
                 </Card.Root>
               ) : (
-                <SectionProgressRadar data={sectionData} />
+                <SectionAreaChart data={sectionData} />
               )}
             </VStack>
           </Container>
@@ -382,5 +487,71 @@ export default function DashboardPage() {
         <MobileBottomNav />
       </Flex>
     </ProtectedRoute>
+  );
+}
+
+interface SectionChartData {
+  section: string;
+  reading: number;
+  listening: number;
+  writing: number;
+}
+
+function SectionAreaChart({ data }: { data: SectionChartData[] }) {
+  const chart = useChart({
+    data,
+    series: [
+      { name: "reading", color: "green.solid" },
+      { name: "listening", color: "purple.solid" },
+      { name: "writing", color: "teal.solid" },
+    ],
+  });
+
+  return (
+    <Card.Root borderRadius="2xl" overflow="hidden">
+      <Card.Body p={{ base: 4, md: 6 }}>
+        <Heading size={{ base: "md", md: "lg" }} mb={1}>
+          Section Accuracy
+        </Heading>
+        <Text
+          fontSize={{ base: "xs", md: "sm" }}
+          color="gray.600"
+          _dark={{ color: "gray.400" }}
+          mb={{ base: 4, md: 6 }}
+        >
+          Your performance across IELTS skill areas
+        </Text>
+        <Chart.Root maxH="sm" chart={chart}>
+          <AreaChart data={chart.data}>
+            <CartesianGrid
+              stroke={chart.color("border.muted")}
+              vertical={false}
+            />
+            <XAxis
+              axisLine={false}
+              tickLine={false}
+              dataKey={chart.key("section")}
+            />
+            <Tooltip
+              cursor={false}
+              animationDuration={100}
+              content={<Chart.Tooltip />}
+            />
+            <Legend content={<Chart.Legend />} />
+            {chart.series.map((item) => (
+              <Area
+                key={item.name}
+                isAnimationActive={false}
+                dataKey={chart.key(item.name)}
+                fill={chart.color(item.color)}
+                fillOpacity={0.2}
+                stroke={chart.color(item.color)}
+                stackId="a"
+              />
+            ))}
+          </AreaChart>
+        </Chart.Root>
+      </Card.Body>
+    </Card.Root>
   );
 }

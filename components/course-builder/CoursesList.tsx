@@ -145,7 +145,7 @@ export default function CoursesList({ onOpenCourse }: CoursesListProps) {
           </Text>
         </VStack>
       ) : (
-        <SimpleGrid columns={{ base: 1, sm: 2, lg: 3 }} gap={6}>
+        <SimpleGrid columns={{ base: 1, sm: 2, lg: 4 }} gap={6}>
           {sorted.map((c) => (
             <Box
               key={c.id}

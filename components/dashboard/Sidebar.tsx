@@ -36,12 +36,12 @@ const studentMenuItems = [
     href: "/practice/results",
     section: "MAIN",
   },
-  {
-    icon: ClipboardList,
-    label: "Mock Tests",
-    href: "/mock-tests",
-    section: "MAIN",
-  },
+  // {
+  //   icon: ClipboardList,
+  //   label: "Mock Tests",
+  //   href: "/mock-tests",
+  //   section: "MAIN",
+  // },
   { icon: BookOpen, label: "Courses", href: "/courses", section: "MAIN" },
   { icon: Bookmark, label: "Resources", href: "/resources", section: "MAIN" },
 ];
@@ -55,6 +55,12 @@ const teacherMenuItems = [
     section: "MAIN",
   },
   { icon: Users, label: "Groups", href: "/groups", section: "MAIN" },
+  {
+    icon: ClipboardList,
+    label: "Grade Writing",
+    href: "/grade-writing",
+    section: "MAIN",
+  },
   {
     icon: ClipboardList,
     label: "IELTS Builder",
