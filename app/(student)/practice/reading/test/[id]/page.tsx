@@ -117,9 +117,12 @@ function ReadingTestPracticeContent() {
       if (partMappings.length > 0) {
         await saveReadingAnswers(answers, partMappings);
       }
-      await submitAttempt();
+      const success = await submitAttempt();
+      if (success && attempt?.id) {
+        router.push(`/practice/results/${attempt.id}`);
+      }
     },
-    [saveReadingAnswers, submitAttempt, partMappings],
+    [saveReadingAnswers, submitAttempt, partMappings, attempt?.id, router],
   );
 
   if (loading) {

@@ -110,9 +110,12 @@ function WritingTestPracticeContent() {
   const handleSubmit = useCallback(
     async (essays: Record<string, string>) => {
       await saveWritingAnswers(essays);
-      await submitAttempt();
+      const success = await submitAttempt();
+      if (success && attempt?.id) {
+        router.push(`/practice/results/${attempt.id}`);
+      }
     },
-    [saveWritingAnswers, submitAttempt],
+    [saveWritingAnswers, submitAttempt, attempt?.id, router],
   );
 
   if (loading) {

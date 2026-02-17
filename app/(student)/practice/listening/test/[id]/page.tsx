@@ -120,9 +120,12 @@ function ListeningTestPracticeContent() {
       if (partMappings.length > 0) {
         await saveListeningAnswers(answers, partMappings);
       }
-      await submitAttempt();
+      const success = await submitAttempt();
+      if (success && attempt?.id) {
+        router.push(`/practice/results/${attempt.id}`);
+      }
     },
-    [saveListeningAnswers, submitAttempt, partMappings],
+    [saveListeningAnswers, submitAttempt, partMappings, attempt?.id, router],
   );
 
   if (loading) {

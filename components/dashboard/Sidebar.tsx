@@ -21,6 +21,7 @@ import {
   ChevronUp,
   Users,
   ClipboardList,
+  BarChart3,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -29,6 +30,12 @@ import { useAuth } from "@/contexts/AuthContext";
 const studentMenuItems = [
   { icon: Home, label: "Home", href: "/home", section: "MAIN" },
   { icon: Target, label: "Practice", href: "/practice", section: "MAIN" },
+  {
+    icon: BarChart3,
+    label: "My Results",
+    href: "/practice/results",
+    section: "MAIN",
+  },
   {
     icon: ClipboardList,
     label: "Mock Tests",
@@ -114,7 +121,15 @@ export default function Sidebar() {
             .filter((item) => item.section === "MAIN")
             .map((item) => {
               const isActive =
-                pathname === item.href || pathname.startsWith(item.href + "/");
+                pathname === item.href ||
+                (pathname.startsWith(item.href + "/") &&
+                  !menuItems.some(
+                    (other) =>
+                      other.href !== item.href &&
+                      other.href.startsWith(item.href + "/") &&
+                      (pathname === other.href ||
+                        pathname.startsWith(other.href + "/")),
+                  ));
               return (
                 <Link key={item.href} href={item.href}>
                   <HStack
