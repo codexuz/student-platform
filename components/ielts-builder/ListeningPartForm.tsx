@@ -17,7 +17,13 @@ import { Save, Upload, X, Plus } from "lucide-react";
 import { useState, useEffect } from "react";
 import { ieltsListeningPartsAPI, ieltsListeningAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
-import type { PageId, IELTSListening, DifficultyLevel } from "./types";
+import type {
+  PageId,
+  IELTSListening,
+  IELTSListeningPart,
+  DifficultyLevel,
+  IELTSMode,
+} from "./types";
 import FileUploadModal from "./FileUploadModal";
 import AudioPlayer from "./AudioPlayer";
 
@@ -33,7 +39,8 @@ export default function ListeningPartForm({
   onNavigate,
 }: ListeningPartFormProps) {
   const [listeningId, setListeningId] = useState(prefillListeningId || "");
-  const [part, setPart] = useState("PART_1");
+  const [part, setPart] = useState<IELTSListeningPart["part"]>("PART_1");
+  const [mode, setMode] = useState<IELTSMode>("practice");
   const [title, setTitle] = useState("");
   const [audioUrl, setAudioUrl] = useState("");
   const [audioName, setAudioName] = useState("");
@@ -67,7 +74,8 @@ export default function ListeningPartForm({
         .getById(editId)
         .then((p: Record<string, unknown>) => {
           setListeningId((p.listening_id as string) || "");
-          setPart((p.part as string) || "PART_1");
+          setPart((p.part as IELTSListeningPart["part"]) || "PART_1");
+          setMode((p.mode as IELTSMode) || "practice");
           setTitle((p.title as string) || "");
           setAudioUrl((p.audio_url as string) || "");
           setAudioName("");
@@ -91,6 +99,7 @@ export default function ListeningPartForm({
       const body: Record<string, unknown> = {
         listening_id: listeningId,
         part,
+        mode,
         title: title || null,
         difficulty,
         isActive,
@@ -206,12 +215,41 @@ export default function ListeningPartForm({
                 <NativeSelect.Root size="sm" w="full">
                   <NativeSelect.Field
                     value={part}
-                    onChange={(e) => setPart(e.currentTarget.value)}
+                    onChange={(e) =>
+                      setPart(
+                        e.currentTarget.value as IELTSListeningPart["part"],
+                      )
+                    }
                   >
                     <option value="PART_1">Part 1</option>
                     <option value="PART_2">Part 2</option>
                     <option value="PART_3">Part 3</option>
                     <option value="PART_4">Part 4</option>
+                  </NativeSelect.Field>
+                  <NativeSelect.Indicator />
+                </NativeSelect.Root>
+              </Box>
+              <Box flex="1">
+                <Text
+                  fontSize="xs"
+                  fontWeight="600"
+                  color="gray.600"
+                  _dark={{ color: "gray.400" }}
+                  mb={1}
+                  textTransform="uppercase"
+                  letterSpacing="0.3px"
+                >
+                  Mode
+                </Text>
+                <NativeSelect.Root size="sm" w="full">
+                  <NativeSelect.Field
+                    value={mode}
+                    onChange={(e) =>
+                      setMode(e.currentTarget.value as IELTSMode)
+                    }
+                  >
+                    <option value="practice">Practice</option>
+                    <option value="mock">Mock</option>
                   </NativeSelect.Field>
                   <NativeSelect.Indicator />
                 </NativeSelect.Root>

@@ -137,6 +137,13 @@ export default function WritingTasksList({
                   >
                     {task.task === "TASK_1" ? "Task 1" : "Task 2"}
                   </Badge>
+                  <Badge
+                    colorPalette={task.mode === "mock" ? "purple" : "blue"}
+                    variant="subtle"
+                    fontSize="xs"
+                  >
+                    {task.mode === "mock" ? "Mock" : "Practice"}
+                  </Badge>
                   <Text fontSize="sm" fontWeight="500">
                     {truncateHtml(task.prompt, 80) || "No prompt"}
                   </Text>

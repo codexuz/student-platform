@@ -24,7 +24,12 @@ import Image from "@tiptap/extension-image";
 import { Control, RichTextEditor } from "@/components/ui/rich-text-editor";
 import { ieltsWritingTasksAPI, ieltsWritingAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
-import type { PageId, IELTSWriting } from "./types";
+import type {
+  PageId,
+  IELTSWriting,
+  IELTSWritingTask,
+  IELTSMode,
+} from "./types";
 import FileUploadModal from "./FileUploadModal";
 
 interface WritingTaskFormProps {
@@ -40,7 +45,8 @@ export default function WritingTaskForm({
 }: WritingTaskFormProps) {
   const isEdit = !!editId;
   const [writingId, setWritingId] = useState(prefillWritingId || "");
-  const [task, setTask] = useState("TASK_1");
+  const [task, setTask] = useState<IELTSWritingTask["task"]>("TASK_1");
+  const [mode, setMode] = useState<IELTSMode>("practice");
   const [prompt, setPrompt] = useState("");
 
   const promptEditor = useEditor({
@@ -86,7 +92,8 @@ export default function WritingTaskForm({
       .then(
         (r: {
           writing_id?: string;
-          task?: string;
+          task?: IELTSWritingTask["task"];
+          mode?: IELTSMode;
           prompt?: string;
           min_words?: number;
           suggested_time?: number;
@@ -94,6 +101,7 @@ export default function WritingTaskForm({
         }) => {
           setWritingId(r.writing_id || "");
           setTask(r.task || "TASK_1");
+          setMode(r.mode || "practice");
           setPrompt(r.prompt || "");
           promptEditor?.commands.setContent(r.prompt || "");
           setMinWords(String(r.min_words || 150));
@@ -114,6 +122,7 @@ export default function WritingTaskForm({
       const body: Record<string, unknown> = {
         writing_id: writingId,
         task,
+        mode,
         prompt: prompt || null,
         min_words: parseInt(minWords) || 150,
         suggested_time: parseInt(suggestedTime) || 20,
@@ -224,10 +233,39 @@ export default function WritingTaskForm({
                   <NativeSelect.Root size="sm" w="full">
                     <NativeSelect.Field
                       value={task}
-                      onChange={(e) => setTask(e.currentTarget.value)}
+                      onChange={(e) =>
+                        setTask(
+                          e.currentTarget.value as IELTSWritingTask["task"],
+                        )
+                      }
                     >
                       <option value="TASK_1">Task 1</option>
                       <option value="TASK_2">Task 2</option>
+                    </NativeSelect.Field>
+                    <NativeSelect.Indicator />
+                  </NativeSelect.Root>
+                </Box>
+                <Box flex="1">
+                  <Text
+                    fontSize="xs"
+                    fontWeight="600"
+                    color="gray.600"
+                    _dark={{ color: "gray.400" }}
+                    mb={1}
+                    textTransform="uppercase"
+                    letterSpacing="0.3px"
+                  >
+                    Mode
+                  </Text>
+                  <NativeSelect.Root size="sm" w="full">
+                    <NativeSelect.Field
+                      value={mode}
+                      onChange={(e) =>
+                        setMode(e.currentTarget.value as IELTSMode)
+                      }
+                    >
+                      <option value="practice">Practice</option>
+                      <option value="mock">Mock</option>
                     </NativeSelect.Field>
                     <NativeSelect.Indicator />
                   </NativeSelect.Root>

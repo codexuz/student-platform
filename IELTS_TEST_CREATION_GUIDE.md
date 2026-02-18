@@ -98,6 +98,7 @@ IeltsTest (top-level container)
 | `id`              | UUID                                  | auto     | Primary key                |
 | `reading_id`      | UUID                                  | **yes**  | FK → `ielts_reading`      |
 | `part`            | ENUM(`PART_1`, `PART_2`, `PART_3`)   | **yes**  |                            |
+| `mode`            | ENUM(`practice`, `mock`)             | **yes**  |                            |
 | `title`           | STRING                                | no       |                            |
 | `content`         | TEXT (long)                           | no       | The reading passage        |
 | `timeLimitMinutes`| INTEGER                               | no       |                            |
@@ -123,6 +124,7 @@ IeltsTest (top-level container)
 | `id`              | UUID                                            | auto     | Primary key                  |
 | `listening_id`    | UUID                                            | **yes**  | FK → `ielts_listening`      |
 | `part`            | ENUM(`PART_1`, `PART_2`, `PART_3`, `PART_4`)  | **yes**  |                              |
+| `mode`            | ENUM(`practice`, `mock`)                        | **yes**  |                              |
 | `title`           | STRING                                          | no       |                              |
 | `audio_id`        | UUID                                            | no       | FK → `ielts_audio`          |
 | `timeLimitMinutes`| INTEGER                                         | no       |                              |
@@ -147,6 +149,7 @@ IeltsTest (top-level container)
 | `id`           | UUID                           | auto     | Primary key                |
 | `writing_id`   | UUID                           | **yes**  | FK → `ielts_writing`      |
 | `task`         | ENUM(`TASK_1`, `TASK_2`)      | **yes**  |                            |
+| `mode`         | ENUM(`practice`, `mock`)      | **yes**  |                            |
 | `prompt`       | TEXT (long)                    | no       | The writing prompt         |
 | `image_url`    | STRING                         | no       | Chart/graph image          |
 | `min_words`    | INTEGER                        | no       | e.g., 150 or 250           |
@@ -460,6 +463,7 @@ This is the most powerful endpoint — it supports **deeply nested creation** of
 {
   "reading_id": "uuid-of-reading",
   "part": "PART_1",
+  "mode": "mock",
   "title": "Georgia O'Keeffe",
   "content": "<p>For seven decades, Georgia O'Keeffe (1887-1986) was a major figure...</p>",
   "timeLimitMinutes": 20,
@@ -528,6 +532,7 @@ This is the most powerful endpoint — it supports **deeply nested creation** of
 |-------------------|----------|----------|----------------------------------------|
 | `reading_id`      | UUID     | **yes**  | FK to the reading section              |
 | `part`            | string   | **yes**  | `PART_1`, `PART_2`, `PART_3`          |
+| `mode`            | string   | **yes**  | `practice` or `mock`                   |
 | `title`           | string   | no       | Part title/passage name               |
 | `content`         | string   | no       | Full reading passage (HTML supported)  |
 | `timeLimitMinutes`| integer  | no       | Time limit in minutes                  |
@@ -586,6 +591,7 @@ GET /ielts-reading-parts
 |------------|--------|------------------------------|
 | `readingId`| string | Filter by reading ID         |
 | `part`     | string | Filter by part number        |
+| `mode`     | string | Filter by mode (`practice`, `mock`) |
 
 #### Get / Update / Delete Reading Part
 ```
@@ -665,6 +671,7 @@ Supports nested creation of audio + questions in a single request:
 {
   "listening_id": "uuid-of-listening",
   "part": "PART_1",
+  "mode": "mock",
   "title": "A conversation about booking a hotel room",
   "audio": {
     "url": "https://cdn.example.com/audio/part1.mp3",
@@ -719,6 +726,7 @@ Supports nested creation of audio + questions in a single request:
 |-------------------|---------|----------|------------------------------------------------|
 | `listening_id`    | UUID    | **yes**  | FK to the listening section                    |
 | `part`            | string  | **yes**  | `PART_1`, `PART_2`, `PART_3`, `PART_4`       |
+| `mode`            | string  | **yes**  | `practice` or `mock`                           |
 | `title`           | string  | no       |                                                |
 | `audio_id`        | UUID    | no       | Existing audio ID (alternative to `audio`)     |
 | `audio`           | object  | no       | Create new audio inline (`url`, `file_name`, `duration`) |
@@ -730,7 +738,7 @@ Supports nested creation of audio + questions in a single request:
 
 #### Get All / Get by ID / Update / Delete Listening Parts
 ```
-GET    /ielts-listening-parts             (query: listeningId, part)
+GET    /ielts-listening-parts             (query: listeningId, part, mode)
 GET    /ielts-listening-parts/:id
 PATCH  /ielts-listening-parts/:id         (ADMIN, TEACHER)
 DELETE /ielts-listening-parts/:id         (ADMIN, TEACHER) → 204
@@ -797,6 +805,7 @@ Roles: ADMIN, TEACHER
 {
   "writing_id": "uuid-of-writing",
   "task": "TASK_1",
+  "mode": "mock",
   "prompt": "The chart below shows the percentage of households in owned and rented accommodation in England and Wales between 1918 and 2011. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.",
   "image_url": "https://cdn.example.com/images/chart-task1.png",
   "min_words": 150,
@@ -808,6 +817,7 @@ Roles: ADMIN, TEACHER
 |----------------|---------|----------|------------------------------------------|
 | `writing_id`   | UUID    | **yes**  | FK to the writing section                |
 | `task`         | string  | **yes**  | `TASK_1` or `TASK_2`                    |
+| `mode`         | string  | **yes**  | `practice` or `mock`                     |
 | `prompt`       | string  | no       | The writing prompt (HTML supported)      |
 | `image_url`    | string  | no       | URL to chart/graph/diagram image         |
 | `min_words`    | integer | no       | Minimum word count (150 for T1, 250 T2)  |
@@ -831,6 +841,7 @@ Roles: ADMIN, TEACHER, STUDENT
 | `search`   | string | Search by prompt text           |
 | `writingId`| string | Filter by writing ID            |
 | `task`     | string | Filter by task type (`TASK_1`, `TASK_2`) |
+| `mode`     | string | Filter by mode (`practice`, `mock`) |
 
 #### Update a Writing Task
 ```

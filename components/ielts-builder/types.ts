@@ -22,6 +22,7 @@ export type IELTSQuestionType =
   | "MULTIPLE_ANSWER";
 
 export type DifficultyLevel = "EASY" | "MEDIUM" | "HARD";
+export type IELTSMode = "practice" | "mock";
 
 // ─── Question Option (Choice) ──────────────────────────────────────────────
 
@@ -77,7 +78,7 @@ export interface IELTSQuestion {
 export interface IELTSTest {
   id: string;
   title: string;
-  mode: "practice" | "mock";
+  mode: IELTSMode;
   status: "draft" | "published";
   category?: string;
   created_by?: string;
@@ -101,6 +102,7 @@ export interface IELTSReadingPart {
   id: string;
   reading_id: string;
   part: "PART_1" | "PART_2" | "PART_3";
+  mode: IELTSMode;
   title?: string;
   content?: string; // reading passage (HTML)
   timeLimitMinutes?: number;
@@ -126,6 +128,7 @@ export interface IELTSListeningPart {
   id: string;
   listening_id: string;
   part: "PART_1" | "PART_2" | "PART_3" | "PART_4";
+  mode: IELTSMode;
   title?: string;
   audio_url?: string;
   timeLimitMinutes?: number;
@@ -150,6 +153,7 @@ export interface IELTSWritingTask {
   id: string;
   writing_id: string;
   task: "TASK_1" | "TASK_2";
+  mode: IELTSMode;
   prompt?: string;
   image_url?: string;
   min_words?: number;

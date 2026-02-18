@@ -107,26 +107,31 @@ export default function ListeningPartsList({
             <Box as="table" w="full" fontSize="sm">
               <Box as="thead">
                 <Box as="tr">
-                  {["Part", "Title", "Listening ID", "ID", "Actions"].map(
-                    (h) => (
-                      <Box
-                        as="th"
-                        key={h}
-                        textAlign="left"
-                        px={4}
-                        py={2.5}
-                        bg="gray.50"
-                        _dark={{ bg: "gray.700", color: "gray.400" }}
-                        fontSize="xs"
-                        textTransform="uppercase"
-                        color="gray.500"
-                        fontWeight="700"
-                        borderBottomWidth="2px"
-                      >
-                        {h}
-                      </Box>
-                    ),
-                  )}
+                  {[
+                    "Part",
+                    "Mode",
+                    "Title",
+                    "Listening ID",
+                    "ID",
+                    "Actions",
+                  ].map((h) => (
+                    <Box
+                      as="th"
+                      key={h}
+                      textAlign="left"
+                      px={4}
+                      py={2.5}
+                      bg="gray.50"
+                      _dark={{ bg: "gray.700", color: "gray.400" }}
+                      fontSize="xs"
+                      textTransform="uppercase"
+                      color="gray.500"
+                      fontWeight="700"
+                      borderBottomWidth="2px"
+                    >
+                      {h}
+                    </Box>
+                  ))}
                 </Box>
               </Box>
               <Box as="tbody">
@@ -146,6 +151,22 @@ export default function ListeningPartsList({
                       _dark={{ borderColor: "gray.700" }}
                     >
                       {p.part}
+                    </Box>
+                    <Box
+                      as="td"
+                      px={4}
+                      py={2.5}
+                      borderBottomWidth="1px"
+                      borderColor="gray.100"
+                      _dark={{ borderColor: "gray.700" }}
+                    >
+                      <Badge
+                        colorPalette={p.mode === "mock" ? "purple" : "blue"}
+                        variant="subtle"
+                        fontSize="xs"
+                      >
+                        {p.mode === "mock" ? "Mock" : "Practice"}
+                      </Badge>
                     </Box>
                     <Box
                       as="td"

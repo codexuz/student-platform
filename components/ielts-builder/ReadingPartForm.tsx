@@ -22,7 +22,13 @@ import Image from "@tiptap/extension-image";
 import { Control, RichTextEditor } from "@/components/ui/rich-text-editor";
 import { ieltsReadingPartsAPI, ieltsReadingAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
-import type { PageId, IELTSReading, DifficultyLevel } from "./types";
+import type {
+  PageId,
+  IELTSReading,
+  IELTSReadingPart,
+  DifficultyLevel,
+  IELTSMode,
+} from "./types";
 
 interface ReadingPartFormProps {
   editId?: string | null;
@@ -36,7 +42,8 @@ export default function ReadingPartForm({
   onNavigate,
 }: ReadingPartFormProps) {
   const [readingId, setReadingId] = useState(prefillReadingId || "");
-  const [part, setPart] = useState("PART_1");
+  const [part, setPart] = useState<IELTSReadingPart["part"]>("PART_1");
+  const [mode, setMode] = useState<IELTSMode>("practice");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [timeLimitMinutes, setTimeLimitMinutes] = useState("");
@@ -82,7 +89,8 @@ export default function ReadingPartForm({
         .getById(editId)
         .then((p: Record<string, unknown>) => {
           setReadingId((p.reading_id as string) || "");
-          setPart((p.part as string) || "PART_1");
+          setPart((p.part as IELTSReadingPart["part"]) || "PART_1");
+          setMode((p.mode as IELTSMode) || "practice");
           setTitle((p.title as string) || "");
           const contentVal = (p.content as string) || "";
           setContent(contentVal);
@@ -118,6 +126,7 @@ export default function ReadingPartForm({
       const body: Record<string, unknown> = {
         reading_id: readingId,
         part,
+        mode,
         title: title || null,
         content: content || null,
         difficulty,
@@ -234,11 +243,38 @@ export default function ReadingPartForm({
                 <NativeSelect.Root size="sm" w="full">
                   <NativeSelect.Field
                     value={part}
-                    onChange={(e) => setPart(e.currentTarget.value)}
+                    onChange={(e) =>
+                      setPart(e.currentTarget.value as IELTSReadingPart["part"])
+                    }
                   >
                     <option value="PART_1">Part 1</option>
                     <option value="PART_2">Part 2</option>
                     <option value="PART_3">Part 3</option>
+                  </NativeSelect.Field>
+                  <NativeSelect.Indicator />
+                </NativeSelect.Root>
+              </Box>
+              <Box flex="1">
+                <Text
+                  fontSize="xs"
+                  fontWeight="600"
+                  color="gray.600"
+                  _dark={{ color: "gray.400" }}
+                  mb={1}
+                  textTransform="uppercase"
+                  letterSpacing="0.3px"
+                >
+                  Mode
+                </Text>
+                <NativeSelect.Root size="sm" w="full">
+                  <NativeSelect.Field
+                    value={mode}
+                    onChange={(e) =>
+                      setMode(e.currentTarget.value as IELTSMode)
+                    }
+                  >
+                    <option value="practice">Practice</option>
+                    <option value="mock">Mock</option>
                   </NativeSelect.Field>
                   <NativeSelect.Indicator />
                 </NativeSelect.Root>
