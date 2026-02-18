@@ -38,6 +38,12 @@ export default function SummaryCompletionDragDrop({
   // Items already placed in gaps
   const placedItems = new Set(Object.values(answers));
 
+  // Lookup optionKey → optionText for display
+  const optionTextMap = new Map(
+    wordBankItems.map((item) => [item.optionKey, item.optionText]),
+  );
+  const displayValue = (key: string) => optionTextMap.get(key) ?? key;
+
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(String(event.active.id));
   };
@@ -116,6 +122,7 @@ export default function SummaryCompletionDragDrop({
                 <DroppableGap
                   id={qNum}
                   value={answer}
+                  displayValue={answer ? displayValue(answer) : ""}
                   isCorrect={!!isCorrect}
                   isWrong={!!isWrong}
                   onClick={() => handleGapClick(qNum)}
@@ -141,12 +148,12 @@ export default function SummaryCompletionDragDrop({
             gap={3}
           >
             {wordBankItems.map((item) => {
-              const isPlaced = placedItems.has(item.optionText);
+              const isPlaced = placedItems.has(item.optionKey);
               return (
                 <DraggableWord
                   key={item.optionKey}
-                  id={item.optionText}
-                  text={item.optionText}
+                  id={item.optionKey}
+                  label={`${item.optionKey}. ${item.optionText}`}
                   isPlaced={isPlaced}
                   disabled={disabled}
                 />
@@ -168,7 +175,7 @@ export default function SummaryCompletionDragDrop({
               shadow="lg"
               cursor="grabbing"
             >
-              {activeId}
+              {displayValue(activeId)}
             </Box>
           ) : null}
         </DragOverlay>
@@ -181,12 +188,12 @@ export default function SummaryCompletionDragDrop({
 
 function DraggableWord({
   id,
-  text,
+  label,
   isPlaced,
   disabled,
 }: {
   id: string;
-  text: string;
+  label: string;
   isPlaced: boolean;
   disabled: boolean;
 }) {
@@ -221,7 +228,7 @@ function DraggableWord({
         disabled || isPlaced ? {} : { borderColor: "blue.400", shadow: "sm" }
       }
     >
-      {text}
+      {label}
     </Box>
   );
 }
@@ -231,6 +238,7 @@ function DraggableWord({
 function DroppableGap({
   id,
   value,
+  displayValue,
   isCorrect,
   isWrong,
   onClick,
@@ -239,6 +247,7 @@ function DroppableGap({
 }: {
   id: number;
   value: string;
+  displayValue: string;
   isCorrect: boolean;
   isWrong: boolean;
   onClick: () => void;
@@ -306,7 +315,9 @@ function DroppableGap({
       transition="all 0.15s"
       fontSize="sm"
     >
-      {value || (
+      {value ? (
+        displayValue
+      ) : (
         <Text color="gray.400" fontSize="sm">
           {placeholder}
         </Text>
