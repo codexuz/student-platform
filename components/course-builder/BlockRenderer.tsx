@@ -12,7 +12,7 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { GripVertical, Trash2, Upload, X } from "lucide-react";
+import { GripVertical, Trash2, Upload, X, Search } from "lucide-react";
 import { useState, useRef, useCallback } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -20,6 +20,7 @@ import Image from "next/image";
 import type { ContentBlock, VideoTrack } from "./types";
 import FileUploadZone from "./FileUploadZone";
 import { uploadAPI } from "@/lib/teacher-api";
+import IeltsPracticePickerModal from "./IeltsPracticePickerModal";
 
 function toYouTubeEmbed(url: string): string | null {
   if (!url) return null;
@@ -728,5 +729,198 @@ export default function BlockRenderer({
     );
   }
 
+  if (block.type === "ielts_practice") {
+    let parsed: { practiceType?: string; id?: string; label?: string } = {};
+    try {
+      parsed = block.content ? JSON.parse(block.content) : {};
+    } catch {
+      /* not yet valid JSON */
+    }
+    const practiceType = parsed.practiceType || "reading";
+    const partId = parsed.id || "";
+    const partLabel = parsed.label || "";
+
+    const updatePractice = (fields: Record<string, string>) => {
+      const next = { ...parsed, ...fields };
+      onChange(JSON.stringify(next));
+    };
+
+    const practiceUrl = partId ? `/practice/${practiceType}/${partId}` : "";
+
+    return (
+      <IeltsPracticeBlock
+        setNodeRef={setNodeRef}
+        style={style}
+        dragHandle={dragHandle}
+        practiceType={practiceType}
+        partId={partId}
+        partLabel={partLabel}
+        practiceUrl={practiceUrl}
+        updatePractice={updatePractice}
+      />
+    );
+  }
+
   return null;
+}
+
+// ─── IELTS Practice Block (extracted for state) ─────────────────────────────
+
+function IeltsPracticeBlock({
+  setNodeRef,
+  style,
+  dragHandle,
+  practiceType,
+  partId,
+  partLabel,
+  practiceUrl,
+  updatePractice,
+}: {
+  setNodeRef: (el: HTMLElement | null) => void;
+  style: React.CSSProperties;
+  dragHandle: React.ReactNode;
+  practiceType: string;
+  partId: string;
+  partLabel: string;
+  practiceUrl: string;
+  updatePractice: (fields: Record<string, string>) => void;
+}) {
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const typeIcon =
+    practiceType === "reading"
+      ? "📖"
+      : practiceType === "listening"
+        ? "🎧"
+        : "✍️";
+
+  const typeLabel =
+    practiceType === "reading"
+      ? "Reading Practice"
+      : practiceType === "listening"
+        ? "Listening Practice"
+        : "Writing Practice";
+
+  const colorScheme =
+    practiceType === "reading"
+      ? "blue"
+      : practiceType === "listening"
+        ? "purple"
+        : "orange";
+
+  return (
+    <Box
+      ref={setNodeRef}
+      style={style}
+      position="relative"
+      mb={1}
+      rounded="md"
+      _hover={{ bg: "blackAlpha.50", _dark: { bg: "whiteAlpha.50" } }}
+      role="group"
+    >
+      {dragHandle}
+      <Box px={4} py={3}>
+        <HStack gap={2} mb={3}>
+          <Text fontSize="lg">{typeIcon}</Text>
+          <Text
+            fontSize="sm"
+            fontWeight="700"
+            color="gray.600"
+            _dark={{ color: "gray.300" }}
+          >
+            IELTS Practice
+          </Text>
+        </HStack>
+
+        <Button
+          size="sm"
+          variant="outline"
+          w="full"
+          mb={3}
+          onClick={() => setPickerOpen(true)}
+        >
+          <Search size={14} />
+          {partId
+            ? `Change selection (${practiceType})`
+            : "Browse Reading / Listening / Writing..."}
+        </Button>
+
+        <IeltsPracticePickerModal
+          open={pickerOpen}
+          onClose={() => setPickerOpen(false)}
+          initialTab={practiceType as "reading" | "listening" | "writing"}
+          onSelect={(type, id, label) => {
+            updatePractice({ practiceType: type, id, label });
+          }}
+        />
+
+        {practiceUrl ? (
+          <a
+            href={practiceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ textDecoration: "none" }}
+          >
+            <Box
+              display="flex"
+              alignItems="center"
+              gap={3}
+              p={3}
+              border="1px solid"
+              borderColor={`${colorScheme}.200`}
+              rounded="lg"
+              bg={`${colorScheme}.50`}
+              _dark={{
+                bg: `${colorScheme}.900`,
+                borderColor: `${colorScheme}.700`,
+              }}
+              _hover={{ shadow: "md" }}
+              transition="all 0.15s"
+              cursor="pointer"
+            >
+              <Text fontSize="2xl">{typeIcon}</Text>
+              <Box flex={1} minW={0}>
+                <Text
+                  fontSize="sm"
+                  fontWeight="600"
+                  color="gray.700"
+                  _dark={{ color: "gray.200" }}
+                >
+                  {typeLabel}
+                </Text>
+                <Text
+                  fontSize="sm"
+                  color="gray.600"
+                  _dark={{ color: "gray.400" }}
+                  truncate
+                >
+                  {partLabel || partId}
+                </Text>
+                <Text fontSize="xs" color="gray.400">
+                  Opens in student practice view
+                </Text>
+              </Box>
+              <Text fontSize="xs" color="gray.400" fontWeight="600">
+                OPEN →
+              </Text>
+            </Box>
+          </a>
+        ) : (
+          <Box
+            p={4}
+            border="2px dashed"
+            borderColor="gray.200"
+            _dark={{ borderColor: "gray.600" }}
+            rounded="lg"
+            textAlign="center"
+          >
+            <Text fontSize="sm" color="gray.400">
+              Click &quot;Browse&quot; above to select a reading part, listening
+              part, or writing task
+            </Text>
+          </Box>
+        )}
+      </Box>
+    </Box>
+  );
 }

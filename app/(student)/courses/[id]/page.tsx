@@ -23,6 +23,7 @@ import {
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import LessonQuiz from "@/components/LessonQuiz";
 import { ieltsCourseAPI } from "@/lib/api";
@@ -759,6 +760,99 @@ function ContentBlockView({
             }}
           />
         </Box>
+      );
+    }
+    case "ielts_practice": {
+      let parsed: { practiceType?: string; id?: string; label?: string } = {};
+      try {
+        parsed = block.content ? JSON.parse(block.content) : {};
+      } catch {
+        return null;
+      }
+      const practiceType = parsed.practiceType || "reading";
+      const partId = parsed.id;
+      const partLabel = parsed.label || "";
+      if (!partId) return null;
+
+      const icon =
+        practiceType === "reading"
+          ? "📖"
+          : practiceType === "listening"
+            ? "🎧"
+            : "✍️";
+      const typeLabel =
+        practiceType === "reading"
+          ? "Reading Practice"
+          : practiceType === "listening"
+            ? "Listening Practice"
+            : "Writing Practice";
+      const colorScheme =
+        practiceType === "reading"
+          ? "blue"
+          : practiceType === "listening"
+            ? "purple"
+            : "orange";
+
+      return (
+        <Link
+          href={`/practice/${practiceType}/${partId}`}
+          style={{ textDecoration: "none" }}
+        >
+          <Box
+            display="flex"
+            alignItems="center"
+            gap={4}
+            p={4}
+            border="1px solid"
+            borderColor={`${colorScheme}.200`}
+            _dark={{
+              borderColor: `${colorScheme}.700`,
+              bg: `${colorScheme}.900`,
+            }}
+            borderRadius="lg"
+            bg={`${colorScheme}.50`}
+            _hover={{ shadow: "md", transform: "translateY(-1px)" }}
+            transition="all 0.15s"
+            cursor="pointer"
+          >
+            <Text fontSize="3xl">{icon}</Text>
+            <Box flex={1} minW={0}>
+              <Text
+                fontSize="sm"
+                fontWeight="700"
+                color={`${colorScheme}.700`}
+                _dark={{ color: `${colorScheme}.200` }}
+                textTransform="uppercase"
+                letterSpacing="0.5px"
+                mb={0.5}
+              >
+                {typeLabel}
+              </Text>
+              {partLabel && (
+                <Text
+                  fontSize="md"
+                  fontWeight="600"
+                  color="gray.800"
+                  _dark={{ color: "gray.100" }}
+                  truncate
+                >
+                  {partLabel}
+                </Text>
+              )}
+              <Text fontSize="xs" color="gray.500" mt={0.5}>
+                Click to start practice
+              </Text>
+            </Box>
+            <Text
+              fontSize="sm"
+              fontWeight="700"
+              color={`${colorScheme}.500`}
+              _dark={{ color: `${colorScheme}.300` }}
+            >
+              START →
+            </Text>
+          </Box>
+        </Link>
       );
     }
     default:

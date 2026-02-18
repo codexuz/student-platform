@@ -15,7 +15,7 @@ import {
   Input,
   NativeSelect,
 } from "@chakra-ui/react";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { Plus, Trash2, Pencil, Eye } from "lucide-react";
 import Link from "next/link";
 import { ieltsWritingTasksAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
@@ -280,6 +280,18 @@ export default function WritingTasksList({
                       {task.min_words}+ words
                     </Text>
                   )}
+                  <IconButton
+                    size="xs"
+                    colorPalette="green"
+                    variant="ghost"
+                    onClick={() =>
+                      window.open(`/practice/writing/${task.id}`, "_blank")
+                    }
+                    aria-label="Preview"
+                    title="Preview as student"
+                  >
+                    <Eye size={14} />
+                  </IconButton>
                   <IconButton
                     size="xs"
                     colorPalette="blue"

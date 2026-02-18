@@ -40,7 +40,8 @@ export type BlockType =
   | "video"
   | "image"
   | "embed"
-  | "document";
+  | "document"
+  | "ielts_practice";
 
 export interface ContentBlock {
   id: number | string;

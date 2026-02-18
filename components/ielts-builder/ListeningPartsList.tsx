@@ -13,7 +13,7 @@ import {
   Input,
   NativeSelect,
 } from "@chakra-ui/react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { ieltsListeningPartsAPI } from "@/lib/ielts-api";
@@ -351,6 +351,18 @@ export default function ListeningPartsList({
                       _dark={{ borderColor: "gray.700" }}
                     >
                       <HStack gap={1}>
+                        <IconButton
+                          size="xs"
+                          variant="ghost"
+                          colorPalette="green"
+                          onClick={() =>
+                            window.open(`/practice/listening/${p.id}`, "_blank")
+                          }
+                          aria-label="Preview"
+                          title="Preview as student"
+                        >
+                          <Eye size={14} />
+                        </IconButton>
                         <IconButton
                           size="xs"
                           variant="outline"

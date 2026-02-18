@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { Box, Flex, Text, Splitter, useSplitter } from "@chakra-ui/react";
 import TestHeader from "./TestHeader";
 import PartNavigation from "./PartNavigation";
@@ -52,29 +52,11 @@ function ReadingTestLayoutInner({
     isSubmitted: false,
   });
 
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // ─── Timer ──────────────────────────────────────────────────────────────
-
-  useEffect(() => {
-    if (state.isTimerRunning && state.timerSeconds > 0) {
-      timerRef.current = setInterval(() => {
-        setState((prev) => {
-          if (prev.timerSeconds <= 1) {
-            clearInterval(timerRef.current!);
-            return { ...prev, timerSeconds: 0, isTimerRunning: false };
-          }
-          return { ...prev, timerSeconds: prev.timerSeconds - 1 };
-        });
-      }, 1000);
-    }
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [state.isTimerRunning, state.timerSeconds]);
-
   // ─── Handlers ───────────────────────────────────────────────────────────
+
+  const handleTimerEnd = useCallback(() => {
+    setState((prev) => ({ ...prev, isTimerRunning: false }));
+  }, []);
 
   const handleStart = useCallback(() => {
     setState((prev) => ({
@@ -231,10 +213,11 @@ function ReadingTestLayoutInner({
     >
       {/* Header */}
       <TestHeader
-        timerSeconds={state.timerSeconds}
+        initialTimerSeconds={state.timerSeconds}
         isTimerRunning={state.isTimerRunning}
         isStarted={state.isStarted}
         onStart={handleStart}
+        onTimerEnd={handleTimerEnd}
         onToggleFullscreen={handleToggleFullscreen}
       />
 

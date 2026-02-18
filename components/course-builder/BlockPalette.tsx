@@ -15,6 +15,7 @@ const paletteItems: { icon: string; label: string; type: BlockType }[] = [
   { icon: "✨", label: "Heading", type: "heading" },
   { icon: "</>", label: "Embed", type: "embed" },
   { icon: "📄", label: "File", type: "document" },
+  { icon: "📖", label: "IELTS", type: "ielts_practice" },
 ];
 
 export default function BlockPalette({ onAddBlock, hasActiveLesson }: Props) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Flex,
   HStack,
@@ -19,16 +19,50 @@ import OptionsModal from "./OptionsModal";
 /**
  * Top header bar for the practice test view.
  * Shows: Back | IELTS badge | Test ID | Timer | Start | Action icons
+ *
+ * The countdown is managed **inside** this component so that the
+ * per-second re-render stays isolated here and does not propagate to
+ * the parent layout (which would destroy DOM-based highlights).
  */
 export default function TestHeader({
-  timerSeconds,
+  initialTimerSeconds,
+  isTimerRunning,
   isStarted,
   onStart,
+  onTimerEnd,
   onToggleFullscreen,
 }: TestHeaderProps) {
   const router = useRouter();
   const { colors } = useTestTheme();
   const [optionsOpen, setOptionsOpen] = useState(false);
+
+  // ─── Internal countdown ─────────────────────────────────────────────
+  const [seconds, setSeconds] = useState(initialTimerSeconds);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Sync when the parent changes the initial value (e.g. listening review)
+  useEffect(() => {
+    setSeconds(initialTimerSeconds);
+  }, [initialTimerSeconds]);
+
+  useEffect(() => {
+    if (isTimerRunning && seconds > 0) {
+      timerRef.current = setInterval(() => {
+        setSeconds((prev) => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current!);
+            onTimerEnd?.();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isTimerRunning, seconds, onTimerEnd]);
 
   return (
     <>
@@ -83,7 +117,7 @@ export default function TestHeader({
             letterSpacing="wider"
             color={colors.text}
           >
-            {formatTime(timerSeconds)}
+            {formatTime(seconds)}
           </Text>
 
           {!isStarted && (

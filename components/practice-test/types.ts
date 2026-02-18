@@ -52,10 +52,13 @@ export interface TestSessionState {
 // ─── Test Header Props ─────────────────────────────────────────────────────
 
 export interface TestHeaderProps {
-  timerSeconds: number;
+  /** Starting value for the countdown (seconds). */
+  initialTimerSeconds: number;
   isTimerRunning: boolean;
   isStarted: boolean;
   onStart: () => void;
+  /** Called when countdown reaches 0. */
+  onTimerEnd?: () => void;
   onToggleFullscreen?: () => void;
 }
 

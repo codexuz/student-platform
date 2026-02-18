@@ -199,7 +199,7 @@ function DraggableWord({
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id,
-    disabled: disabled || isPlaced,
+    disabled,
   });
 
   const dragProps = { ...listeners, ...attributes };

@@ -84,7 +84,8 @@ type AnswerMode =
 const getAnswerMode = (t: IELTSQuestionType): AnswerMode => {
   if (t === "TRUE_FALSE_NOT_GIVEN") return "dropdown-tfng";
   if (t === "YES_NO_NOT_GIVEN") return "dropdown-ynng";
-  if (t === "MATCHING_HEADINGS") return "select-heading-key";
+  if (t === "MATCHING_HEADINGS" || t === "MATCHING_INFORMATION")
+    return "select-heading-key";
   if (
     [
       "MATCHING_FEATURES",
@@ -176,7 +177,7 @@ const typeHints: Partial<Record<IELTSQuestionType, string>> = {
   MATCHING_HEADINGS:
     "Define heading options below (roman numerals). Sub-question correctAnswer = heading key.",
   MATCHING_INFORMATION:
-    "Sub-questions only. Correct answer = paragraph letter (A, B, C…).",
+    "Define paragraph options below (A, B, C…). Sub-question correctAnswer = paragraph key.",
   MATCHING_FEATURES:
     "Options = features/people to match. Sub-question correctAnswer = option key.",
   MATCHING_SENTENCE_ENDINGS:
@@ -288,7 +289,8 @@ export default function QuestionContentModal({
       instructionEditor?.commands.setContent(defInst);
 
       // Reset type-specific data
-      if (newType !== "MATCHING_HEADINGS") setHeadingOptions([]);
+      if (newType !== "MATCHING_HEADINGS" && newType !== "MATCHING_INFORMATION")
+        setHeadingOptions([]);
       if (newType !== "TABLE_COMPLETION") {
         setTableHeaders([""]);
         setTableRows([[""]]);
@@ -382,24 +384,29 @@ export default function QuestionContentModal({
   /* ── Heading Options helpers ──────────────────────── */
   const addHeadingOption = useCallback(() => {
     setHeadingOptions((prev) => {
-      const romanNumerals = [
-        "i",
-        "ii",
-        "iii",
-        "iv",
-        "v",
-        "vi",
-        "vii",
-        "viii",
-        "ix",
-        "x",
-        "xi",
-        "xii",
-      ];
-      const nextKey = romanNumerals[prev.length] || `h${prev.length + 1}`;
+      let nextKey: string;
+      if (type === "MATCHING_INFORMATION") {
+        nextKey = String.fromCharCode(65 + prev.length); // A, B, C…
+      } else {
+        const romanNumerals = [
+          "i",
+          "ii",
+          "iii",
+          "iv",
+          "v",
+          "vi",
+          "vii",
+          "viii",
+          "ix",
+          "x",
+          "xi",
+          "xii",
+        ];
+        nextKey = romanNumerals[prev.length] || `h${prev.length + 1}`;
+      }
       return [...prev, { key: nextKey, text: "" }];
     });
-  }, []);
+  }, [type]);
 
   const removeHeadingOption = useCallback((idx: number) => {
     setHeadingOptions((prev) => prev.filter((_, i) => i !== idx));
@@ -448,8 +455,11 @@ export default function QuestionContentModal({
       isActive: true,
     };
 
-    // Heading options for MATCHING_HEADINGS
-    if (type === "MATCHING_HEADINGS" && headingOptions.length > 0) {
+    // Heading options for MATCHING_HEADINGS & MATCHING_INFORMATION
+    if (
+      (type === "MATCHING_HEADINGS" || type === "MATCHING_INFORMATION") &&
+      headingOptions.length > 0
+    ) {
       const ho: Record<string, string> = {};
       headingOptions.forEach((h) => {
         if (h.key) ho[h.key] = h.text;
@@ -671,6 +681,11 @@ export default function QuestionContentModal({
                   Heading Options
                 </Badge>
               )}
+              {type === "MATCHING_INFORMATION" && (
+                <Badge size="sm" colorPalette="orange" variant="subtle">
+                  Paragraph Options
+                </Badge>
+              )}
               {type === "TABLE_COMPLETION" && (
                 <Badge size="sm" colorPalette="orange" variant="subtle">
                   Table Data
@@ -802,8 +817,9 @@ export default function QuestionContentModal({
               </Box>
             </Flex> */}
 
-            {/* ── MATCHING_HEADINGS: Heading Options ────────── */}
-            {type === "MATCHING_HEADINGS" && (
+            {/* ── MATCHING_HEADINGS / MATCHING_INFORMATION: Options ── */}
+            {(type === "MATCHING_HEADINGS" ||
+              type === "MATCHING_INFORMATION") && (
               <Box
                 borderWidth="1px"
                 borderColor="orange.200"
@@ -812,13 +828,20 @@ export default function QuestionContentModal({
                 p={3}
               >
                 <Flex justifyContent="space-between" alignItems="center" mb={2}>
-                  <FieldLabel>Heading Options (i, ii, iii…)</FieldLabel>
+                  <FieldLabel>
+                    {type === "MATCHING_INFORMATION"
+                      ? "Paragraph Options (A, B, C…)"
+                      : "Heading Options (i, ii, iii…)"}
+                  </FieldLabel>
                   <Button
                     size="xs"
                     variant="outline"
                     onClick={addHeadingOption}
                   >
-                    <Plus size={12} /> Add Heading
+                    <Plus size={12} />{" "}
+                    {type === "MATCHING_INFORMATION"
+                      ? "Add Paragraph"
+                      : "Add Heading"}
                   </Button>
                 </Flex>
                 <VStack gap={2} alignItems="stretch">
@@ -857,8 +880,9 @@ export default function QuestionContentModal({
                   ))}
                   {headingOptions.length === 0 && (
                     <Text fontSize="xs" color="gray.400" textAlign="center">
-                      No headings yet. Click &quot;Add Heading&quot; to create
-                      the list.
+                      {type === "MATCHING_INFORMATION"
+                        ? 'No paragraphs yet. Click "Add Paragraph" to create the list.'
+                        : 'No headings yet. Click "Add Heading" to create the list.'}
                     </Text>
                   )}
                 </VStack>

@@ -63,28 +63,13 @@ function ListeningTestLayoutInner({
   // Audio is playing (before review timer starts)
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [showOverlay, setShowOverlay] = useState(true);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // ─── Timer (starts only after audio ends) ───────────────────────────────
+  // ─── Timer end callback ─────────────────────────────────────────────────
 
-  useEffect(() => {
-    if (state.isTimerRunning && state.timerSeconds > 0) {
-      timerRef.current = setInterval(() => {
-        setState((prev) => {
-          if (prev.timerSeconds <= 1) {
-            clearInterval(timerRef.current!);
-            return { ...prev, timerSeconds: 0, isTimerRunning: false };
-          }
-          return { ...prev, timerSeconds: prev.timerSeconds - 1 };
-        });
-      }, 1000);
-    }
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [state.isTimerRunning, state.timerSeconds]);
+  const handleTimerEnd = useCallback(() => {
+    setState((prev) => ({ ...prev, isTimerRunning: false }));
+  }, []);
 
   // Clean up audio on unmount
   useEffect(() => {
@@ -310,10 +295,11 @@ function ListeningTestLayoutInner({
 
       {/* Header */}
       <TestHeader
-        timerSeconds={state.timerSeconds}
+        initialTimerSeconds={state.timerSeconds}
         isTimerRunning={state.isTimerRunning}
         isStarted={state.isStarted}
         onStart={handleStart}
+        onTimerEnd={handleTimerEnd}
         onToggleFullscreen={handleToggleFullscreen}
       />
 

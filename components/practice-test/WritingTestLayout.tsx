@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import {
   Box,
   Flex,
@@ -61,36 +61,19 @@ function WritingTestLayoutInner({
   timerMinutes = 60,
   onSubmit,
   onEssayChange,
-  onSaveProgress,
 }: WritingTestLayoutProps) {
   const [currentPartIndex, setCurrentPartIndex] = useState(0);
   const [essays, setEssays] = useState<EssayMap>({});
-  const [timerSeconds, setTimerSeconds] = useState(timerMinutes * 60);
+  const [timerSeconds] = useState(timerMinutes * 60);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [isStarted, setIsStarted] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // ─── Timer end callback ─────────────────────────────────────────────
 
-  // ─── Timer ──────────────────────────────────────────────────────────────
-
-  useEffect(() => {
-    if (isTimerRunning && timerSeconds > 0) {
-      timerRef.current = setInterval(() => {
-        setTimerSeconds((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current!);
-            setIsTimerRunning(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isTimerRunning, timerSeconds]);
+  const handleTimerEnd = useCallback(() => {
+    setIsTimerRunning(false);
+  }, []);
 
   // ─── Handlers ───────────────────────────────────────────────────────────
 
@@ -172,10 +155,11 @@ function WritingTestLayoutInner({
     >
       {/* Header */}
       <TestHeader
-        timerSeconds={timerSeconds}
+        initialTimerSeconds={timerSeconds}
         isTimerRunning={isTimerRunning}
         isStarted={isStarted}
         onStart={handleStart}
+        onTimerEnd={handleTimerEnd}
         onToggleFullscreen={handleToggleFullscreen}
       />
 
