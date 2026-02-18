@@ -19,6 +19,7 @@ import {
   Pagination,
   NativeSelect,
   EmptyState,
+  Text,
 } from "@chakra-ui/react";
 import {
   Headphones,
@@ -50,6 +51,7 @@ interface PracticeItem {
   task?: string;
   type?: string;
   skill?: string;
+  prompt?: string;
 }
 
 const skillMeta: Record<
@@ -526,6 +528,12 @@ function PracticeContent() {
                           <Heading size="sm" lineClamp={2}>
                             {item.title || item.name}
                           </Heading>
+
+                          {item.prompt && (
+                            <Text fontSize="xs" color="gray.500" lineClamp={2}>
+                              {item.prompt.replace(/<[^>]*>/g, "")}
+                            </Text>
+                          )}
 
                           <HStack gap={2} flexWrap="wrap">
                             <Badge
