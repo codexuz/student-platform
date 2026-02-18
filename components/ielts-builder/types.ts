@@ -95,12 +95,21 @@ export interface IELTSReading {
   id: string;
   title: string;
   test_id: string;
+  test?: {
+    id: string;
+    title: string;
+  } | null;
   parts?: IELTSReadingPart[];
 }
 
 export interface IELTSReadingPart {
   id: string;
   reading_id: string;
+  reading?: {
+    id: string;
+    title: string;
+    test_id?: string;
+  } | null;
   part: "PART_1" | "PART_2" | "PART_3";
   mode: IELTSMode;
   title?: string;
@@ -119,6 +128,10 @@ export interface IELTSListening {
   title: string;
   description?: string;
   test_id: string;
+  test?: {
+    id: string;
+    title: string;
+  } | null;
   full_audio_url?: string;
   is_active?: boolean;
   parts?: IELTSListeningPart[];
@@ -127,6 +140,11 @@ export interface IELTSListening {
 export interface IELTSListeningPart {
   id: string;
   listening_id: string;
+  listening?: {
+    id: string;
+    title: string;
+    test_id?: string;
+  } | null;
   part: "PART_1" | "PART_2" | "PART_3" | "PART_4";
   mode: IELTSMode;
   title?: string;
@@ -145,6 +163,10 @@ export interface IELTSWriting {
   title: string;
   description?: string;
   test_id: string;
+  test?: {
+    id: string;
+    title: string;
+  } | null;
   is_active?: boolean;
   tasks?: IELTSWritingTask[];
 }
@@ -152,6 +174,11 @@ export interface IELTSWriting {
 export interface IELTSWritingTask {
   id: string;
   writing_id: string;
+  writing?: {
+    id: string;
+    title: string;
+    test_id?: string;
+  } | null;
   task: "TASK_1" | "TASK_2";
   mode: IELTSMode;
   prompt?: string;

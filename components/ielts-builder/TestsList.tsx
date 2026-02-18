@@ -10,9 +10,11 @@ import {
   Badge,
   Spinner,
   IconButton,
+  Input,
+  NativeSelect,
 } from "@chakra-ui/react";
 import { Plus, Eye, Pencil, Trash2, Copy } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { ieltsTestsAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
 import type { IELTSTest, PageId } from "./types";
@@ -24,6 +26,12 @@ interface TestsListProps {
 export default function TestsList({ onNavigate }: TestsListProps) {
   const [tests, setTests] = useState<IELTSTest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [modeFilter, setModeFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   const loadTests = useCallback(async () => {
     setLoading(true);
@@ -62,6 +70,50 @@ export default function TestsList({ onNavigate }: TestsListProps) {
 
   const truncId = (id: string) => (id ? id.substring(0, 8) + "..." : "-");
 
+  const categories = useMemo(
+    () =>
+      [...new Set(tests.map((t) => t.category).filter(Boolean))] as string[],
+    [tests],
+  );
+
+  const filteredTests = useMemo(() => {
+    let result = tests;
+
+    if (statusFilter) result = result.filter((t) => t.status === statusFilter);
+    if (modeFilter) result = result.filter((t) => t.mode === modeFilter);
+    if (categoryFilter)
+      result = result.filter((t) => t.category === categoryFilter);
+
+    const query = searchTerm.trim().toLowerCase();
+    if (query) {
+      result = result.filter((test) =>
+        [test.title, test.mode, test.category, test.status, test.id]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+          .includes(query),
+      );
+    }
+
+    return result;
+  }, [tests, searchTerm, statusFilter, modeFilter, categoryFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredTests.length / PAGE_SIZE));
+  const paginatedTests = filteredTests.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE,
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, statusFilter, modeFilter, categoryFilter]);
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
+
   if (loading) {
     return (
       <Flex justifyContent="center" py={12}>
@@ -87,6 +139,54 @@ export default function TestsList({ onNavigate }: TestsListProps) {
         </Button>
       </Flex>
 
+      <Flex mb={3} gap={2} flexWrap="wrap" alignItems="center">
+        <Input
+          maxW="220px"
+          size="sm"
+          placeholder="Search tests..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <NativeSelect.Root size="sm" width="140px">
+          <NativeSelect.Field
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="">All Status</option>
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+          </NativeSelect.Field>
+          <NativeSelect.Indicator />
+        </NativeSelect.Root>
+        <NativeSelect.Root size="sm" width="140px">
+          <NativeSelect.Field
+            value={modeFilter}
+            onChange={(e) => setModeFilter(e.target.value)}
+          >
+            <option value="">All Modes</option>
+            <option value="practice">Practice</option>
+            <option value="mock">Mock</option>
+          </NativeSelect.Field>
+          <NativeSelect.Indicator />
+        </NativeSelect.Root>
+        {categories.length > 0 && (
+          <NativeSelect.Root size="sm" width="160px">
+            <NativeSelect.Field
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+            >
+              <option value="">All Categories</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </NativeSelect.Field>
+            <NativeSelect.Indicator />
+          </NativeSelect.Root>
+        )}
+      </Flex>
+
       {tests.length === 0 ? (
         <Box textAlign="center" py={12} color="gray.400">
           <Text fontSize="4xl" mb={3}>
@@ -96,6 +196,12 @@ export default function TestsList({ onNavigate }: TestsListProps) {
             No tests yet
           </Heading>
           <Text fontSize="sm">Create your first test</Text>
+        </Box>
+      ) : filteredTests.length === 0 ? (
+        <Box textAlign="center" py={12} color="gray.400">
+          <Heading size="sm" color="gray.500">
+            No matching tests
+          </Heading>
         </Box>
       ) : (
         <Box
@@ -139,7 +245,7 @@ export default function TestsList({ onNavigate }: TestsListProps) {
                 </Box>
               </Box>
               <Box as="tbody">
-                {tests.map((t) => (
+                {paginatedTests.map((t) => (
                   <Box
                     as="tr"
                     key={t.id}
@@ -282,6 +388,45 @@ export default function TestsList({ onNavigate }: TestsListProps) {
               </Box>
             </Box>
           </Box>
+          <Flex
+            px={4}
+            py={3}
+            borderTopWidth="1px"
+            borderColor="gray.100"
+            _dark={{ borderColor: "gray.700" }}
+            alignItems="center"
+            justifyContent="space-between"
+            gap={3}
+          >
+            <Text fontSize="xs" color="gray.500">
+              Showing {(page - 1) * PAGE_SIZE + 1}-
+              {Math.min(page * PAGE_SIZE, filteredTests.length)} of{" "}
+              {filteredTests.length}
+            </Text>
+            <HStack gap={2}>
+              <Button
+                size="xs"
+                variant="outline"
+                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                disabled={page === 1}
+              >
+                Prev
+              </Button>
+              <Text fontSize="xs" color="gray.500">
+                Page {page} / {totalPages}
+              </Text>
+              <Button
+                size="xs"
+                variant="outline"
+                onClick={() =>
+                  setPage((prev) => Math.min(totalPages, prev + 1))
+                }
+                disabled={page >= totalPages}
+              >
+                Next
+              </Button>
+            </HStack>
+          </Flex>
         </Box>
       )}
     </Box>
