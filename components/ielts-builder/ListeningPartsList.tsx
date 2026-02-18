@@ -15,6 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { Plus, Pencil, Trash2, Eye } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { ieltsListeningPartsAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
@@ -27,6 +28,7 @@ interface ListeningPartsListProps {
 export default function ListeningPartsList({
   onNavigate,
 }: ListeningPartsListProps) {
+  const router = useRouter();
   const [items, setItems] = useState<IELTSListeningPart[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -356,7 +358,7 @@ export default function ListeningPartsList({
                           variant="ghost"
                           colorPalette="green"
                           onClick={() =>
-                            window.open(`/practice/listening/${p.id}`, "_blank")
+                            router.push(`/practice/listening/${p.id}`)
                           }
                           aria-label="Preview"
                           title="Preview as student"

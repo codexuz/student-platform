@@ -17,6 +17,7 @@ import {
 } from "@chakra-ui/react";
 import { Plus, Trash2, Pencil, Eye } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ieltsWritingTasksAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
 import type { PageId, IELTSWritingTask } from "./types";
@@ -28,6 +29,7 @@ interface WritingTasksListProps {
 export default function WritingTasksList({
   onNavigate,
 }: WritingTasksListProps) {
+  const router = useRouter();
   const [tasks, setTasks] = useState<IELTSWritingTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -284,9 +286,7 @@ export default function WritingTasksList({
                     size="xs"
                     colorPalette="green"
                     variant="ghost"
-                    onClick={() =>
-                      window.open(`/practice/writing/${task.id}`, "_blank")
-                    }
+                    onClick={() => router.push(`/practice/writing/${task.id}`)}
                     aria-label="Preview"
                     title="Preview as student"
                   >

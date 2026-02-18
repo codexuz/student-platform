@@ -15,6 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { Plus, Pencil, Trash2, Eye } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { ieltsReadingPartsAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
@@ -27,6 +28,7 @@ interface ReadingPartsListProps {
 export default function ReadingPartsList({
   onNavigate,
 }: ReadingPartsListProps) {
+  const router = useRouter();
   const [items, setItems] = useState<IELTSReadingPart[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -355,7 +357,7 @@ export default function ReadingPartsList({
                           variant="ghost"
                           colorPalette="green"
                           onClick={() =>
-                            window.open(`/practice/reading/${p.id}`, "_blank")
+                            router.push(`/practice/reading/${p.id}`)
                           }
                           aria-label="Preview"
                           title="Preview as student"
