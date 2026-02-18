@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Heading,
@@ -18,7 +19,6 @@ import {
   ButtonGroup,
   IconButton,
   Pagination,
-  NativeSelect,
   EmptyState,
 } from "@chakra-ui/react";
 import {
@@ -35,20 +35,36 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
 import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
-import { ieltsAPI } from "@/lib/api";
+import { ieltsMockTestsAPI } from "@/lib/ielts-api";
 
 const PAGE_SIZE = 9;
 
 interface MockTest {
-  id?: string;
-  _id?: string;
-  title?: string;
-  mode?: string;
-  status?: string;
-  category?: string;
-  reading?: { id: string; title?: string; parts?: unknown[] };
-  listening?: { id: string; title?: string; parts?: unknown[] };
-  writing?: { id: string; title?: string; tasks?: unknown[] };
+  id: string;
+  title: string;
+  test_id?: string;
+  group_id?: string;
+  teacher_id?: string;
+  listening_confirmed?: boolean;
+  reading_confirmed?: boolean;
+  writing_confirmed?: boolean;
+  listening_finished?: boolean;
+  reading_finished?: boolean;
+  writing_finished?: boolean;
+  archived?: boolean;
+  meta?: {
+    listening_videoUrl?: string;
+    reading_videoUrl?: string;
+    writing_videoUrl?: string;
+  };
+  test?: {
+    id: string;
+    title?: string;
+    category?: string;
+    reading?: { id: string; title?: string; parts?: unknown[] };
+    listening?: { id: string; title?: string; parts?: unknown[] };
+    writing?: { id: string; title?: string; tasks?: unknown[] };
+  };
   createdAt?: string;
 }
 
@@ -67,13 +83,12 @@ export default function MockTestsPage() {
 }
 
 function MockTestsContent() {
-  const [tests, setTests] = useState<MockTest[]>([]);
-  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const [allTests, setAllTests] = useState<MockTest[]>([]);
+  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
-  const [category, setCategory] = useState<string>("");
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [debouncedSearch, setDebouncedSearch] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -87,46 +102,53 @@ function MockTestsContent() {
     };
   }, [searchQuery]);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await ieltsAPI.getTests({
-        page,
-        limit: PAGE_SIZE,
-        mode: "mock",
-        ...(category && { category }),
-        ...(debouncedSearch && { search: debouncedSearch }),
-      });
-      setTests(response?.data || response?.results || response || []);
-      setTotalCount(
-        response?.total || response?.count || response?.totalCount || 0,
-      );
-    } catch (error) {
-      console.error("Error fetching mock tests:", error);
-      setTests([]);
-      setTotalCount(0);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, category, debouncedSearch]);
-
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    let cancelled = false;
+    requestAnimationFrame(() => {
+      if (!cancelled) setLoading(true);
+    });
+    ieltsMockTestsAPI
+      .getMy()
+      .then((res: MockTest[] | { data?: MockTest[] }) => {
+        if (!cancelled) {
+          const list = Array.isArray(res) ? res : res?.data || [];
+          setAllTests(list.filter((t) => !t.archived));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setAllTests([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setCategory(e.target.value);
-    setPage(1);
-  };
+  // Client-side filtering
+  const filteredTests = useMemo(() => {
+    const q = debouncedSearch.toLowerCase();
+    if (!q) return allTests;
+    return allTests.filter(
+      (t) =>
+        t.title?.toLowerCase().includes(q) ||
+        t.test?.title?.toLowerCase().includes(q) ||
+        t.test?.category?.toLowerCase().includes(q),
+    );
+  }, [allTests, debouncedSearch]);
+
+  const totalCount = filteredTests.length;
+  const tests = filteredTests.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const getModuleBadges = (test: MockTest) => {
     const badges: { label: string; icon: typeof BookOpen; color: string }[] =
       [];
-    if (test.reading)
+    if (test.test?.reading)
       badges.push({ label: "Reading", icon: BookOpen, color: "#4F46E5" });
-    if (test.listening)
+    if (test.test?.listening)
       badges.push({ label: "Listening", icon: Headphones, color: "#D97706" });
-    if (test.writing)
+    if (test.test?.writing)
       badges.push({ label: "Writing", icon: PenTool, color: "#059669" });
     return badges;
   };
@@ -181,8 +203,8 @@ function MockTestsContent() {
               fontSize={{ base: "sm", md: "md" }}
               maxW="600px"
             >
-              Simulate the real IELTS exam experience. Each mock test includes
-              Reading, Listening, and Writing modules with timed conditions.
+              Your assigned mock tests. Each test includes Reading, Listening,
+              and Writing modules with timed conditions.
             </Text>
             <HStack gap={6} mt={5}>
               <HStack gap={2} color="whiteAlpha.700" fontSize="sm">
@@ -225,19 +247,6 @@ function MockTestsContent() {
                 borderRadius="md"
               />
             </Box>
-
-            <NativeSelect.Root size="sm" width={{ base: "100%", md: "180px" }}>
-              <NativeSelect.Field
-                value={category}
-                onChange={handleCategoryChange}
-              >
-                <option value="">All Categories</option>
-                <option value="authentic">Authentic</option>
-                <option value="pre-test">Pre-test</option>
-                <option value="cambridge books">Cambridge Books</option>
-              </NativeSelect.Field>
-              <NativeSelect.Indicator />
-            </NativeSelect.Root>
           </Flex>
 
           {/* Results header */}
@@ -276,8 +285,12 @@ function MockTestsContent() {
                 gap={6}
               >
                 {tests.map((test) => {
-                  const testId = test.id || test._id;
+                  const testId = test.id;
                   const moduleBadges = getModuleBadges(test);
+                  const allDone =
+                    test.listening_finished &&
+                    test.reading_finished &&
+                    test.writing_finished;
 
                   return (
                     <Card.Root
@@ -305,7 +318,7 @@ function MockTestsContent() {
                         >
                           <ClipboardList size={32} color="white" />
                         </Flex>
-                        {test.category && (
+                        {test.test?.category && (
                           <Badge
                             position="absolute"
                             top={3}
@@ -318,7 +331,20 @@ function MockTestsContent() {
                             color="white"
                             fontWeight="semibold"
                           >
-                            {categoryLabels[test.category] || test.category}
+                            {categoryLabels[test.test.category] ||
+                              test.test.category}
+                          </Badge>
+                        )}
+                        {allDone && (
+                          <Badge
+                            position="absolute"
+                            top={3}
+                            left={3}
+                            fontSize="xs"
+                            colorPalette="green"
+                            variant="solid"
+                          >
+                            Completed
                           </Badge>
                         )}
                       </Flex>
@@ -328,6 +354,12 @@ function MockTestsContent() {
                           <Heading size="sm" lineClamp={2}>
                             {test.title}
                           </Heading>
+                          {test.test?.title &&
+                            test.test.title !== test.title && (
+                              <Text fontSize="xs" color="gray.500">
+                                {test.test.title}
+                              </Text>
+                            )}
 
                           {/* Module badges */}
                           <HStack gap={2} flexWrap="wrap">
@@ -358,17 +390,65 @@ function MockTestsContent() {
                             })}
                           </HStack>
 
+                          {/* Skill progress */}
+                          <HStack gap={2} flexWrap="wrap">
+                            {test.listening_finished != null && (
+                              <Badge
+                                size="sm"
+                                variant={
+                                  test.listening_finished ? "solid" : "outline"
+                                }
+                                colorPalette={
+                                  test.listening_finished ? "orange" : "gray"
+                                }
+                              >
+                                L:{" "}
+                                {test.listening_finished ? "Done" : "Pending"}
+                              </Badge>
+                            )}
+                            {test.reading_finished != null && (
+                              <Badge
+                                size="sm"
+                                variant={
+                                  test.reading_finished ? "solid" : "outline"
+                                }
+                                colorPalette={
+                                  test.reading_finished ? "purple" : "gray"
+                                }
+                              >
+                                R: {test.reading_finished ? "Done" : "Pending"}
+                              </Badge>
+                            )}
+                            {test.writing_finished != null && (
+                              <Badge
+                                size="sm"
+                                variant={
+                                  test.writing_finished ? "solid" : "outline"
+                                }
+                                colorPalette={
+                                  test.writing_finished ? "green" : "gray"
+                                }
+                              >
+                                W: {test.writing_finished ? "Done" : "Pending"}
+                              </Badge>
+                            )}
+                          </HStack>
+
                           <Button
                             size="sm"
                             colorPalette="brand"
-                            variant="subtle"
+                            variant={allDone ? "subtle" : "solid"}
                             mt={1}
-                            disabled
+                            onClick={() =>
+                              router.push(
+                                `/mock-tests/${testId}${test.test_id ? `?testId=${test.test_id}` : ""}`,
+                              )
+                            }
                           >
                             <Icon fontSize="sm" mr={1}>
                               <Play size={14} />
                             </Icon>
-                            Start Test
+                            {allDone ? "Review" : "Start Test"}
                           </Button>
                         </VStack>
                       </Card.Body>

@@ -14,11 +14,15 @@ import { getAllQuestionNumbers } from "./types";
 interface ReadingTestLayoutProps {
   parts: PartData[];
   timerMinutes?: number; // default 60
+  /** Auto-start timer immediately (for mock tests) */
+  autoStart?: boolean;
   onSubmit?: (answers: AnswerMap) => void;
   /** Called when answers change (for auto-save tracking) */
   onAnswerChange?: (answers: AnswerMap) => void;
   /** Called when user switches parts (good moment to save progress) */
   onSaveProgress?: (answers: AnswerMap) => void;
+  /** Called when timer finishes (for mock test redirect) */
+  onFinish?: () => void;
 }
 
 /**
@@ -38,17 +42,19 @@ export default function ReadingTestLayout(props: ReadingTestLayoutProps) {
 function ReadingTestLayoutInner({
   parts,
   timerMinutes = 60,
+  autoStart = false,
   onSubmit,
   onAnswerChange,
   onSaveProgress,
+  onFinish,
 }: ReadingTestLayoutProps) {
   const [state, setState] = useState<TestSessionState>({
     answers: {},
     currentPartIndex: 0,
     currentQuestionNumber: null,
     timerSeconds: timerMinutes * 60,
-    isTimerRunning: false,
-    isStarted: false,
+    isTimerRunning: autoStart,
+    isStarted: autoStart,
     isSubmitted: false,
   });
 
@@ -56,7 +62,8 @@ function ReadingTestLayoutInner({
 
   const handleTimerEnd = useCallback(() => {
     setState((prev) => ({ ...prev, isTimerRunning: false }));
-  }, []);
+    onFinish?.();
+  }, [onFinish]);
 
   const handleStart = useCallback(() => {
     setState((prev) => ({

@@ -22,6 +22,7 @@ import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
 import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { groupsAPI, groupStudentsAPI } from "@/lib/teacher-api";
+import { ClipboardList } from "lucide-react";
 
 interface Group {
   id: string;
@@ -128,7 +129,7 @@ export default function GroupDetailPage() {
             px={{ base: 4, md: 6 }}
           >
             <VStack gap={{ base: 4, md: 6 }} alignItems="stretch">
-              <HStack>
+              <HStack justify="space-between">
                 <Button
                   size="sm"
                   bg="black"
@@ -139,9 +140,17 @@ export default function GroupDetailPage() {
                     color: "black",
                     _hover: { bg: "gray.200" },
                   }}
-                  onClick={() => router.back()}
+                  onClick={() => router.push(`/groups`)}
                 >
                   Back
+                </Button>
+                <Button
+                  size="sm"
+                  colorPalette="brand"
+                  onClick={() => router.push(`/groups/${groupId}/mock-tests`)}
+                >
+                  <ClipboardList size={16} />
+                  Assign Mock Test
                 </Button>
               </HStack>
 

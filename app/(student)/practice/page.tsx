@@ -145,6 +145,7 @@ function PracticeContent() {
           response = await ieltsAPI.getSkills({
             page,
             limit: PAGE_SIZE,
+            mode: "practice",
             ...(debouncedSearch && { search: debouncedSearch }),
             ...(skillType && { type: skillType }),
             ...(testCategory && { category: testCategory }),
@@ -154,6 +155,7 @@ function PracticeContent() {
           response = await ieltsAPI.getListeningParts({
             page,
             limit: PAGE_SIZE,
+            mode: "practice",
             ...(listeningPart && { part: listeningPart }),
           });
           break;
@@ -161,6 +163,7 @@ function PracticeContent() {
           response = await ieltsAPI.getReadingParts({
             page,
             limit: PAGE_SIZE,
+            mode: "practice",
             ...(readingPart && { part: readingPart }),
           });
           break;
@@ -168,6 +171,7 @@ function PracticeContent() {
           response = await ieltsAPI.getWritingTasks({
             page,
             limit: PAGE_SIZE,
+            mode: "practice",
             ...(writingTask && { task: writingTask }),
           });
           break;

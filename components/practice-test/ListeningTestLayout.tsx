@@ -19,11 +19,15 @@ export interface ListeningTestLayoutProps {
   audioUrl?: string;
   /** Per-part audio URLs (single part practice) */
   partAudioUrls?: Record<number, string>;
+  /** Auto-start: skip overlay and play audio immediately (for mock tests) */
+  autoStart?: boolean;
   onSubmit?: (answers: AnswerMap) => void;
   /** Called when answers change (for auto-save tracking) */
   onAnswerChange?: (answers: AnswerMap) => void;
   /** Called when user switches parts (good moment to save progress) */
   onSaveProgress?: (answers: AnswerMap) => void;
+  /** Called when timer finishes (for mock test redirect) */
+  onFinish?: () => void;
 }
 
 /**
@@ -48,7 +52,7 @@ function ListeningTestLayoutInner({
   partAudioUrls,
   onSubmit,
   onAnswerChange,
-  onSaveProgress,
+  onFinish,
 }: ListeningTestLayoutProps) {
   const [state, setState] = useState<TestSessionState>({
     answers: {},
@@ -69,7 +73,8 @@ function ListeningTestLayoutInner({
 
   const handleTimerEnd = useCallback(() => {
     setState((prev) => ({ ...prev, isTimerRunning: false }));
-  }, []);
+    onFinish?.();
+  }, [onFinish]);
 
   // Clean up audio on unmount
   useEffect(() => {

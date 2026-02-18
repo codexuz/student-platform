@@ -32,11 +32,15 @@ export interface WritingPartData {
 interface WritingTestLayoutProps {
   parts: WritingPartData[];
   timerMinutes?: number; // default 60
+  /** Auto-start timer immediately (for mock tests) */
+  autoStart?: boolean;
   onSubmit?: (essays: Record<string, string>) => void;
   /** Called when essays change (for auto-save tracking) */
   onEssayChange?: (essays: Record<string, string>) => void;
   /** Called when user switches parts (good moment to save progress) */
   onSaveProgress?: (essays: Record<string, string>) => void;
+  /** Called when timer finishes (for mock test redirect) */
+  onFinish?: () => void;
 }
 
 /** Essay state per part */
@@ -59,21 +63,24 @@ export default function WritingTestLayout(props: WritingTestLayoutProps) {
 function WritingTestLayoutInner({
   parts,
   timerMinutes = 60,
+  autoStart = false,
   onSubmit,
   onEssayChange,
+  onFinish,
 }: WritingTestLayoutProps) {
   const [currentPartIndex, setCurrentPartIndex] = useState(0);
   const [essays, setEssays] = useState<EssayMap>({});
   const [timerSeconds] = useState(timerMinutes * 60);
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [isStarted, setIsStarted] = useState(false);
+  const [isTimerRunning, setIsTimerRunning] = useState(autoStart);
+  const [isStarted, setIsStarted] = useState(autoStart);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   // ─── Timer end callback ─────────────────────────────────────────────
 
   const handleTimerEnd = useCallback(() => {
     setIsTimerRunning(false);
-  }, []);
+    onFinish?.();
+  }, [onFinish]);
 
   // ─── Handlers ───────────────────────────────────────────────────────────
 
