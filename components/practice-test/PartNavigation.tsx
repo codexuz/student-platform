@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Flex, HStack, Text, IconButton } from "@chakra-ui/react";
-import { ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { PartNavigationProps } from "./types";
 import { getAllQuestionNumbers } from "./types";
 import { useTestTheme } from "./TestThemeContext";
@@ -187,27 +187,6 @@ export default function PartNavigation({
         >
           <ChevronRight size={20} />
         </IconButton>
-
-        {onSubmit && (
-          <IconButton
-            variant="outline"
-            size="sm"
-            aria-label="Submit test"
-            onClick={onSubmit}
-            borderRadius="full"
-            color={isStarted ? "green.600" : "gray.400"}
-            borderColor={isStarted ? "green.300" : "gray.300"}
-            _hover={
-              isStarted ? { bg: "green.50", borderColor: "green.400" } : {}
-            }
-            ml={1}
-            disabled={!isStarted}
-            opacity={isStarted ? 1 : 0.5}
-            cursor={isStarted ? "pointer" : "not-allowed"}
-          >
-            <Check size={18} />
-          </IconButton>
-        )}
       </HStack>
     </Flex>
   );

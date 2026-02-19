@@ -9,7 +9,7 @@ import {
   Button,
   IconButton,
 } from "@chakra-ui/react";
-import { ArrowLeft, Maximize2, Bell, Menu } from "lucide-react";
+import { ArrowLeft, Maximize2, Bell, Menu, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { TestHeaderProps } from "./types";
 import { formatTime } from "./types";
@@ -31,6 +31,7 @@ export default function TestHeader({
   onStart,
   onTimerEnd,
   onToggleFullscreen,
+  onSubmit,
 }: TestHeaderProps) {
   const router = useRouter();
   const { colors } = useTestTheme();
@@ -134,8 +135,22 @@ export default function TestHeader({
           )}
         </HStack>
 
-        {/* Right — Action icons */}
-        <HStack gap={0}>
+        {/* Right — Submit + Action icons */}
+        <HStack gap={1}>
+          {isStarted && onSubmit && (
+            <Button
+              size="sm"
+              colorPalette="red"
+              borderRadius="full"
+              px={5}
+              onClick={onSubmit}
+              fontWeight="semibold"
+              gap={1.5}
+            >
+              <Send size={14} />
+              Submit
+            </Button>
+          )}
           <IconButton
             variant="ghost"
             size="sm"

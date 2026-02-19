@@ -41,6 +41,8 @@ interface WritingTestLayoutProps {
   onSaveProgress?: (essays: Record<string, string>) => void;
   /** Called when timer finishes (for mock test redirect) */
   onFinish?: () => void;
+  /** Called when Start button is clicked (e.g. to create an attempt) */
+  onStartAttempt?: () => void;
 }
 
 /** Essay state per part */
@@ -67,6 +69,7 @@ function WritingTestLayoutInner({
   onSubmit,
   onEssayChange,
   onFinish,
+  onStartAttempt,
 }: WritingTestLayoutProps) {
   const [currentPartIndex, setCurrentPartIndex] = useState(0);
   const [essays, setEssays] = useState<EssayMap>({});
@@ -87,7 +90,8 @@ function WritingTestLayoutInner({
   const handleStart = useCallback(() => {
     setIsStarted(true);
     setIsTimerRunning(true);
-  }, []);
+    onStartAttempt?.();
+  }, [onStartAttempt]);
 
   const handleEssayChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -168,6 +172,7 @@ function WritingTestLayoutInner({
         onStart={handleStart}
         onTimerEnd={handleTimerEnd}
         onToggleFullscreen={handleToggleFullscreen}
+        onSubmit={handleSubmit}
       />
 
       {/* Part header — full width above the split view */}

@@ -28,6 +28,8 @@ export interface ListeningTestLayoutProps {
   onSaveProgress?: (answers: AnswerMap) => void;
   /** Called when timer finishes (for mock test redirect) */
   onFinish?: () => void;
+  /** Called when Play button is clicked on the overlay (e.g. to create an attempt) */
+  onStartAttempt?: () => void;
 }
 
 /**
@@ -53,6 +55,7 @@ function ListeningTestLayoutInner({
   onSubmit,
   onAnswerChange,
   onFinish,
+  onStartAttempt,
 }: ListeningTestLayoutProps) {
   const [state, setState] = useState<TestSessionState>({
     answers: {},
@@ -140,7 +143,8 @@ function ListeningTestLayoutInner({
       // Timer does NOT start yet — it starts after audio ends
     }));
     playAudio();
-  }, [playAudio]);
+    onStartAttempt?.();
+  }, [playAudio, onStartAttempt]);
 
   /** Fallback Start button in header */
   const handleStart = useCallback(() => {
@@ -306,6 +310,7 @@ function ListeningTestLayoutInner({
         onStart={handleStart}
         onTimerEnd={handleTimerEnd}
         onToggleFullscreen={handleToggleFullscreen}
+        onSubmit={handleSubmit}
       />
 
       {/* Part header */}

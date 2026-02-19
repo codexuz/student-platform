@@ -60,6 +60,8 @@ export interface TestHeaderProps {
   /** Called when countdown reaches 0. */
   onTimerEnd?: () => void;
   onToggleFullscreen?: () => void;
+  /** Called when the user clicks Submit. */
+  onSubmit?: () => void;
 }
 
 // ─── Part Navigation Props ─────────────────────────────────────────────────

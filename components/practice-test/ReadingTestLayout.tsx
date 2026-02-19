@@ -23,6 +23,8 @@ interface ReadingTestLayoutProps {
   onSaveProgress?: (answers: AnswerMap) => void;
   /** Called when timer finishes (for mock test redirect) */
   onFinish?: () => void;
+  /** Called when Start button is clicked (e.g. to create an attempt) */
+  onStartAttempt?: () => void;
 }
 
 /**
@@ -47,6 +49,7 @@ function ReadingTestLayoutInner({
   onAnswerChange,
   onSaveProgress,
   onFinish,
+  onStartAttempt,
 }: ReadingTestLayoutProps) {
   const [state, setState] = useState<TestSessionState>({
     answers: {},
@@ -71,7 +74,8 @@ function ReadingTestLayoutInner({
       isStarted: true,
       isTimerRunning: true,
     }));
-  }, []);
+    onStartAttempt?.();
+  }, [onStartAttempt]);
 
   const handleAnswer = useCallback(
     (questionNumber: number, answer: string) => {
@@ -226,6 +230,7 @@ function ReadingTestLayoutInner({
         onStart={handleStart}
         onTimerEnd={handleTimerEnd}
         onToggleFullscreen={handleToggleFullscreen}
+        onSubmit={handleSubmit}
       />
 
       {/* Part header — full width above the split view */}

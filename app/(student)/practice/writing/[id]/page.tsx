@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Flex, Text, Button, Spinner } from "@chakra-ui/react";
 import { ArrowLeft } from "lucide-react";
@@ -35,8 +35,6 @@ function WritingTaskPracticeContent() {
 
   const { attempt, createAttempt, saveWritingAnswers, submitAttempt } =
     useIeltsAttempt({ scope: "TASK", entityId: id });
-
-  const attemptCreatedRef = useRef(false);
 
   useEffect(() => {
     if (!id) return;
@@ -77,14 +75,6 @@ function WritingTaskPracticeContent() {
 
     fetchData();
   }, [id]);
-
-  // Create attempt once data is loaded
-  useEffect(() => {
-    if (parts.length > 0 && !attemptCreatedRef.current) {
-      attemptCreatedRef.current = true;
-      createAttempt();
-    }
-  }, [parts, createAttempt]);
 
   const handleSaveProgress = useCallback(
     async (essays: Record<string, string>) => {
@@ -139,6 +129,7 @@ function WritingTaskPracticeContent() {
       timerMinutes={timerMinutes}
       onSubmit={handleSubmit}
       onSaveProgress={handleSaveProgress}
+      onStartAttempt={createAttempt}
     />
   );
 }
