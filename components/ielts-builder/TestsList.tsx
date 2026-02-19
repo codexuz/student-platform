@@ -12,9 +12,19 @@ import {
   IconButton,
   Input,
   NativeSelect,
+  Pagination,
+  ButtonGroup,
 } from "@chakra-ui/react";
-import { Plus, Eye, Pencil, Trash2, Copy } from "lucide-react";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  Plus,
+  Eye,
+  Pencil,
+  Trash2,
+  Copy,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { ieltsTestsAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
 import type { IELTSTest, PageId } from "./types";
@@ -31,33 +41,75 @@ export default function TestsList({ onNavigate }: TestsListProps) {
   const [modeFilter, setModeFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const PAGE_SIZE = 10;
 
-  const loadTests = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await ieltsTestsAPI.getAll();
-      setTests(data?.data || data || []);
-    } catch (e: unknown) {
-      toaster.error({
-        title: "Error loading tests",
-        description: (e as Error).message,
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Debounce timer ref for search
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const loadTests = useCallback(
+    async (
+      currentPage: number,
+      search: string,
+      status: string,
+      mode: string,
+      category: string,
+    ) => {
+      setLoading(true);
+      try {
+        const params: Record<string, string | number> = {
+          page: currentPage,
+          limit: PAGE_SIZE,
+        };
+        if (search.trim()) params.search = search.trim();
+        if (status) params.status = status;
+        if (mode) params.mode = mode;
+        if (category) params.category = category;
+
+        const res = await ieltsTestsAPI.getAll(params);
+        setTests(res?.data || []);
+        setTotal(res?.total || 0);
+      } catch (e: unknown) {
+        toaster.error({
+          title: "Error loading tests",
+          description: (e as Error).message,
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
+
+  // Reload when page or filters change
   useEffect(() => {
-    loadTests();
-  }, [loadTests]);
+    loadTests(page, searchTerm, statusFilter, modeFilter, categoryFilter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, statusFilter, modeFilter, categoryFilter, loadTests]);
+
+  // Debounced search: reset to page 1 whenever search text changes
+  useEffect(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      setPage(1);
+      loadTests(1, searchTerm, statusFilter, modeFilter, categoryFilter);
+    }, 400);
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current);
+    };
+  }, [searchTerm, statusFilter, modeFilter, categoryFilter, loadTests]);
+
+  // Reset to page 1 when dropdown filters change
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, modeFilter, categoryFilter]);
 
   const deleteTest = async (id: string) => {
     if (!confirm("Delete this test?")) return;
     try {
       await ieltsTestsAPI.delete(id);
       toaster.success({ title: "Test deleted" });
-      loadTests();
+      loadTests(page, searchTerm, statusFilter, modeFilter, categoryFilter);
     } catch (e: unknown) {
       toaster.error({ title: "Error", description: (e as Error).message });
     }
@@ -69,50 +121,6 @@ export default function TestsList({ onNavigate }: TestsListProps) {
   };
 
   const truncId = (id: string) => (id ? id.substring(0, 8) + "..." : "-");
-
-  const categories = useMemo(
-    () =>
-      [...new Set(tests.map((t) => t.category).filter(Boolean))] as string[],
-    [tests],
-  );
-
-  const filteredTests = useMemo(() => {
-    let result = tests;
-
-    if (statusFilter) result = result.filter((t) => t.status === statusFilter);
-    if (modeFilter) result = result.filter((t) => t.mode === modeFilter);
-    if (categoryFilter)
-      result = result.filter((t) => t.category === categoryFilter);
-
-    const query = searchTerm.trim().toLowerCase();
-    if (query) {
-      result = result.filter((test) =>
-        [test.title, test.mode, test.category, test.status, test.id]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase()
-          .includes(query),
-      );
-    }
-
-    return result;
-  }, [tests, searchTerm, statusFilter, modeFilter, categoryFilter]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredTests.length / PAGE_SIZE));
-  const paginatedTests = filteredTests.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE,
-  );
-
-  useEffect(() => {
-    setPage(1);
-  }, [searchTerm, statusFilter, modeFilter, categoryFilter]);
-
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [page, totalPages]);
 
   if (loading) {
     return (
@@ -169,25 +177,25 @@ export default function TestsList({ onNavigate }: TestsListProps) {
           </NativeSelect.Field>
           <NativeSelect.Indicator />
         </NativeSelect.Root>
-        {categories.length > 0 && (
-          <NativeSelect.Root size="sm" width="160px">
-            <NativeSelect.Field
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-            >
-              <option value="">All Categories</option>
-              {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </NativeSelect.Field>
-            <NativeSelect.Indicator />
-          </NativeSelect.Root>
-        )}
+        <NativeSelect.Root size="sm" width="160px">
+          <NativeSelect.Field
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+          >
+            <option value="">All Categories</option>
+            <option value="cambridge books">Cambridge Books</option>
+            <option value="authentic">Autentic Tests</option>
+            <option value="pre-test">Pre Test</option>
+          </NativeSelect.Field>
+          <NativeSelect.Indicator />
+        </NativeSelect.Root>
       </Flex>
 
-      {tests.length === 0 ? (
+      {tests.length === 0 &&
+      !searchTerm &&
+      !statusFilter &&
+      !modeFilter &&
+      !categoryFilter ? (
         <Box textAlign="center" py={12} color="gray.400">
           <Text fontSize="4xl" mb={3}>
             📋
@@ -197,7 +205,7 @@ export default function TestsList({ onNavigate }: TestsListProps) {
           </Heading>
           <Text fontSize="sm">Create your first test</Text>
         </Box>
-      ) : filteredTests.length === 0 ? (
+      ) : tests.length === 0 ? (
         <Box textAlign="center" py={12} color="gray.400">
           <Heading size="sm" color="gray.500">
             No matching tests
@@ -245,7 +253,7 @@ export default function TestsList({ onNavigate }: TestsListProps) {
                 </Box>
               </Box>
               <Box as="tbody">
-                {paginatedTests.map((t) => (
+                {tests.map((t) => (
                   <Box
                     as="tr"
                     key={t.id}
@@ -400,32 +408,38 @@ export default function TestsList({ onNavigate }: TestsListProps) {
           >
             <Text fontSize="xs" color="gray.500">
               Showing {(page - 1) * PAGE_SIZE + 1}-
-              {Math.min(page * PAGE_SIZE, filteredTests.length)} of{" "}
-              {filteredTests.length}
+              {Math.min(page * PAGE_SIZE, total)} of {total}
             </Text>
-            <HStack gap={2}>
-              <Button
-                size="xs"
-                variant="outline"
-                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                disabled={page === 1}
-              >
-                Prev
-              </Button>
-              <Text fontSize="xs" color="gray.500">
-                Page {page} / {totalPages}
-              </Text>
-              <Button
-                size="xs"
-                variant="outline"
-                onClick={() =>
-                  setPage((prev) => Math.min(totalPages, prev + 1))
-                }
-                disabled={page >= totalPages}
-              >
-                Next
-              </Button>
-            </HStack>
+            <Pagination.Root
+              count={total}
+              pageSize={PAGE_SIZE}
+              page={page}
+              onPageChange={(e) => setPage(e.page)}
+            >
+              <ButtonGroup variant="ghost" size="sm" wrap="wrap">
+                <Pagination.PrevTrigger asChild>
+                  <IconButton aria-label="Previous page">
+                    <ChevronLeft size={16} />
+                  </IconButton>
+                </Pagination.PrevTrigger>
+
+                <Pagination.Items
+                  render={(p) => (
+                    <IconButton
+                      variant={{ base: "ghost", _selected: "outline" }}
+                    >
+                      {p.value}
+                    </IconButton>
+                  )}
+                />
+
+                <Pagination.NextTrigger asChild>
+                  <IconButton aria-label="Next page">
+                    <ChevronRight size={16} />
+                  </IconButton>
+                </Pagination.NextTrigger>
+              </ButtonGroup>
+            </Pagination.Root>
           </Flex>
         </Box>
       )}

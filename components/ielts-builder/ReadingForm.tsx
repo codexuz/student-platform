@@ -3,17 +3,19 @@
 import {
   Box,
   Button,
+  Combobox,
   Heading,
   HStack,
   Input,
-  NativeSelect,
+  Portal,
   Text,
   VStack,
   Spinner,
   Flex,
+  createListCollection,
 } from "@chakra-ui/react";
-import { Save } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Save, ChevronsUpDown } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { ieltsReadingAPI, ieltsTestsAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
 import type { PageId, IELTSTest } from "./types";
@@ -36,10 +38,23 @@ export default function ReadingForm({
   const [loadingData, setLoadingData] = useState(!!editId);
   const [tests, setTests] = useState<IELTSTest[]>([]);
   const [loadingTests, setLoadingTests] = useState(true);
+  const [testSearchInput, setTestSearchInput] = useState("");
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const testCollection = useMemo(
+    () =>
+      createListCollection({
+        items: tests,
+        itemToValue: (t) => t.id,
+        itemToString: (t) => t.title,
+      }),
+    [tests],
+  );
+
+  // Load initial tests
   useEffect(() => {
     ieltsTestsAPI
-      .getAll()
+      .getAll({ limit: 20 })
       .then((res: IELTSTest[] | { data: IELTSTest[] }) => {
         const list = Array.isArray(res) ? res : res.data || [];
         setTests(list);
@@ -47,6 +62,23 @@ export default function ReadingForm({
       .catch(() => {})
       .finally(() => setLoadingTests(false));
   }, []);
+
+  // Debounced search for tests
+  useEffect(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      ieltsTestsAPI
+        .getAll({ limit: 20, search: testSearchInput || undefined })
+        .then((res: IELTSTest[] | { data: IELTSTest[] }) => {
+          const list = Array.isArray(res) ? res : res.data || [];
+          setTests(list);
+        })
+        .catch(() => {});
+    }, 400);
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current);
+    };
+  }, [testSearchInput]);
 
   useEffect(() => {
     if (!editId) return;
@@ -56,6 +88,17 @@ export default function ReadingForm({
       .then((r: { title?: string; test_id?: string }) => {
         setTitle(r.title || "");
         setTestId(r.test_id || "");
+        // Ensure the linked test appears in the combobox list
+        if (r.test_id) {
+          ieltsTestsAPI
+            .getById(r.test_id)
+            .then((test: IELTSTest) => {
+              setTests((prev) =>
+                prev.some((t) => t.id === test.id) ? prev : [test, ...prev],
+              );
+            })
+            .catch(() => {});
+        }
       })
       .catch(() => {
         toaster.error({ title: "Failed to load reading" });
@@ -160,20 +203,43 @@ export default function ReadingForm({
                   </Text>
                 </HStack>
               ) : (
-                <NativeSelect.Root size="sm" w="full">
-                  <NativeSelect.Field
-                    value={testId}
-                    onChange={(e) => setTestId(e.currentTarget.value)}
-                  >
-                    <option value="">— Select a test —</option>
-                    {tests.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.title}
-                      </option>
-                    ))}
-                  </NativeSelect.Field>
-                  <NativeSelect.Indicator />
-                </NativeSelect.Root>
+                <Combobox.Root
+                  collection={testCollection}
+                  value={testId ? [testId] : []}
+                  onValueChange={(details) => {
+                    setTestId(details.value[0] || "");
+                  }}
+                  onInputValueChange={(details) => {
+                    setTestSearchInput(details.inputValue);
+                  }}
+                  inputBehavior="autohighlight"
+                  openOnClick
+                  size="sm"
+                  w="full"
+                >
+                  <Combobox.Control>
+                    <Combobox.Input placeholder="Search tests..." />
+                    <Combobox.IndicatorGroup>
+                      <Combobox.ClearTrigger />
+                      <Combobox.Trigger>
+                        <ChevronsUpDown />
+                      </Combobox.Trigger>
+                    </Combobox.IndicatorGroup>
+                  </Combobox.Control>
+                  <Portal>
+                    <Combobox.Positioner>
+                      <Combobox.Content>
+                        <Combobox.Empty>No tests found</Combobox.Empty>
+                        {testCollection.items.map((t) => (
+                          <Combobox.Item key={t.id} item={t}>
+                            {t.title}
+                            <Combobox.ItemIndicator />
+                          </Combobox.Item>
+                        ))}
+                      </Combobox.Content>
+                    </Combobox.Positioner>
+                  </Portal>
+                </Combobox.Root>
               )}
             </Box>
             <HStack gap={2} pt={2}>

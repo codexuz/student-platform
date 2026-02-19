@@ -3,19 +3,22 @@
 import {
   Box,
   Button,
+  Combobox,
   Flex,
   Heading,
   HStack,
   Input,
   NativeSelect,
+  Portal,
   Text,
   VStack,
   Icon,
   Spinner,
   Image as ChakraImage,
+  createListCollection,
 } from "@chakra-ui/react";
-import { Save, Upload, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Save, Upload, X, ChevronsUpDown } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -72,10 +75,23 @@ export default function WritingTaskForm({
   const [loadingWritings, setLoadingWritings] = useState(true);
   const [loadingData, setLoadingData] = useState(!!editId);
   const [showImageUpload, setShowImageUpload] = useState(false);
+  const [writingSearchInput, setWritingSearchInput] = useState("");
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const writingCollection = useMemo(
+    () =>
+      createListCollection({
+        items: writings,
+        itemToValue: (w) => w.id,
+        itemToString: (w) => w.title,
+      }),
+    [writings],
+  );
+
+  // Load initial writings
   useEffect(() => {
     ieltsWritingAPI
-      .getAll()
+      .getAll({ limit: 20 })
       .then((res: IELTSWriting[] | { data: IELTSWriting[] }) => {
         const list = Array.isArray(res) ? res : res.data || [];
         setWritings(list);
@@ -83,6 +99,23 @@ export default function WritingTaskForm({
       .catch(() => {})
       .finally(() => setLoadingWritings(false));
   }, []);
+
+  // Debounced search for writings
+  useEffect(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      ieltsWritingAPI
+        .getAll({ limit: 20, search: writingSearchInput || undefined })
+        .then((res: IELTSWriting[] | { data: IELTSWriting[] }) => {
+          const list = Array.isArray(res) ? res : res.data || [];
+          setWritings(list);
+        })
+        .catch(() => {});
+    }, 400);
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current);
+    };
+  }, [writingSearchInput]);
 
   useEffect(() => {
     if (!editId) return;
@@ -107,6 +140,19 @@ export default function WritingTaskForm({
           setMinWords(String(r.min_words || 150));
           setSuggestedTime(String(r.suggested_time || 20));
           setImageUrl(r.image_url || "");
+          // Ensure the linked writing appears in the combobox list
+          if (r.writing_id) {
+            ieltsWritingAPI
+              .getById(r.writing_id)
+              .then((writing: IELTSWriting) => {
+                setWritings((prev) =>
+                  prev.some((w) => w.id === writing.id)
+                    ? prev
+                    : [writing, ...prev],
+                );
+              })
+              .catch(() => {});
+          }
         },
       )
       .catch(() => {
@@ -202,20 +248,43 @@ export default function WritingTaskForm({
                       </Text>
                     </HStack>
                   ) : (
-                    <NativeSelect.Root size="sm" w="full">
-                      <NativeSelect.Field
-                        value={writingId}
-                        onChange={(e) => setWritingId(e.currentTarget.value)}
-                      >
-                        <option value="">— Select a writing —</option>
-                        {writings.map((w) => (
-                          <option key={w.id} value={w.id}>
-                            {w.title}
-                          </option>
-                        ))}
-                      </NativeSelect.Field>
-                      <NativeSelect.Indicator />
-                    </NativeSelect.Root>
+                    <Combobox.Root
+                      collection={writingCollection}
+                      value={writingId ? [writingId] : []}
+                      onValueChange={(details) => {
+                        setWritingId(details.value[0] || "");
+                      }}
+                      onInputValueChange={(details) => {
+                        setWritingSearchInput(details.inputValue);
+                      }}
+                      inputBehavior="autohighlight"
+                      openOnClick
+                      size="sm"
+                      w="full"
+                    >
+                      <Combobox.Control>
+                        <Combobox.Input placeholder="Search writings..." />
+                        <Combobox.IndicatorGroup>
+                          <Combobox.ClearTrigger />
+                          <Combobox.Trigger>
+                            <ChevronsUpDown />
+                          </Combobox.Trigger>
+                        </Combobox.IndicatorGroup>
+                      </Combobox.Control>
+                      <Portal>
+                        <Combobox.Positioner>
+                          <Combobox.Content>
+                            <Combobox.Empty>No writings found</Combobox.Empty>
+                            {writingCollection.items.map((w) => (
+                              <Combobox.Item key={w.id} item={w}>
+                                {w.title}
+                                <Combobox.ItemIndicator />
+                              </Combobox.Item>
+                            ))}
+                          </Combobox.Content>
+                        </Combobox.Positioner>
+                      </Portal>
+                    </Combobox.Root>
                   )}
                 </Box>
                 <Box flex="1">

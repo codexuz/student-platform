@@ -12,11 +12,20 @@ import {
   IconButton,
   Input,
   NativeSelect,
+  Pagination,
+  ButtonGroup,
 } from "@chakra-ui/react";
-import { Plus, Pencil, Trash2, Eye } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { ieltsReadingPartsAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
 import type { IELTSReadingPart, PageId } from "./types";
@@ -34,32 +43,65 @@ export default function ReadingPartsList({
   const [searchTerm, setSearchTerm] = useState("");
   const [partFilter, setPartFilter] = useState("");
   const [modeFilter, setModeFilter] = useState("");
-  const [readingFilter, setReadingFilter] = useState("");
   const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const PAGE_SIZE = 10;
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await ieltsReadingPartsAPI.getAll();
-      setItems(data?.data || data || []);
-    } catch (e: unknown) {
-      toaster.error({ title: "Error", description: (e as Error).message });
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const load = useCallback(
+    async (currentPage: number, search: string, part: string, mode: string) => {
+      setLoading(true);
+      try {
+        const params: Record<string, string | number> = {
+          page: currentPage,
+          limit: PAGE_SIZE,
+        };
+        if (search.trim()) params.search = search.trim();
+        if (part) params.part = part;
+        if (mode) params.mode = mode;
+
+        const res = await ieltsReadingPartsAPI.getAll(params);
+        setItems(res?.data || []);
+        setTotal(res?.total || 0);
+      } catch (e: unknown) {
+        toaster.error({ title: "Error", description: (e as Error).message });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
+
+  // Reload when page or dropdown filters change
   useEffect(() => {
-    load();
-  }, [load]);
+    load(page, searchTerm, partFilter, modeFilter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, partFilter, modeFilter, load]);
+
+  // Debounced search: reset to page 1
+  useEffect(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      setPage(1);
+      load(1, searchTerm, partFilter, modeFilter);
+    }, 400);
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current);
+    };
+  }, [searchTerm, partFilter, modeFilter, load]);
+
+  // Reset to page 1 when dropdown filters change
+  useEffect(() => {
+    setPage(1);
+  }, [partFilter, modeFilter]);
 
   const deleteItem = async (id: string) => {
     if (!confirm("Delete this reading part?")) return;
     try {
       await ieltsReadingPartsAPI.delete(id);
       toaster.success({ title: "Deleted!" });
-      load();
+      load(page, searchTerm, partFilter, modeFilter);
     } catch (e: unknown) {
       toaster.error({ title: "Error", description: (e as Error).message });
     }
@@ -71,63 +113,6 @@ export default function ReadingPartsList({
   };
 
   const truncId = (id: string) => (id ? id.substring(0, 8) + "..." : "-");
-
-  const readingOptions = useMemo(
-    () =>
-      [
-        ...new Map(
-          items
-            .filter((p) => p.reading?.title)
-            .map((p) => [p.reading_id, p.reading!.title]),
-        ).entries(),
-      ].map(([id, title]) => ({ id, title })),
-    [items],
-  );
-
-  const filteredItems = useMemo(() => {
-    let result = items;
-
-    if (partFilter) result = result.filter((p) => p.part === partFilter);
-    if (modeFilter) result = result.filter((p) => p.mode === modeFilter);
-    if (readingFilter)
-      result = result.filter((p) => p.reading_id === readingFilter);
-
-    const query = searchTerm.trim().toLowerCase();
-    if (query) {
-      result = result.filter((part) =>
-        [
-          part.title,
-          part.id,
-          part.part,
-          part.mode,
-          part.reading?.title,
-          part.reading_id,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase()
-          .includes(query),
-      );
-    }
-
-    return result;
-  }, [items, searchTerm, partFilter, modeFilter, readingFilter]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
-  const paginatedItems = filteredItems.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE,
-  );
-
-  useEffect(() => {
-    setPage(1);
-  }, [searchTerm, partFilter, modeFilter, readingFilter]);
-
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [page, totalPages]);
 
   if (loading)
     return (
@@ -184,25 +169,9 @@ export default function ReadingPartsList({
           </NativeSelect.Field>
           <NativeSelect.Indicator />
         </NativeSelect.Root>
-        {readingOptions.length > 0 && (
-          <NativeSelect.Root size="sm" width="180px">
-            <NativeSelect.Field
-              value={readingFilter}
-              onChange={(e) => setReadingFilter(e.target.value)}
-            >
-              <option value="">All Readings</option>
-              {readingOptions.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.title}
-                </option>
-              ))}
-            </NativeSelect.Field>
-            <NativeSelect.Indicator />
-          </NativeSelect.Root>
-        )}
       </Flex>
 
-      {items.length === 0 ? (
+      {items.length === 0 && !searchTerm && !partFilter && !modeFilter ? (
         <Box textAlign="center" py={12} color="gray.400">
           <Text fontSize="4xl" mb={3}>
             📄
@@ -211,7 +180,7 @@ export default function ReadingPartsList({
             No reading parts yet
           </Heading>
         </Box>
-      ) : filteredItems.length === 0 ? (
+      ) : items.length === 0 ? (
         <Box textAlign="center" py={12} color="gray.400">
           <Heading size="sm" color="gray.500">
             No matching reading parts
@@ -253,7 +222,7 @@ export default function ReadingPartsList({
                 </Box>
               </Box>
               <Box as="tbody">
-                {paginatedItems.map((p) => (
+                {items.map((p) => (
                   <Box
                     as="tr"
                     key={p.id}
@@ -402,32 +371,38 @@ export default function ReadingPartsList({
           >
             <Text fontSize="xs" color="gray.500">
               Showing {(page - 1) * PAGE_SIZE + 1}-
-              {Math.min(page * PAGE_SIZE, filteredItems.length)} of{" "}
-              {filteredItems.length}
+              {Math.min(page * PAGE_SIZE, total)} of {total}
             </Text>
-            <HStack gap={2}>
-              <Button
-                size="xs"
-                variant="outline"
-                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                disabled={page === 1}
-              >
-                Prev
-              </Button>
-              <Text fontSize="xs" color="gray.500">
-                Page {page} / {totalPages}
-              </Text>
-              <Button
-                size="xs"
-                variant="outline"
-                onClick={() =>
-                  setPage((prev) => Math.min(totalPages, prev + 1))
-                }
-                disabled={page >= totalPages}
-              >
-                Next
-              </Button>
-            </HStack>
+            <Pagination.Root
+              count={total}
+              pageSize={PAGE_SIZE}
+              page={page}
+              onPageChange={(e) => setPage(e.page)}
+            >
+              <ButtonGroup variant="ghost" size="sm" wrap="wrap">
+                <Pagination.PrevTrigger asChild>
+                  <IconButton aria-label="Previous page">
+                    <ChevronLeft size={16} />
+                  </IconButton>
+                </Pagination.PrevTrigger>
+
+                <Pagination.Items
+                  render={(p) => (
+                    <IconButton
+                      variant={{ base: "ghost", _selected: "outline" }}
+                    >
+                      {p.value}
+                    </IconButton>
+                  )}
+                />
+
+                <Pagination.NextTrigger asChild>
+                  <IconButton aria-label="Next page">
+                    <ChevronRight size={16} />
+                  </IconButton>
+                </Pagination.NextTrigger>
+              </ButtonGroup>
+            </Pagination.Root>
           </Flex>
         </Box>
       )}

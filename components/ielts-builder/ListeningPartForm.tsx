@@ -3,18 +3,21 @@
 import {
   Box,
   Button,
+  Combobox,
   Flex,
   Heading,
   HStack,
   Input,
   NativeSelect,
+  Portal,
   Text,
   VStack,
   Icon,
   Spinner,
+  createListCollection,
 } from "@chakra-ui/react";
-import { Save, Upload, X, Plus } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Save, Upload, X, Plus, ChevronsUpDown } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { ieltsListeningPartsAPI, ieltsListeningAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
 import type {
@@ -54,11 +57,24 @@ export default function ListeningPartForm({
   const [listenings, setListenings] = useState<IELTSListening[]>([]);
   const [loadingListenings, setLoadingListenings] = useState(true);
   const [showAudioUpload, setShowAudioUpload] = useState(false);
+  const [listeningSearchInput, setListeningSearchInput] = useState("");
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isEdit = !!editId;
 
+  const listeningCollection = useMemo(
+    () =>
+      createListCollection({
+        items: listenings,
+        itemToValue: (l) => l.id,
+        itemToString: (l) => l.title,
+      }),
+    [listenings],
+  );
+
+  // Load initial listenings
   useEffect(() => {
     ieltsListeningAPI
-      .getAll()
+      .getAll({ limit: 20 })
       .then((res: IELTSListening[] | { data: IELTSListening[] }) => {
         const list = Array.isArray(res) ? res : res.data || [];
         setListenings(list);
@@ -66,6 +82,23 @@ export default function ListeningPartForm({
       .catch(() => {})
       .finally(() => setLoadingListenings(false));
   }, []);
+
+  // Debounced search for listenings
+  useEffect(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      ieltsListeningAPI
+        .getAll({ limit: 20, search: listeningSearchInput || undefined })
+        .then((res: IELTSListening[] | { data: IELTSListening[] }) => {
+          const list = Array.isArray(res) ? res : res.data || [];
+          setListenings(list);
+        })
+        .catch(() => {});
+    }, 400);
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current);
+    };
+  }, [listeningSearchInput]);
 
   useEffect(() => {
     if (editId) {
@@ -80,6 +113,19 @@ export default function ListeningPartForm({
           setAudioUrl((p.audio_url as string) || "");
           setAudioName("");
           setAudioDuration("");
+          // Ensure the linked listening appears in the combobox list
+          if (p.listening_id) {
+            ieltsListeningAPI
+              .getById(p.listening_id as string)
+              .then((listening: IELTSListening) => {
+                setListenings((prev) =>
+                  prev.some((l) => l.id === listening.id)
+                    ? prev
+                    : [listening, ...prev],
+                );
+              })
+              .catch(() => {});
+          }
           if (p.timeLimitMinutes)
             setTimeLimitMinutes(String(p.timeLimitMinutes));
           if (p.difficulty) setDifficulty(p.difficulty as DifficultyLevel);
@@ -184,20 +230,43 @@ export default function ListeningPartForm({
                     </Text>
                   </HStack>
                 ) : (
-                  <NativeSelect.Root size="sm" w="full">
-                    <NativeSelect.Field
-                      value={listeningId}
-                      onChange={(e) => setListeningId(e.currentTarget.value)}
-                    >
-                      <option value="">— Select a listening —</option>
-                      {listenings.map((l) => (
-                        <option key={l.id} value={l.id}>
-                          {l.title}
-                        </option>
-                      ))}
-                    </NativeSelect.Field>
-                    <NativeSelect.Indicator />
-                  </NativeSelect.Root>
+                  <Combobox.Root
+                    collection={listeningCollection}
+                    value={listeningId ? [listeningId] : []}
+                    onValueChange={(details) => {
+                      setListeningId(details.value[0] || "");
+                    }}
+                    onInputValueChange={(details) => {
+                      setListeningSearchInput(details.inputValue);
+                    }}
+                    inputBehavior="autohighlight"
+                    openOnClick
+                    size="sm"
+                    w="full"
+                  >
+                    <Combobox.Control>
+                      <Combobox.Input placeholder="Search listenings..." />
+                      <Combobox.IndicatorGroup>
+                        <Combobox.ClearTrigger />
+                        <Combobox.Trigger>
+                          <ChevronsUpDown />
+                        </Combobox.Trigger>
+                      </Combobox.IndicatorGroup>
+                    </Combobox.Control>
+                    <Portal>
+                      <Combobox.Positioner>
+                        <Combobox.Content>
+                          <Combobox.Empty>No listenings found</Combobox.Empty>
+                          {listeningCollection.items.map((l) => (
+                            <Combobox.Item key={l.id} item={l}>
+                              {l.title}
+                              <Combobox.ItemIndicator />
+                            </Combobox.Item>
+                          ))}
+                        </Combobox.Content>
+                      </Combobox.Positioner>
+                    </Portal>
+                  </Combobox.Root>
                 )}
               </Box>
               <Box flex="1">

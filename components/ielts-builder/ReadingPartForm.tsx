@@ -3,17 +3,20 @@
 import {
   Box,
   Button,
+  Combobox,
   Flex,
   Heading,
   HStack,
   Input,
   NativeSelect,
+  Portal,
   Text,
   VStack,
   Spinner,
+  createListCollection,
 } from "@chakra-ui/react";
-import { Save, Plus } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Save, Plus, ChevronsUpDown } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -69,11 +72,24 @@ export default function ReadingPartForm({
   const [loading, setLoading] = useState(false);
   const [readings, setReadings] = useState<IELTSReading[]>([]);
   const [loadingReadings, setLoadingReadings] = useState(true);
+  const [readingSearchInput, setReadingSearchInput] = useState("");
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isEdit = !!editId;
 
+  const readingCollection = useMemo(
+    () =>
+      createListCollection({
+        items: readings,
+        itemToValue: (r) => r.id,
+        itemToString: (r) => r.title,
+      }),
+    [readings],
+  );
+
+  // Load initial readings
   useEffect(() => {
     ieltsReadingAPI
-      .getAll()
+      .getAll({ limit: 20 })
       .then((res: IELTSReading[] | { data: IELTSReading[] }) => {
         const list = Array.isArray(res) ? res : res.data || [];
         setReadings(list);
@@ -81,6 +97,23 @@ export default function ReadingPartForm({
       .catch(() => {})
       .finally(() => setLoadingReadings(false));
   }, []);
+
+  // Debounced search for readings
+  useEffect(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      ieltsReadingAPI
+        .getAll({ limit: 20, search: readingSearchInput || undefined })
+        .then((res: IELTSReading[] | { data: IELTSReading[] }) => {
+          const list = Array.isArray(res) ? res : res.data || [];
+          setReadings(list);
+        })
+        .catch(() => {});
+    }, 400);
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current);
+    };
+  }, [readingSearchInput]);
 
   useEffect(() => {
     if (editId) {
@@ -92,6 +125,19 @@ export default function ReadingPartForm({
           setPart((p.part as IELTSReadingPart["part"]) || "PART_1");
           setMode((p.mode as IELTSMode) || "practice");
           setTitle((p.title as string) || "");
+          // Ensure the linked reading appears in the combobox list
+          if (p.reading_id) {
+            ieltsReadingAPI
+              .getById(p.reading_id as string)
+              .then((reading: IELTSReading) => {
+                setReadings((prev) =>
+                  prev.some((r) => r.id === reading.id)
+                    ? prev
+                    : [reading, ...prev],
+                );
+              })
+              .catch(() => {});
+          }
           const contentVal = (p.content as string) || "";
           setContent(contentVal);
           if (contentEditor) {
@@ -212,20 +258,43 @@ export default function ReadingPartForm({
                     </Text>
                   </HStack>
                 ) : (
-                  <NativeSelect.Root size="sm" w="full">
-                    <NativeSelect.Field
-                      value={readingId}
-                      onChange={(e) => setReadingId(e.currentTarget.value)}
-                    >
-                      <option value="">— Select a reading —</option>
-                      {readings.map((r) => (
-                        <option key={r.id} value={r.id}>
-                          {r.title}
-                        </option>
-                      ))}
-                    </NativeSelect.Field>
-                    <NativeSelect.Indicator />
-                  </NativeSelect.Root>
+                  <Combobox.Root
+                    collection={readingCollection}
+                    value={readingId ? [readingId] : []}
+                    onValueChange={(details) => {
+                      setReadingId(details.value[0] || "");
+                    }}
+                    onInputValueChange={(details) => {
+                      setReadingSearchInput(details.inputValue);
+                    }}
+                    inputBehavior="autohighlight"
+                    openOnClick
+                    size="sm"
+                    w="full"
+                  >
+                    <Combobox.Control>
+                      <Combobox.Input placeholder="Search readings..." />
+                      <Combobox.IndicatorGroup>
+                        <Combobox.ClearTrigger />
+                        <Combobox.Trigger>
+                          <ChevronsUpDown />
+                        </Combobox.Trigger>
+                      </Combobox.IndicatorGroup>
+                    </Combobox.Control>
+                    <Portal>
+                      <Combobox.Positioner>
+                        <Combobox.Content>
+                          <Combobox.Empty>No readings found</Combobox.Empty>
+                          {readingCollection.items.map((r) => (
+                            <Combobox.Item key={r.id} item={r}>
+                              {r.title}
+                              <Combobox.ItemIndicator />
+                            </Combobox.Item>
+                          ))}
+                        </Combobox.Content>
+                      </Combobox.Positioner>
+                    </Portal>
+                  </Combobox.Root>
                 )}
               </Box>
               <Box flex="1">

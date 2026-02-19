@@ -3,18 +3,20 @@
 import {
   Box,
   Button,
+  Combobox,
   Flex,
   Heading,
   HStack,
   Input,
-  NativeSelect,
+  Portal,
   Text,
   VStack,
   Icon,
   Spinner,
+  createListCollection,
 } from "@chakra-ui/react";
-import { Save, Upload, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Save, Upload, X, ChevronsUpDown } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -59,10 +61,23 @@ export default function ListeningForm({
   const [tests, setTests] = useState<IELTSTest[]>([]);
   const [loadingTests, setLoadingTests] = useState(true);
   const [showAudioUpload, setShowAudioUpload] = useState(false);
+  const [testSearchInput, setTestSearchInput] = useState("");
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const testCollection = useMemo(
+    () =>
+      createListCollection({
+        items: tests,
+        itemToValue: (t) => t.id,
+        itemToString: (t) => t.title,
+      }),
+    [tests],
+  );
+
+  // Load initial tests
   useEffect(() => {
     ieltsTestsAPI
-      .getAll()
+      .getAll({ limit: 20 })
       .then((res: IELTSTest[] | { data: IELTSTest[] }) => {
         const list = Array.isArray(res) ? res : res.data || [];
         setTests(list);
@@ -70,6 +85,23 @@ export default function ListeningForm({
       .catch(() => {})
       .finally(() => setLoadingTests(false));
   }, []);
+
+  // Debounced search for tests
+  useEffect(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      ieltsTestsAPI
+        .getAll({ limit: 20, search: testSearchInput || undefined })
+        .then((res: IELTSTest[] | { data: IELTSTest[] }) => {
+          const list = Array.isArray(res) ? res : res.data || [];
+          setTests(list);
+        })
+        .catch(() => {});
+    }, 400);
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current);
+    };
+  }, [testSearchInput]);
 
   useEffect(() => {
     if (!editId) return;
@@ -88,6 +120,17 @@ export default function ListeningForm({
           descriptionEditor?.commands.setContent(r.description || "");
           setTestId(r.test_id || "");
           setFullAudio(r.full_audio_url || "");
+          // Ensure the linked test appears in the combobox list
+          if (r.test_id) {
+            ieltsTestsAPI
+              .getById(r.test_id)
+              .then((test: IELTSTest) => {
+                setTests((prev) =>
+                  prev.some((t) => t.id === test.id) ? prev : [test, ...prev],
+                );
+              })
+              .catch(() => {});
+          }
         },
       )
       .catch(() => {
@@ -237,20 +280,43 @@ export default function ListeningForm({
                     </Text>
                   </HStack>
                 ) : (
-                  <NativeSelect.Root size="sm" w="full">
-                    <NativeSelect.Field
-                      value={testId}
-                      onChange={(e) => setTestId(e.currentTarget.value)}
-                    >
-                      <option value="">— Select a test —</option>
-                      {tests.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.title}
-                        </option>
-                      ))}
-                    </NativeSelect.Field>
-                    <NativeSelect.Indicator />
-                  </NativeSelect.Root>
+                  <Combobox.Root
+                    collection={testCollection}
+                    value={testId ? [testId] : []}
+                    onValueChange={(details) => {
+                      setTestId(details.value[0] || "");
+                    }}
+                    onInputValueChange={(details) => {
+                      setTestSearchInput(details.inputValue);
+                    }}
+                    inputBehavior="autohighlight"
+                    openOnClick
+                    size="sm"
+                    w="full"
+                  >
+                    <Combobox.Control>
+                      <Combobox.Input placeholder="Search tests..." />
+                      <Combobox.IndicatorGroup>
+                        <Combobox.ClearTrigger />
+                        <Combobox.Trigger>
+                          <ChevronsUpDown />
+                        </Combobox.Trigger>
+                      </Combobox.IndicatorGroup>
+                    </Combobox.Control>
+                    <Portal>
+                      <Combobox.Positioner>
+                        <Combobox.Content>
+                          <Combobox.Empty>No tests found</Combobox.Empty>
+                          {testCollection.items.map((t) => (
+                            <Combobox.Item key={t.id} item={t}>
+                              {t.title}
+                              <Combobox.ItemIndicator />
+                            </Combobox.Item>
+                          ))}
+                        </Combobox.Content>
+                      </Combobox.Positioner>
+                    </Portal>
+                  </Combobox.Root>
                 )}
               </Box>
               <Box flex="1">

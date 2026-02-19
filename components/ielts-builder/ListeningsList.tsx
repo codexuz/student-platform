@@ -11,11 +11,12 @@ import {
   IconButton,
   Spinner,
   Input,
-  NativeSelect,
+  Pagination,
+  ButtonGroup,
 } from "@chakra-ui/react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { ieltsListeningAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
 import type { IELTSListening, PageId } from "./types";
@@ -28,15 +29,24 @@ export default function ListeningsList({ onNavigate }: ListeningsListProps) {
   const [items, setItems] = useState<IELTSListening[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [testFilter, setTestFilter] = useState("");
   const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const PAGE_SIZE = 10;
 
-  const load = useCallback(async () => {
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const load = useCallback(async (currentPage: number, search: string) => {
     setLoading(true);
     try {
-      const data = await ieltsListeningAPI.getAll();
-      setItems(data?.data || data || []);
+      const params: Record<string, string | number> = {
+        page: currentPage,
+        limit: PAGE_SIZE,
+      };
+      if (search.trim()) params.search = search.trim();
+
+      const res = await ieltsListeningAPI.getAll(params);
+      setItems(res?.data || []);
+      setTotal(res?.total || 0);
     } catch (e: unknown) {
       toaster.error({ title: "Error", description: (e as Error).message });
     } finally {
@@ -44,16 +54,30 @@ export default function ListeningsList({ onNavigate }: ListeningsListProps) {
     }
   }, []);
 
+  // Reload when page changes
   useEffect(() => {
-    load();
-  }, [load]);
+    load(page, searchTerm);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, load]);
+
+  // Debounced search: reset to page 1
+  useEffect(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      setPage(1);
+      load(1, searchTerm);
+    }, 400);
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current);
+    };
+  }, [searchTerm, load]);
 
   const deleteItem = async (id: string) => {
     if (!confirm("Delete this listening?")) return;
     try {
       await ieltsListeningAPI.delete(id);
       toaster.success({ title: "Deleted!" });
-      load();
+      load(page, searchTerm);
     } catch (e: unknown) {
       toaster.error({ title: "Error", description: (e as Error).message });
     }
@@ -65,58 +89,6 @@ export default function ListeningsList({ onNavigate }: ListeningsListProps) {
   };
 
   const truncId = (id: string) => (id ? id.substring(0, 8) + "..." : "-");
-
-  const testOptions = useMemo(
-    () =>
-      [
-        ...new Map(
-          items
-            .filter((l) => l.test?.title)
-            .map((l) => [l.test_id, l.test!.title]),
-        ).entries(),
-      ].map(([id, title]) => ({ id, title })),
-    [items],
-  );
-
-  const filteredItems = useMemo(() => {
-    let result = items;
-
-    if (testFilter) result = result.filter((l) => l.test_id === testFilter);
-
-    const query = searchTerm.trim().toLowerCase();
-    if (query) {
-      result = result.filter((listening) =>
-        [
-          listening.title,
-          listening.id,
-          listening.test?.title,
-          listening.test_id,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase()
-          .includes(query),
-      );
-    }
-
-    return result;
-  }, [items, searchTerm, testFilter]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
-  const paginatedItems = filteredItems.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE,
-  );
-
-  useEffect(() => {
-    setPage(1);
-  }, [searchTerm, testFilter]);
-
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [page, totalPages]);
 
   if (loading)
     return (
@@ -150,25 +122,9 @@ export default function ListeningsList({ onNavigate }: ListeningsListProps) {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-        {testOptions.length > 0 && (
-          <NativeSelect.Root size="sm" width="180px">
-            <NativeSelect.Field
-              value={testFilter}
-              onChange={(e) => setTestFilter(e.target.value)}
-            >
-              <option value="">All Tests</option>
-              {testOptions.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.title}
-                </option>
-              ))}
-            </NativeSelect.Field>
-            <NativeSelect.Indicator />
-          </NativeSelect.Root>
-        )}
       </Flex>
 
-      {items.length === 0 ? (
+      {items.length === 0 && !searchTerm ? (
         <Box textAlign="center" py={12} color="gray.400">
           <Text fontSize="4xl" mb={3}>
             🎧
@@ -177,7 +133,7 @@ export default function ListeningsList({ onNavigate }: ListeningsListProps) {
             No listenings yet
           </Heading>
         </Box>
-      ) : filteredItems.length === 0 ? (
+      ) : items.length === 0 ? (
         <Box textAlign="center" py={12} color="gray.400">
           <Heading size="sm" color="gray.500">
             No matching listenings
@@ -217,7 +173,7 @@ export default function ListeningsList({ onNavigate }: ListeningsListProps) {
                 </Box>
               </Box>
               <Box as="tbody">
-                {paginatedItems.map((l) => (
+                {items.map((l) => (
                   <Box
                     as="tr"
                     key={l.id}
@@ -341,32 +297,38 @@ export default function ListeningsList({ onNavigate }: ListeningsListProps) {
           >
             <Text fontSize="xs" color="gray.500">
               Showing {(page - 1) * PAGE_SIZE + 1}-
-              {Math.min(page * PAGE_SIZE, filteredItems.length)} of{" "}
-              {filteredItems.length}
+              {Math.min(page * PAGE_SIZE, total)} of {total}
             </Text>
-            <HStack gap={2}>
-              <Button
-                size="xs"
-                variant="outline"
-                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                disabled={page === 1}
-              >
-                Prev
-              </Button>
-              <Text fontSize="xs" color="gray.500">
-                Page {page} / {totalPages}
-              </Text>
-              <Button
-                size="xs"
-                variant="outline"
-                onClick={() =>
-                  setPage((prev) => Math.min(totalPages, prev + 1))
-                }
-                disabled={page >= totalPages}
-              >
-                Next
-              </Button>
-            </HStack>
+            <Pagination.Root
+              count={total}
+              pageSize={PAGE_SIZE}
+              page={page}
+              onPageChange={(e) => setPage(e.page)}
+            >
+              <ButtonGroup variant="ghost" size="sm" wrap="wrap">
+                <Pagination.PrevTrigger asChild>
+                  <IconButton aria-label="Previous page">
+                    <ChevronLeft size={16} />
+                  </IconButton>
+                </Pagination.PrevTrigger>
+
+                <Pagination.Items
+                  render={(p) => (
+                    <IconButton
+                      variant={{ base: "ghost", _selected: "outline" }}
+                    >
+                      {p.value}
+                    </IconButton>
+                  )}
+                />
+
+                <Pagination.NextTrigger asChild>
+                  <IconButton aria-label="Next page">
+                    <ChevronRight size={16} />
+                  </IconButton>
+                </Pagination.NextTrigger>
+              </ButtonGroup>
+            </Pagination.Root>
           </Flex>
         </Box>
       )}

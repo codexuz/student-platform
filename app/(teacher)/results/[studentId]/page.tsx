@@ -16,11 +16,21 @@ import {
 } from "@chakra-ui/react";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
 import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { ieltsAnswersAPI } from "@/lib/ielts-api";
+import { studentsAPI } from "@/lib/teacher-api";
+
+interface StudentProfile {
+  id: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone?: string;
+}
 
 interface StudentAttempt {
   id: string;
@@ -75,6 +85,19 @@ export default function StudentResultsPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [student, setStudent] = useState<StudentProfile | null>(null);
+
+  // Fetch student profile
+  useEffect(() => {
+    if (!studentId || Array.isArray(studentId)) return;
+    studentsAPI
+      .getById(studentId)
+      .then((res: StudentProfile | { data: StudentProfile }) => {
+        const data = (res as { data: StudentProfile }).data ?? res;
+        setStudent(data);
+      })
+      .catch(() => {});
+  }, [studentId]);
 
   useEffect(() => {
     const fetchAttempts = async () => {
@@ -191,12 +214,11 @@ export default function StudentResultsPage() {
                   <VStack alignItems="stretch" gap={4}>
                     <Box>
                       <Heading size={{ base: "md", md: "lg" }} mb={1}>
-                        Attempts
+                        {student
+                          ? `${student.first_name || ""} ${student.last_name || ""}`.trim() ||
+                            "Student"
+                          : "Attempts"}
                       </Heading>
-                      <Text color="gray.600" _dark={{ color: "gray.400" }}>
-                        Student ID:{" "}
-                        {typeof studentId === "string" ? studentId : "-"}
-                      </Text>
                     </Box>
 
                     {loading ? (
@@ -218,12 +240,13 @@ export default function StudentResultsPage() {
                                 <Table.ColumnHeader>
                                   Finished
                                 </Table.ColumnHeader>
+                                <Table.ColumnHeader>Actions</Table.ColumnHeader>
                               </Table.Row>
                             </Table.Header>
                             <Table.Body>
                               {attempts.length === 0 ? (
                                 <Table.Row>
-                                  <Table.Cell colSpan={5}>
+                                  <Table.Cell colSpan={6}>
                                     <Text color="gray.500">
                                       No attempts found.
                                     </Text>
@@ -268,6 +291,20 @@ export default function StudentResultsPage() {
                                             attempt.finished_at,
                                           ).toLocaleString()
                                         : "-"}
+                                    </Table.Cell>
+                                    <Table.Cell>
+                                      <Button
+                                        asChild
+                                        size="xs"
+                                        colorPalette="blue"
+                                        variant="outline"
+                                      >
+                                        <Link
+                                          href={`/results/${studentId}/${attempt.id}`}
+                                        >
+                                          View
+                                        </Link>
+                                      </Button>
                                     </Table.Cell>
                                   </Table.Row>
                                 ))

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Box,
   Button,
@@ -8,14 +8,22 @@ import {
   Heading,
   HStack,
   Text,
-  VStack,
   Badge,
   IconButton,
   Spinner,
   Input,
   NativeSelect,
+  Pagination,
+  ButtonGroup,
 } from "@chakra-ui/react";
-import { Plus, Trash2, Pencil, Eye } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Pencil,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ieltsWritingTasksAPI } from "@/lib/ielts-api";
@@ -35,99 +43,60 @@ export default function WritingTasksList({
   const [searchTerm, setSearchTerm] = useState("");
   const [taskFilter, setTaskFilter] = useState("");
   const [modeFilter, setModeFilter] = useState("");
-  const [writingFilter, setWritingFilter] = useState("");
   const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const PAGE_SIZE = 10;
 
-  const loadTasks = useCallback(() => {
-    setLoading(true);
-    ieltsWritingTasksAPI
-      .getAll()
-      .then((res: IELTSWritingTask[] | { data: IELTSWritingTask[] }) => {
-        const list = Array.isArray(res) ? res : res.data || [];
-        setTasks(list);
-      })
-      .catch(() => {
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const load = useCallback(
+    async (currentPage: number, search: string, task: string, mode: string) => {
+      setLoading(true);
+      try {
+        const params: Record<string, string | number> = {
+          page: currentPage,
+          limit: PAGE_SIZE,
+        };
+        if (search.trim()) params.search = search.trim();
+        if (task) params.task = task;
+        if (mode) params.mode = mode;
+
+        const res = await ieltsWritingTasksAPI.getAll(params);
+        setTasks(res?.data || []);
+        setTotal(res?.total || 0);
+      } catch {
         toaster.error({ title: "Error loading writing tasks" });
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
-  const writingOptions = useMemo(
-    () =>
-      [
-        ...new Map(
-          tasks
-            .filter((t) => t.writing?.title)
-            .map((t) => [t.writing_id, t.writing!.title]),
-        ).entries(),
-      ].map(([id, title]) => ({ id, title })),
-    [tasks],
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
   );
 
-  const filteredTasks = useMemo(() => {
-    let result = tasks;
-
-    if (taskFilter) result = result.filter((t) => t.task === taskFilter);
-    if (modeFilter) result = result.filter((t) => t.mode === modeFilter);
-    if (writingFilter)
-      result = result.filter((t) => t.writing_id === writingFilter);
-
-    const query = searchTerm.trim().toLowerCase();
-    if (query) {
-      result = result.filter((task) => {
-        const promptText = task.prompt?.replace(/<[^>]+>/g, "") || "";
-        return [task.id, task.task, task.mode, task.writing?.title, promptText]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase()
-          .includes(query);
-      });
-    }
-
-    return result;
-  }, [tasks, searchTerm, taskFilter, modeFilter, writingFilter]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredTasks.length / PAGE_SIZE));
-  const paginatedTasks = filteredTasks.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE,
-  );
-
+  // Reload when page changes
   useEffect(() => {
-    setPage(1);
-  }, [searchTerm, taskFilter, modeFilter, writingFilter]);
+    load(page, searchTerm, taskFilter, modeFilter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, load]);
 
+  // Debounced search / filter: reset to page 1
   useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [page, totalPages]);
-  useEffect(() => {
-    let cancelled = false;
-    ieltsWritingTasksAPI
-      .getAll()
-      .then((res: IELTSWritingTask[] | { data: IELTSWritingTask[] }) => {
-        if (cancelled) return;
-        const list = Array.isArray(res) ? res : res.data || [];
-        setTasks(list);
-      })
-      .catch(() => {
-        if (!cancelled) toaster.error({ title: "Error loading writing tasks" });
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      setPage(1);
+      load(1, searchTerm, taskFilter, modeFilter);
+    }, 400);
     return () => {
-      cancelled = true;
+      if (searchTimer.current) clearTimeout(searchTimer.current);
     };
-  }, []);
+  }, [searchTerm, taskFilter, modeFilter, load]);
 
   const handleDelete = async (id: string) => {
+    if (!confirm("Delete this writing task?")) return;
     try {
       await ieltsWritingTasksAPI.delete(id);
       toaster.success({ title: "Writing task deleted" });
-      loadTasks();
+      load(page, searchTerm, taskFilter, modeFilter);
     } catch {
       toaster.error({ title: "Error deleting task" });
     }
@@ -138,6 +107,20 @@ export default function WritingTasksList({
     const text = html.replace(/<[^>]+>/g, "");
     return text.length > n ? text.substring(0, n) + "..." : text;
   };
+
+  const copyId = (id: string) => {
+    navigator.clipboard.writeText(id);
+    toaster.success({ title: "ID copied!" });
+  };
+
+  const truncId = (id: string) => (id ? id.substring(0, 8) + "..." : "-");
+
+  if (loading && tasks.length === 0)
+    return (
+      <Flex justifyContent="center" py={12}>
+        <Spinner size="lg" color="#4f46e5" />
+      </Flex>
+    );
 
   return (
     <Box>
@@ -186,32 +169,9 @@ export default function WritingTasksList({
           </NativeSelect.Field>
           <NativeSelect.Indicator />
         </NativeSelect.Root>
-        {writingOptions.length > 0 && (
-          <NativeSelect.Root size="sm" width="180px">
-            <NativeSelect.Field
-              value={writingFilter}
-              onChange={(e) => setWritingFilter(e.target.value)}
-            >
-              <option value="">All Writings</option>
-              {writingOptions.map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.title}
-                </option>
-              ))}
-            </NativeSelect.Field>
-            <NativeSelect.Indicator />
-          </NativeSelect.Root>
-        )}
       </Flex>
 
-      {loading ? (
-        <Box py={12} textAlign="center" color="gray.400">
-          <HStack gap={2} justifyContent="center">
-            <Spinner size="sm" />
-            <Text>Loading writing tasks...</Text>
-          </HStack>
-        </Box>
-      ) : tasks.length === 0 ? (
+      {tasks.length === 0 && !searchTerm && !taskFilter && !modeFilter ? (
         <Box textAlign="center" py={12} color="gray.400">
           <Text fontSize="4xl" mb={3}>
             📝
@@ -224,135 +184,282 @@ export default function WritingTasksList({
             navigate to Writings first.
           </Text>
         </Box>
-      ) : filteredTasks.length === 0 ? (
+      ) : tasks.length === 0 ? (
         <Box textAlign="center" py={12} color="gray.400">
           <Heading size="sm" color="gray.500">
             No matching writing tasks
           </Heading>
         </Box>
       ) : (
-        <VStack gap={2} alignItems="stretch">
-          {paginatedTasks.map((task) => (
-            <Box
-              key={task.id}
-              bg="white"
-              _dark={{ bg: "gray.800" }}
-              borderWidth="1px"
-              rounded="lg"
-              px={4}
-              py={3}
-              shadow="sm"
-            >
-              <Flex justifyContent="space-between" alignItems="center">
-                <HStack gap={3}>
-                  <Badge
-                    colorPalette={task.task === "TASK_1" ? "blue" : "purple"}
-                    variant="subtle"
-                    fontSize="xs"
-                  >
-                    {task.task === "TASK_1" ? "Task 1" : "Task 2"}
-                  </Badge>
-                  <Badge
-                    colorPalette={task.mode === "mock" ? "purple" : "blue"}
-                    variant="subtle"
-                    fontSize="xs"
-                  >
-                    {task.mode === "mock" ? "Mock" : "Practice"}
-                  </Badge>
-                  <Text fontSize="sm" fontWeight="500">
-                    {truncateHtml(task.prompt, 80) || "No prompt"}
-                  </Text>
-                  {task.writing?.title && task.writing_id ? (
-                    <Link
-                      href={`/ielts-test-builder/writings/${task.writing_id}/edit`}
-                      style={{
-                        color: "#4f46e5",
-                        fontWeight: 500,
-                        textDecoration: "none",
-                        fontSize: "12px",
-                      }}
+        <Box
+          bg="white"
+          _dark={{ bg: "gray.800" }}
+          rounded="lg"
+          borderWidth="1px"
+          shadow="sm"
+          overflow="hidden"
+        >
+          <Box overflowX="auto">
+            <Box as="table" w="full" fontSize="sm">
+              <Box as="thead">
+                <Box as="tr">
+                  {[
+                    "Prompt",
+                    "Task",
+                    "Mode",
+                    "Writing",
+                    "Words",
+                    "ID",
+                    "Actions",
+                  ].map((h) => (
+                    <Box
+                      as="th"
+                      key={h}
+                      textAlign="left"
+                      px={4}
+                      py={2.5}
+                      bg="gray.50"
+                      _dark={{ bg: "gray.700", color: "gray.400" }}
+                      fontSize="xs"
+                      textTransform="uppercase"
+                      color="gray.500"
+                      fontWeight="700"
+                      borderBottomWidth="2px"
+                      whiteSpace="nowrap"
                     >
-                      {task.writing.title}
-                    </Link>
-                  ) : null}
-                </HStack>
-                <HStack gap={1}>
-                  {task.min_words && (
-                    <Text fontSize="xs" color="gray.400">
-                      {task.min_words}+ words
-                    </Text>
-                  )}
-                  <IconButton
-                    size="xs"
-                    colorPalette="green"
-                    variant="ghost"
-                    onClick={() => router.push(`/practice/writing/${task.id}`)}
-                    aria-label="Preview"
-                    title="Preview as student"
+                      {h}
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+              <Box as="tbody">
+                {tasks.map((task) => (
+                  <Box
+                    as="tr"
+                    key={task.id}
+                    _hover={{ bg: "gray.50", _dark: { bg: "gray.700" } }}
                   >
-                    <Eye size={14} />
-                  </IconButton>
-                  <IconButton
-                    size="xs"
-                    colorPalette="blue"
-                    variant="ghost"
-                    onClick={() =>
-                      onNavigate("writing-task-form", { editId: task.id })
-                    }
-                    aria-label="Edit task"
-                  >
-                    <Pencil size={14} />
-                  </IconButton>
-                  <IconButton
-                    size="xs"
-                    colorPalette="red"
-                    variant="ghost"
-                    onClick={() => handleDelete(task.id)}
-                    aria-label="Delete task"
-                  >
-                    <Trash2 size={14} />
-                  </IconButton>
-                </HStack>
-              </Flex>
+                    {/* Prompt */}
+                    <Box
+                      as="td"
+                      px={4}
+                      py={2.5}
+                      fontWeight="500"
+                      borderBottomWidth="1px"
+                      borderColor="gray.100"
+                      _dark={{ borderColor: "gray.700" }}
+                      maxW="320px"
+                    >
+                      {truncateHtml(task.prompt, 80) || "No prompt"}
+                    </Box>
+
+                    {/* Task */}
+                    <Box
+                      as="td"
+                      px={4}
+                      py={2.5}
+                      borderBottomWidth="1px"
+                      borderColor="gray.100"
+                      _dark={{ borderColor: "gray.700" }}
+                    >
+                      <Badge
+                        colorPalette={
+                          task.task === "TASK_1" ? "blue" : "purple"
+                        }
+                        variant="subtle"
+                        fontSize="xs"
+                      >
+                        {task.task === "TASK_1" ? "Task 1" : "Task 2"}
+                      </Badge>
+                    </Box>
+
+                    {/* Mode */}
+                    <Box
+                      as="td"
+                      px={4}
+                      py={2.5}
+                      borderBottomWidth="1px"
+                      borderColor="gray.100"
+                      _dark={{ borderColor: "gray.700" }}
+                    >
+                      <Badge
+                        colorPalette={task.mode === "mock" ? "purple" : "blue"}
+                        variant="subtle"
+                        fontSize="xs"
+                      >
+                        {task.mode === "mock" ? "Mock" : "Practice"}
+                      </Badge>
+                    </Box>
+
+                    {/* Writing */}
+                    <Box
+                      as="td"
+                      px={4}
+                      py={2.5}
+                      borderBottomWidth="1px"
+                      borderColor="gray.100"
+                      _dark={{ borderColor: "gray.700" }}
+                    >
+                      {task.writing?.title && task.writing_id ? (
+                        <Link
+                          href={`/ielts-test-builder/writings/${task.writing_id}/edit`}
+                          style={{
+                            color: "#4f46e5",
+                            fontWeight: 500,
+                            textDecoration: "none",
+                            fontSize: "13px",
+                          }}
+                        >
+                          {task.writing.title}
+                        </Link>
+                      ) : (
+                        <Text color="gray.500">-</Text>
+                      )}
+                    </Box>
+
+                    {/* Min Words */}
+                    <Box
+                      as="td"
+                      px={4}
+                      py={2.5}
+                      borderBottomWidth="1px"
+                      borderColor="gray.100"
+                      _dark={{ borderColor: "gray.700" }}
+                      whiteSpace="nowrap"
+                    >
+                      {task.min_words ? (
+                        <Text fontSize="xs" color="gray.500">
+                          {task.min_words}+
+                        </Text>
+                      ) : (
+                        <Text color="gray.400">-</Text>
+                      )}
+                    </Box>
+
+                    {/* ID */}
+                    <Box
+                      as="td"
+                      px={4}
+                      py={2.5}
+                      borderBottomWidth="1px"
+                      borderColor="gray.100"
+                      _dark={{ borderColor: "gray.700" }}
+                    >
+                      <Badge
+                        bg="gray.100"
+                        color="gray.500"
+                        _dark={{ bg: "gray.700", color: "gray.400" }}
+                        fontSize="xs"
+                        fontFamily="mono"
+                        px={1.5}
+                        rounded="sm"
+                        cursor="pointer"
+                        onClick={() => copyId(task.id)}
+                        variant="plain"
+                      >
+                        {truncId(task.id)}
+                      </Badge>
+                    </Box>
+
+                    {/* Actions */}
+                    <Box
+                      as="td"
+                      px={4}
+                      py={2.5}
+                      borderBottomWidth="1px"
+                      borderColor="gray.100"
+                      _dark={{ borderColor: "gray.700" }}
+                    >
+                      <HStack gap={1}>
+                        <IconButton
+                          size="xs"
+                          colorPalette="green"
+                          variant="ghost"
+                          onClick={() =>
+                            router.push(`/practice/writing/${task.id}`)
+                          }
+                          aria-label="Preview"
+                          title="Preview as student"
+                        >
+                          <Eye size={14} />
+                        </IconButton>
+                        <IconButton
+                          size="xs"
+                          colorPalette="blue"
+                          variant="ghost"
+                          onClick={() =>
+                            onNavigate("writing-task-form", {
+                              editId: task.id,
+                            })
+                          }
+                          aria-label="Edit task"
+                        >
+                          <Pencil size={14} />
+                        </IconButton>
+                        <IconButton
+                          size="xs"
+                          colorPalette="red"
+                          variant="ghost"
+                          onClick={() => handleDelete(task.id)}
+                          aria-label="Delete task"
+                        >
+                          <Trash2 size={14} />
+                        </IconButton>
+                      </HStack>
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
             </Box>
-          ))}
+          </Box>
+
+          {/* Pagination */}
           <Flex
-            px={2}
-            py={2}
+            px={4}
+            py={3}
+            borderTopWidth="1px"
+            borderColor="gray.100"
+            _dark={{ borderColor: "gray.700" }}
             alignItems="center"
             justifyContent="space-between"
             gap={3}
           >
             <Text fontSize="xs" color="gray.500">
               Showing {(page - 1) * PAGE_SIZE + 1}-
-              {Math.min(page * PAGE_SIZE, filteredTasks.length)} of{" "}
-              {filteredTasks.length}
+              {Math.min(page * PAGE_SIZE, total)} of {total}
             </Text>
-            <HStack gap={2}>
-              <Button
-                size="xs"
-                variant="outline"
-                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                disabled={page === 1}
-              >
-                Prev
-              </Button>
-              <Text fontSize="xs" color="gray.500">
-                Page {page} / {totalPages}
-              </Text>
-              <Button
-                size="xs"
-                variant="outline"
-                onClick={() =>
-                  setPage((prev) => Math.min(totalPages, prev + 1))
-                }
-                disabled={page >= totalPages}
-              >
-                Next
-              </Button>
-            </HStack>
+            <Pagination.Root
+              count={total}
+              pageSize={PAGE_SIZE}
+              page={page}
+              onPageChange={(e) => setPage(e.page)}
+            >
+              <ButtonGroup variant="ghost" size="sm" wrap="wrap">
+                <Pagination.PrevTrigger asChild>
+                  <IconButton aria-label="Previous page">
+                    <ChevronLeft size={16} />
+                  </IconButton>
+                </Pagination.PrevTrigger>
+
+                <Pagination.Items
+                  render={(p) => (
+                    <IconButton
+                      variant={{ base: "ghost", _selected: "outline" }}
+                    >
+                      {p.value}
+                    </IconButton>
+                  )}
+                />
+
+                <Pagination.NextTrigger asChild>
+                  <IconButton aria-label="Next page">
+                    <ChevronRight size={16} />
+                  </IconButton>
+                </Pagination.NextTrigger>
+              </ButtonGroup>
+            </Pagination.Root>
           </Flex>
-        </VStack>
+        </Box>
       )}
     </Box>
   );
