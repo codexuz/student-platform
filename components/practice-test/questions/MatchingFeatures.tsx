@@ -90,9 +90,7 @@ export default function MatchingFeatures({
               >
                 {qNum}
               </Circle>
-              <Text fontSize="sm" flex={1}>
-                {sub.questionText}
-              </Text>
+              <Text fontSize="sm">{sub.questionText}</Text>
               <NativeSelect.Root size="sm" width="80px" flexShrink={0}>
                 <NativeSelect.Field
                   value={selected}
