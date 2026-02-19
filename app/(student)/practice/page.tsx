@@ -37,7 +37,7 @@ import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
 import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import { ieltsAPI } from "@/lib/api";
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 12;
 
 interface PracticeItem {
   id?: string;
