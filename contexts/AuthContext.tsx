@@ -22,7 +22,7 @@ interface User {
   avatar_url?: string;
 }
 
-type UserRole = "student" | "teacher";
+type UserRole = "student" | "teacher" | "guest";
 
 interface AuthContextType {
   user: User | null;
@@ -104,7 +104,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setToken(response.access_token);
         setUser(response.user);
         setRole(loginRole);
-        router.push(loginRole === "teacher" ? "/dashboard" : "/home");
+        const redirectMap: Record<UserRole, string> = {
+          teacher: "/dashboard",
+          student: "/home",
+          guest: "/guest/mock-tests",
+        };
+        router.push(redirectMap[loginRole] || "/home");
         return { success: true };
       }
 

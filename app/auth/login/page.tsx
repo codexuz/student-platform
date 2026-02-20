@@ -12,11 +12,11 @@ import {
   Icon,
 } from "@chakra-ui/react";
 import { useState } from "react";
-import { LuGraduationCap, LuUserCog } from "react-icons/lu";
+import { LuGraduationCap, LuUserCog, LuUsers } from "react-icons/lu";
 import { toaster } from "@/components/ui/toaster";
 import { useAuth } from "@/contexts/AuthContext";
 
-type UserRole = "student" | "teacher";
+type UserRole = "student" | "teacher" | "guest";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -140,6 +140,10 @@ export default function LoginPage() {
                 <Icon as={LuUserCog} mr={2} />
                 Teacher
               </Tabs.Trigger>
+              <Tabs.Trigger value="guest">
+                <Icon as={LuUsers} mr={2} />
+                Guest
+              </Tabs.Trigger>
             </Tabs.List>
 
             <Tabs.Content value="student" pt={4}>
@@ -162,6 +166,16 @@ export default function LoginPage() {
               >
                 Sign in as a teacher to manage courses, groups, and student
                 progress.
+              </Text>
+            </Tabs.Content>
+            <Tabs.Content value="guest" pt={4}>
+              <Text
+                fontSize="sm"
+                color="gray.500"
+                _dark={{ color: "gray.400" }}
+                mb={4}
+              >
+                Sign in as a guest to browse and take mock tests.
               </Text>
             </Tabs.Content>
           </Tabs.Root>
