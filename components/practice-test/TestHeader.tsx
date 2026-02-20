@@ -8,8 +8,18 @@ import {
   Badge,
   Button,
   IconButton,
+  Dialog,
+  Portal,
+  VStack,
 } from "@chakra-ui/react";
-import { ArrowLeft, Maximize2, Bell, Menu, Send } from "lucide-react";
+import {
+  ArrowLeft,
+  Maximize2,
+  Bell,
+  Menu,
+  Send,
+  AlertTriangle,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { TestHeaderProps } from "./types";
 import { formatTime } from "./types";
@@ -36,6 +46,7 @@ export default function TestHeader({
   const router = useRouter();
   const { colors } = useTestTheme();
   const [optionsOpen, setOptionsOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   // ─── Internal countdown ─────────────────────────────────────────────
   const [seconds, setSeconds] = useState(initialTimerSeconds);
@@ -143,7 +154,7 @@ export default function TestHeader({
               colorPalette="red"
               borderRadius="full"
               px={5}
-              onClick={onSubmit}
+              onClick={() => setConfirmOpen(true)}
               fontWeight="semibold"
               gap={1.5}
             >
@@ -188,6 +199,101 @@ export default function TestHeader({
         isOpen={optionsOpen}
         onClose={() => setOptionsOpen(false)}
       />
+
+      {/* Submit confirm modal */}
+      <Dialog.Root
+        open={confirmOpen}
+        onOpenChange={(e) => setConfirmOpen(e.open)}
+        placement="center"
+        motionPreset="scale"
+      >
+        <Portal>
+          <Dialog.Backdrop bg="blackAlpha.600" />
+          <Dialog.Positioner>
+            <Dialog.Content
+              bg={colors.headerBg}
+              borderColor={colors.border}
+              borderWidth="1px"
+              borderRadius="xl"
+              maxW="sm"
+              mx={4}
+            >
+              <Dialog.Header
+                borderBottomWidth="1px"
+                borderColor={colors.border}
+              >
+                <Dialog.Title color={colors.text} fontSize="lg">
+                  Submit Test
+                </Dialog.Title>
+              </Dialog.Header>
+
+              <Dialog.Body py={6}>
+                <VStack gap={3}>
+                  <AlertTriangle size={36} color="#E53E3E" />
+                  <Text color={colors.text} textAlign="center" fontSize="md">
+                    Are you sure you want to submit your test?
+                  </Text>
+                  <Text
+                    color={colors.textSecondary}
+                    textAlign="center"
+                    fontSize="sm"
+                  >
+                    You won&apos;t be able to change your answers after
+                    submission.
+                  </Text>
+                </VStack>
+              </Dialog.Body>
+
+              <Dialog.Footer
+                borderTopWidth="1px"
+                borderColor={colors.border}
+                gap={3}
+              >
+                <Button
+                  variant="outline"
+                  size="sm"
+                  borderRadius="full"
+                  px={5}
+                  onClick={() => setConfirmOpen(false)}
+                  color={colors.text}
+                  borderColor={colors.border}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  colorPalette="red"
+                  borderRadius="full"
+                  px={5}
+                  fontWeight="semibold"
+                  gap={1.5}
+                  onClick={() => {
+                    setConfirmOpen(false);
+                    onSubmit?.();
+                  }}
+                >
+                  <Send size={14} />
+                  Confirm Submit
+                </Button>
+              </Dialog.Footer>
+
+              <Dialog.CloseTrigger
+                asChild
+                position="absolute"
+                top={2}
+                right={2}
+              >
+                <IconButton
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Close"
+                  color={colors.text}
+                />
+              </Dialog.CloseTrigger>
+            </Dialog.Content>
+          </Dialog.Positioner>
+        </Portal>
+      </Dialog.Root>
     </>
   );
 }
