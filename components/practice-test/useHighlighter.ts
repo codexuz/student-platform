@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useLayoutEffect } from "react";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -42,6 +42,63 @@ let nextId = 1;
 const HIGHLIGHT_ATTR = "data-highlight-id";
 const HIGHLIGHT_CLASS = "text-highlight";
 
+// ─── Text-search helper for re-applying highlights after DOM changes ───
+
+/**
+ * Walk all text nodes inside `root` (skipping existing <mark> highlights),
+ * build a flat string, find `searchText` in it, and return a Range that
+ * covers exactly that substring.  Returns null when the text cannot be found.
+ */
+function findTextRange(root: Node, searchText: string): Range | null {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const segments: { node: Text; start: number }[] = [];
+  let fullText = "";
+
+  while (walker.nextNode()) {
+    const node = walker.currentNode as Text;
+    // Skip text that lives inside an existing highlight <mark>
+    if (
+      (node.parentElement as HTMLElement | null)?.closest(
+        `mark.${HIGHLIGHT_CLASS}`,
+      )
+    ) {
+      continue;
+    }
+    segments.push({ node, start: fullText.length });
+    fullText += node.textContent ?? "";
+  }
+
+  const idx = fullText.indexOf(searchText);
+  if (idx === -1) return null;
+
+  const endIdx = idx + searchText.length;
+  let startNode: Text | null = null;
+  let startOffset = 0;
+  let endNode: Text | null = null;
+  let endOffset = 0;
+
+  for (const seg of segments) {
+    const segEnd = seg.start + (seg.node.textContent?.length ?? 0);
+
+    if (!startNode && idx >= seg.start && idx < segEnd) {
+      startNode = seg.node;
+      startOffset = idx - seg.start;
+    }
+    if (endIdx > seg.start && endIdx <= segEnd) {
+      endNode = seg.node;
+      endOffset = endIdx - seg.start;
+      break;
+    }
+  }
+
+  if (!startNode || !endNode) return null;
+
+  const range = document.createRange();
+  range.setStart(startNode, startOffset);
+  range.setEnd(endNode, endOffset);
+  return range;
+}
+
 // ─── Hook ──────────────────────────────────────────────────────────────────
 
 export function useHighlighter() {
@@ -55,6 +112,27 @@ export function useHighlighter() {
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const savedRangeRef = useRef<Range | null>(null);
+
+  // ── Re-apply highlights that were lost after a React re-render ────────
+  // Runs synchronously before paint so the user never sees a flicker.
+
+  useLayoutEffect(() => {
+    const root = containerRef.current;
+    if (!root || highlights.length === 0) return;
+
+    for (const entry of highlights) {
+      const existing = root.querySelectorAll(
+        `mark[${HIGHLIGHT_ATTR}="${entry.id}"]`,
+      );
+      if (existing.length > 0) continue; // still in the DOM
+
+      // Mark was removed by a React re-render — restore it
+      const range = findTextRange(root, entry.text);
+      if (range) {
+        wrapRange(range, entry.id);
+      }
+    }
+  }); // intentionally no deps — runs after every render
 
   // ── Close popup ────────────────────────────────────────────────────────
 

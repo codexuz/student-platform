@@ -1,13 +1,16 @@
 "use client";
 
+import { memo } from "react";
 import { Box, Heading, Text } from "@chakra-ui/react";
 import type { ReadingPassageProps } from "./types";
 import { useTestTheme } from "./TestThemeContext";
 
 /**
  * Left panel — reading passage with scrollable content.
+ * Memoised so that answer-change re-renders in the parent don't
+ * recreate the DOM (which would destroy user highlights).
  */
-export default function ReadingPassage({
+const ReadingPassage = memo(function ReadingPassage({
   content,
   title,
 }: ReadingPassageProps) {
@@ -105,4 +108,6 @@ export default function ReadingPassage({
       </Box>
     </Box>
   );
-}
+});
+
+export default ReadingPassage;
