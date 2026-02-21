@@ -21,7 +21,7 @@ export interface ListeningTestLayoutProps {
   partAudioUrls?: Record<number, string>;
   /** Auto-start: skip overlay and play audio immediately (for mock tests) */
   autoStart?: boolean;
-  onSubmit?: (answers: AnswerMap) => void;
+  onSubmit?: (answers: AnswerMap) => void | Promise<void>;
   /** Called when answers change (for auto-save tracking) */
   onAnswerChange?: (answers: AnswerMap) => void;
   /** Called when user switches parts (good moment to save progress) */
@@ -54,7 +54,6 @@ function ListeningTestLayoutInner({
   partAudioUrls,
   onSubmit,
   onAnswerChange,
-  onFinish,
   onStartAttempt,
 }: ListeningTestLayoutProps) {
   const [state, setState] = useState<TestSessionState>({
@@ -71,13 +70,6 @@ function ListeningTestLayoutInner({
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [showOverlay, setShowOverlay] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  // ─── Timer end callback ─────────────────────────────────────────────────
-
-  const handleTimerEnd = useCallback(() => {
-    setState((prev) => ({ ...prev, isTimerRunning: false }));
-    onFinish?.();
-  }, [onFinish]);
 
   // Clean up audio on unmount
   useEffect(() => {
@@ -274,6 +266,12 @@ function ListeningTestLayoutInner({
     }));
     onSubmit?.(state.answers);
   }, [onSubmit, state.answers]);
+
+  // ─── Timer end → auto-submit ────────────────────────────────────────────
+
+  const handleTimerEnd = useCallback(() => {
+    handleSubmit();
+  }, [handleSubmit]);
 
   const handleToggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {

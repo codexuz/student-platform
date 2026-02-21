@@ -16,7 +16,7 @@ interface ReadingTestLayoutProps {
   timerMinutes?: number; // default 60
   /** Auto-start timer immediately (for mock tests) */
   autoStart?: boolean;
-  onSubmit?: (answers: AnswerMap) => void;
+  onSubmit?: (answers: AnswerMap) => void | Promise<void>;
   /** Called when answers change (for auto-save tracking) */
   onAnswerChange?: (answers: AnswerMap) => void;
   /** Called when user switches parts (good moment to save progress) */
@@ -48,7 +48,6 @@ function ReadingTestLayoutInner({
   onSubmit,
   onAnswerChange,
   onSaveProgress,
-  onFinish,
   onStartAttempt,
 }: ReadingTestLayoutProps) {
   const [state, setState] = useState<TestSessionState>({
@@ -62,11 +61,6 @@ function ReadingTestLayoutInner({
   });
 
   // ─── Handlers ───────────────────────────────────────────────────────────
-
-  const handleTimerEnd = useCallback(() => {
-    setState((prev) => ({ ...prev, isTimerRunning: false }));
-    onFinish?.();
-  }, [onFinish]);
 
   const handleStart = useCallback(() => {
     setState((prev) => ({
@@ -191,6 +185,12 @@ function ReadingTestLayoutInner({
     }));
     onSubmit?.(state.answers);
   }, [onSubmit, state.answers]);
+
+  // ─── Timer end → auto-submit ────────────────────────────────────────────
+
+  const handleTimerEnd = useCallback(() => {
+    handleSubmit();
+  }, [handleSubmit]);
 
   const handleToggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {

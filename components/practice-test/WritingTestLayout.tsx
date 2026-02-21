@@ -34,7 +34,7 @@ interface WritingTestLayoutProps {
   timerMinutes?: number; // default 60
   /** Auto-start timer immediately (for mock tests) */
   autoStart?: boolean;
-  onSubmit?: (essays: Record<string, string>) => void;
+  onSubmit?: (essays: Record<string, string>) => void | Promise<void>;
   /** Called when essays change (for auto-save tracking) */
   onEssayChange?: (essays: Record<string, string>) => void;
   /** Called when user switches parts (good moment to save progress) */
@@ -68,7 +68,6 @@ function WritingTestLayoutInner({
   autoStart = false,
   onSubmit,
   onEssayChange,
-  onFinish,
   onStartAttempt,
 }: WritingTestLayoutProps) {
   const [currentPartIndex, setCurrentPartIndex] = useState(0);
@@ -77,13 +76,6 @@ function WritingTestLayoutInner({
   const [isTimerRunning, setIsTimerRunning] = useState(autoStart);
   const [isStarted, setIsStarted] = useState(autoStart);
   const [isSubmitted, setIsSubmitted] = useState(false);
-
-  // ─── Timer end callback ─────────────────────────────────────────────
-
-  const handleTimerEnd = useCallback(() => {
-    setIsTimerRunning(false);
-    onFinish?.();
-  }, [onFinish]);
 
   // ─── Handlers ───────────────────────────────────────────────────────────
 
@@ -125,6 +117,12 @@ function WritingTestLayoutInner({
     setIsSubmitted(true);
     onSubmit?.(essays);
   }, [onSubmit, essays]);
+
+  // ─── Timer end → auto-submit ────────────────────────────────────────────
+
+  const handleTimerEnd = useCallback(() => {
+    handleSubmit();
+  }, [handleSubmit]);
 
   const handleToggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
