@@ -30,8 +30,10 @@ import {
   Power,
   Eye,
   EyeOff,
+  ClipboardList,
 } from "lucide-react";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
+import { useRouter } from "next/navigation";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
 import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
@@ -64,6 +66,7 @@ export default function MockAssignPage() {
 }
 
 function MockAssignContent() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState<GuestStudent[]>([]);
   const [total, setTotal] = useState(0);
@@ -368,11 +371,15 @@ function MockAssignContent() {
                     >
                       Actions
                     </Table.ColumnHeader>
+                    <Table.ColumnHeader px={2} py={3} w="10" />
                   </Table.Row>
                 </Table.Header>
                 <Table.Body>
                   {students.map((student, idx) => (
-                    <Table.Row key={student.user_id}>
+                    <Table.Row
+                      key={student.user_id}
+                      _hover={{ bg: "gray.50", _dark: { bg: "gray.700" } }}
+                    >
                       <Table.Cell px={4} py={3}>
                         <Text fontSize="sm" color="gray.500">
                           {(page - 1) * PAGE_SIZE + idx + 1}
@@ -470,6 +477,31 @@ function MockAssignContent() {
                             onClick={() => setDeleteTarget(student)}
                           >
                             <Trash2 size={14} />
+                          </IconButton>
+                        </HStack>
+                      </Table.Cell>
+                      <Table.Cell px={2} py={3}>
+                        <HStack gap={1}>
+                          <IconButton
+                            size="xs"
+                            variant="ghost"
+                            colorPalette="brand"
+                            aria-label="Assign mock test"
+                            onClick={() =>
+                              router.push(`/mock-assign/${student.user_id}`)
+                            }
+                          >
+                            <Plus size={16} />
+                          </IconButton>
+                          <IconButton
+                            size="xs"
+                            variant="ghost"
+                            aria-label="View results"
+                            onClick={() =>
+                              router.push(`/results/${student.user_id}`)
+                            }
+                          >
+                            <ClipboardList size={16} />
                           </IconButton>
                         </HStack>
                       </Table.Cell>
