@@ -12,7 +12,7 @@ import {
   Image,
   HStack,
 } from "@chakra-ui/react";
-import { ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import TestHeader from "./TestHeader";
 import HighlightablePanel from "./HighlightablePanel";
 import { TestThemeProvider, useTestTheme } from "./TestThemeContext";
@@ -370,8 +370,6 @@ function WritingPartNavigation({
   onPartChange,
   onPrev,
   onNext,
-  onSubmit,
-  isStarted,
 }: WritingPartNavProps) {
   const { colors } = useTestTheme();
 
@@ -460,22 +458,6 @@ function WritingPartNavigation({
           disabled={currentPartIndex === parts.length - 1}
         >
           <ChevronRight size={20} />
-        </IconButton>
-
-        <IconButton
-          variant="outline"
-          size="sm"
-          aria-label="Submit test"
-          onClick={onSubmit}
-          borderRadius="full"
-          color={isStarted ? "green.600" : "gray.400"}
-          borderColor={isStarted ? "green.300" : "gray.300"}
-          _hover={
-            isStarted ? { bg: "green.50", borderColor: "green.400" } : undefined
-          }
-          disabled={!isStarted}
-        >
-          <Check size={18} />
         </IconButton>
       </HStack>
     </Flex>

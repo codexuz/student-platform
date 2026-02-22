@@ -30,6 +30,7 @@ const teacherMenuItems = [
   { icon: BookOpen, label: "Courses", href: "/course-builder" },
   { icon: Users, label: "Groups", href: "/groups" },
   { icon: ClipboardList, label: "IELTS", href: "/ielts-test-builder" },
+  { icon: Users, label: "Mock", href: "/mock-assign" },
 ];
 
 export default function MobileBottomNav() {

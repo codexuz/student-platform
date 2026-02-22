@@ -22,6 +22,7 @@ import {
   Users,
   ClipboardList,
   BarChart3,
+  UserPlus,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -65,6 +66,12 @@ const teacherMenuItems = [
     icon: ClipboardList,
     label: "IELTS Builder",
     href: "/ielts-test-builder",
+    section: "MAIN",
+  },
+  {
+    icon: UserPlus,
+    label: "Mock Assign",
+    href: "/mock-assign",
     section: "MAIN",
   },
 ];

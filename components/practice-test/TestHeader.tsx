@@ -47,6 +47,7 @@ export default function TestHeader({
   const { colors } = useTestTheme();
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [leaveOpen, setLeaveOpen] = useState(false);
 
   // ─── Internal countdown ─────────────────────────────────────────────
   const [seconds, setSeconds] = useState(initialTimerSeconds);
@@ -95,7 +96,7 @@ export default function TestHeader({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.back()}
+            onClick={() => setLeaveOpen(true)}
             px={2}
             color={colors.text}
             _hover={{ bg: colors.hoverBg }}
@@ -199,6 +200,100 @@ export default function TestHeader({
         isOpen={optionsOpen}
         onClose={() => setOptionsOpen(false)}
       />
+
+      {/* Leave confirm modal */}
+      <Dialog.Root
+        open={leaveOpen}
+        onOpenChange={(e) => setLeaveOpen(e.open)}
+        placement="center"
+        motionPreset="scale"
+      >
+        <Portal>
+          <Dialog.Backdrop bg="blackAlpha.600" />
+          <Dialog.Positioner>
+            <Dialog.Content
+              bg={colors.headerBg}
+              borderColor={colors.border}
+              borderWidth="1px"
+              borderRadius="xl"
+              maxW="sm"
+              mx={4}
+            >
+              <Dialog.Header
+                borderBottomWidth="1px"
+                borderColor={colors.border}
+              >
+                <Dialog.Title color={colors.text} fontSize="lg">
+                  Leave Test
+                </Dialog.Title>
+              </Dialog.Header>
+
+              <Dialog.Body py={6}>
+                <VStack gap={3}>
+                  <AlertTriangle size={36} color="#E53E3E" />
+                  <Text color={colors.text} textAlign="center" fontSize="md">
+                    Are you sure you want to leave this test?
+                  </Text>
+                  <Text
+                    color={colors.textSecondary}
+                    textAlign="center"
+                    fontSize="sm"
+                  >
+                    Your progress may not be saved.
+                  </Text>
+                </VStack>
+              </Dialog.Body>
+
+              <Dialog.Footer
+                borderTopWidth="1px"
+                borderColor={colors.border}
+                gap={3}
+              >
+                <Button
+                  variant="outline"
+                  size="sm"
+                  borderRadius="full"
+                  px={5}
+                  onClick={() => setLeaveOpen(false)}
+                  color={colors.text}
+                  borderColor={colors.border}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  colorPalette="red"
+                  borderRadius="full"
+                  px={5}
+                  fontWeight="semibold"
+                  gap={1.5}
+                  onClick={() => {
+                    setLeaveOpen(false);
+                    router.back();
+                  }}
+                >
+                  <ArrowLeft size={14} />
+                  Leave
+                </Button>
+              </Dialog.Footer>
+
+              <Dialog.CloseTrigger
+                asChild
+                position="absolute"
+                top={2}
+                right={2}
+              >
+                <IconButton
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Close"
+                  color={colors.text}
+                />
+              </Dialog.CloseTrigger>
+            </Dialog.Content>
+          </Dialog.Positioner>
+        </Portal>
+      </Dialog.Root>
 
       {/* Submit confirm modal */}
       <Dialog.Root

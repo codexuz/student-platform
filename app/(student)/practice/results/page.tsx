@@ -11,13 +11,12 @@ import {
   Spinner,
   Badge,
   HStack,
-  VStack,
-  Card,
   EmptyState,
   Pagination,
   ButtonGroup,
   IconButton,
   NativeSelect,
+  Table,
 } from "@chakra-ui/react";
 import {
   ArrowLeft,
@@ -178,7 +177,7 @@ function ResultsListContent() {
             </NativeSelect.Root>
           </Flex>
 
-          {/* Attempts list */}
+          {/* Attempts table */}
           {loading ? (
             <Flex justify="center" py={12}>
               <Spinner size="xl" color="brand.500" />
@@ -193,39 +192,213 @@ function ResultsListContent() {
               </EmptyState.Content>
             </EmptyState.Root>
           ) : (
-            <VStack gap={3} align="stretch">
-              {attempts.map((attempt) => (
-                <AttemptCard
-                  key={attempt.id}
-                  attempt={attempt}
-                  onClick={() => handleAttemptClick(attempt)}
-                  onViewResults={() =>
-                    router.push(`/practice/results/${attempt.id}`)
-                  }
-                  onReview={() => {
-                    const params = new URLSearchParams();
-                    if (attempt.part_id) params.set("part_id", attempt.part_id);
-                    if (attempt.scope) params.set("scope", attempt.scope);
-                    const type =
-                      attempt.part?.type ||
-                      attempt.module?.type ||
-                      (attempt.task ? "writing" : "");
-                    if (type) params.set("type", type);
-                    // Pass audio URL for listening reviews
-                    if (type === "listening") {
-                      const audioUrl =
-                        attempt.module?.full_audio_url ||
-                        attempt.part?.audio_url;
-                      if (audioUrl) params.set("audio_url", audioUrl);
-                    }
-                    const qs = params.toString();
-                    router.push(
-                      `/practice/review/${attempt.id}${qs ? `?${qs}` : ""}`,
+            <Box
+              borderWidth="1px"
+              borderRadius="lg"
+              overflow="hidden"
+              bg="white"
+              _dark={{ bg: "gray.800" }}
+            >
+              <Table.Root size="sm" variant="outline" interactive>
+                <Table.Header>
+                  <Table.Row bg="gray.50" _dark={{ bg: "gray.700" }}>
+                    <Table.ColumnHeader
+                      px={4}
+                      py={3}
+                      fontSize="xs"
+                      fontWeight="semibold"
+                      textTransform="uppercase"
+                      color="gray.500"
+                    >
+                      Title
+                    </Table.ColumnHeader>
+                    <Table.ColumnHeader
+                      px={4}
+                      py={3}
+                      fontSize="xs"
+                      fontWeight="semibold"
+                      textTransform="uppercase"
+                      color="gray.500"
+                    >
+                      Type
+                    </Table.ColumnHeader>
+                    <Table.ColumnHeader
+                      px={4}
+                      py={3}
+                      fontSize="xs"
+                      fontWeight="semibold"
+                      textTransform="uppercase"
+                      color="gray.500"
+                    >
+                      Scope
+                    </Table.ColumnHeader>
+                    <Table.ColumnHeader
+                      px={4}
+                      py={3}
+                      fontSize="xs"
+                      fontWeight="semibold"
+                      textTransform="uppercase"
+                      color="gray.500"
+                      display={{ base: "none", md: "table-cell" }}
+                    >
+                      Date
+                    </Table.ColumnHeader>
+                    <Table.ColumnHeader
+                      px={4}
+                      py={3}
+                      fontSize="xs"
+                      fontWeight="semibold"
+                      textTransform="uppercase"
+                      color="gray.500"
+                      display={{ base: "none", md: "table-cell" }}
+                    >
+                      Duration
+                    </Table.ColumnHeader>
+                    <Table.ColumnHeader
+                      px={4}
+                      py={3}
+                      fontSize="xs"
+                      fontWeight="semibold"
+                      textTransform="uppercase"
+                      color="gray.500"
+                      textAlign="end"
+                    >
+                      Actions
+                    </Table.ColumnHeader>
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                  {attempts.map((attempt) => {
+                    const type = getAttemptType(attempt);
+                    const duration = getDuration(
+                      attempt.started_at,
+                      attempt.finished_at,
                     );
-                  }}
-                />
-              ))}
-            </VStack>
+                    return (
+                      <Table.Row
+                        key={attempt.id}
+                        cursor="pointer"
+                        _hover={{ bg: "gray.50", _dark: { bg: "gray.700" } }}
+                        onClick={() => handleAttemptClick(attempt)}
+                      >
+                        <Table.Cell px={4} py={3}>
+                          <HStack gap={2}>
+                            <Flex
+                              align="center"
+                              justify="center"
+                              w="32px"
+                              h="32px"
+                              borderRadius="md"
+                              bg={getScopeBg(attempt.scope)}
+                              flexShrink={0}
+                            >
+                              {getScopeIcon(attempt.scope, attempt)}
+                            </Flex>
+                            <Text
+                              fontWeight="medium"
+                              fontSize="sm"
+                              lineClamp={1}
+                            >
+                              {getAttemptTitle(attempt)}
+                            </Text>
+                          </HStack>
+                        </Table.Cell>
+                        <Table.Cell px={4} py={3}>
+                          <Badge
+                            fontSize="2xs"
+                            colorPalette={getTypePalette(type)}
+                          >
+                            {type}
+                          </Badge>
+                        </Table.Cell>
+                        <Table.Cell px={4} py={3}>
+                          <Badge fontSize="2xs" variant="outline">
+                            {attempt.scope}
+                          </Badge>
+                        </Table.Cell>
+                        <Table.Cell
+                          px={4}
+                          py={3}
+                          display={{ base: "none", md: "table-cell" }}
+                        >
+                          <Text fontSize="xs" color="gray.500">
+                            {getTimeAgo(attempt.started_at)}
+                          </Text>
+                        </Table.Cell>
+                        <Table.Cell
+                          px={4}
+                          py={3}
+                          display={{ base: "none", md: "table-cell" }}
+                        >
+                          {duration ? (
+                            <HStack gap={1}>
+                              <Clock size={12} />
+                              <Text fontSize="xs" color="gray.500">
+                                {duration}
+                              </Text>
+                            </HStack>
+                          ) : (
+                            <Text fontSize="xs" color="gray.400">
+                              —
+                            </Text>
+                          )}
+                        </Table.Cell>
+                        <Table.Cell
+                          px={4}
+                          py={3}
+                          textAlign="end"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <HStack gap={1} justify="flex-end">
+                            <Button
+                              size="xs"
+                              variant="outline"
+                              colorPalette="brand"
+                              onClick={() =>
+                                router.push(`/practice/results/${attempt.id}`)
+                              }
+                            >
+                              <Target size={12} />
+                              Results
+                            </Button>
+                            <Button
+                              size="xs"
+                              variant="outline"
+                              onClick={() => {
+                                const params = new URLSearchParams();
+                                if (attempt.part_id)
+                                  params.set("part_id", attempt.part_id);
+                                if (attempt.scope)
+                                  params.set("scope", attempt.scope);
+                                const t =
+                                  attempt.part?.type ||
+                                  attempt.module?.type ||
+                                  (attempt.task ? "writing" : "");
+                                if (t) params.set("type", t);
+                                if (t === "listening") {
+                                  const audioUrl =
+                                    attempt.module?.full_audio_url ||
+                                    attempt.part?.audio_url;
+                                  if (audioUrl)
+                                    params.set("audio_url", audioUrl);
+                                }
+                                const qs = params.toString();
+                                router.push(
+                                  `/practice/review/${attempt.id}${qs ? `?${qs}` : ""}`,
+                                );
+                              }}
+                            >
+                              <Eye size={12} />
+                              Review
+                            </Button>
+                          </HStack>
+                        </Table.Cell>
+                      </Table.Row>
+                    );
+                  })}
+                </Table.Body>
+              </Table.Root>
+            </Box>
           )}
 
           {/* Pagination */}
@@ -265,101 +438,6 @@ function ResultsListContent() {
       </Box>
       <MobileBottomNav />
     </Box>
-  );
-}
-
-// ─── Attempt Card ─────────────────────────────────────────────────────────
-
-function AttemptCard({
-  attempt,
-  onClick,
-  onViewResults,
-  onReview,
-}: {
-  attempt: AttemptItem;
-  onClick: () => void;
-  onViewResults: () => void;
-  onReview: () => void;
-}) {
-  const timeAgo = getTimeAgo(attempt.started_at);
-  const duration = getDuration(attempt.started_at, attempt.finished_at);
-
-  return (
-    <Card.Root
-      cursor="pointer"
-      onClick={onClick}
-      transition="all 0.2s"
-      _hover={{ shadow: "md", borderColor: "brand.200" }}
-      overflow="hidden"
-    >
-      <Card.Body py={4} px={5}>
-        <Flex justify="space-between" align="flex-start" gap={4}>
-          {/* Left */}
-          <HStack gap={3} align="flex-start" flex={1}>
-            <Flex
-              align="center"
-              justify="center"
-              w="40px"
-              h="40px"
-              borderRadius="lg"
-              bg={getScopeBg(attempt.scope)}
-              flexShrink={0}
-            >
-              {getScopeIcon(attempt.scope, attempt)}
-            </Flex>
-            <Box flex={1}>
-              <Text fontWeight="semibold" fontSize="sm" lineClamp={1}>
-                {getAttemptTitle(attempt)}
-              </Text>
-              <HStack gap={2} mt={1} flexWrap="wrap">
-                <Badge
-                  fontSize="2xs"
-                  colorPalette={getTypePalette(getAttemptType(attempt))}
-                >
-                  {getAttemptType(attempt)}
-                </Badge>
-                <Badge fontSize="2xs" variant="outline">
-                  {attempt.scope}
-                </Badge>
-                {getQuestionCount(attempt) > 0 && (
-                  <Text fontSize="xs" color="gray.500">
-                    {getQuestionCount(attempt)} Qs
-                  </Text>
-                )}
-                <Text fontSize="xs" color="gray.500">
-                  {timeAgo}
-                </Text>
-                {duration && (
-                  <HStack gap={1}>
-                    <Clock size={10} />
-                    <Text fontSize="xs" color="gray.500">
-                      {duration}
-                    </Text>
-                  </HStack>
-                )}
-              </HStack>
-            </Box>
-          </HStack>
-
-          {/* Right — Action buttons */}
-          <HStack gap={1} flexShrink={0} onClick={(e) => e.stopPropagation()}>
-            <Button
-              size="xs"
-              variant="outline"
-              colorPalette="brand"
-              onClick={onViewResults}
-            >
-              <Target size={12} />
-              Results
-            </Button>
-            <Button size="xs" variant="outline" onClick={onReview}>
-              <Eye size={12} />
-              Review
-            </Button>
-          </HStack>
-        </Flex>
-      </Card.Body>
-    </Card.Root>
   );
 }
 
