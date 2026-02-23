@@ -26,6 +26,7 @@ import Image from "next/image";
 import Link from "next/link";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import LessonQuiz from "@/components/LessonQuiz";
+import AudioPlayer from "@/components/ielts-builder/AudioPlayer";
 import { ieltsCourseAPI } from "@/lib/api";
 
 // ── Types ──────────────────────────────────────────────
@@ -762,6 +763,15 @@ function ContentBlockView({
         </Box>
       );
     }
+    case "audio":
+      return (
+        <AudioPlayer
+          src={block.content}
+          fileName={decodeURIComponent(
+            block.content.split("/").pop() || "Audio",
+          )}
+        />
+      );
     case "ielts_practice": {
       let parsed: { practiceType?: string; id?: string; label?: string } = {};
       try {

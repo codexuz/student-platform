@@ -295,7 +295,7 @@ function ListeningTestLayoutInner({
       direction="column"
       h="100vh"
       bg={colors.bg}
-      style={{ fontSize: `${fontScale}rem` }}
+      style={{ fontSize: `${fontScale}em` }}
     >
       {/* Audio play overlay (shown initially) */}
       {showOverlay && <AudioPlayOverlay onPlay={handlePlayOverlay} />}

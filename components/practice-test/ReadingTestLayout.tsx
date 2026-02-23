@@ -220,7 +220,7 @@ function ReadingTestLayoutInner({
       direction="column"
       h="100vh"
       bg={colors.bg}
-      style={{ fontSize: `${fontScale}rem` }}
+      style={{ fontSize: `${fontScale}em` }}
     >
       {/* Header */}
       <TestHeader

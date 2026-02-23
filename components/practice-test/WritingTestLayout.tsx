@@ -160,7 +160,7 @@ function WritingTestLayoutInner({
       direction="column"
       h="100vh"
       bg={colors.bg}
-      style={{ fontSize: `${fontScale}rem` }}
+      style={{ fontSize: `${fontScale}em` }}
     >
       {/* Header */}
       <TestHeader
@@ -222,7 +222,7 @@ function WritingTestLayoutInner({
                     mb={6}
                     css={{
                       "& p": {
-                        fontSize: "0.95rem",
+                        fontSize: "0.95em",
                         lineHeight: "1.75",
                         marginBottom: "1rem",
                         color: colors.text,
@@ -241,7 +241,7 @@ function WritingTestLayoutInner({
                         marginBottom: "1rem",
                       },
                       "& li": {
-                        fontSize: "0.9rem",
+                        fontSize: "0.9em",
                         lineHeight: "1.75",
                         marginBottom: "0.25rem",
                         color: colors.text,
@@ -295,7 +295,7 @@ function WritingTestLayoutInner({
                 placeholder=""
                 flex={1}
                 resize="none"
-                fontSize="0.95rem"
+                fontSize="0.95em"
                 lineHeight="1.8"
                 fontFamily="inherit"
                 borderWidth="1px"

@@ -21,6 +21,7 @@ import type { ContentBlock, VideoTrack } from "./types";
 import FileUploadZone from "./FileUploadZone";
 import { uploadAPI } from "@/lib/teacher-api";
 import IeltsPracticePickerModal from "./IeltsPracticePickerModal";
+import AudioPlayer from "@/components/ielts-builder/AudioPlayer";
 
 function toYouTubeEmbed(url: string): string | null {
   if (!url) return null;
@@ -512,6 +513,42 @@ export default function BlockRenderer({
           </Box>
         ) : (
           <FileUploadZone type="image" onUploaded={(url) => onUrlChange(url)} />
+        )}
+      </Box>
+    );
+  }
+
+  if (block.type === "audio") {
+    return (
+      <Box
+        ref={setNodeRef}
+        style={style}
+        position="relative"
+        mb={1}
+        rounded="md"
+        _hover={{ bg: "blackAlpha.50", _dark: { bg: "whiteAlpha.50" } }}
+        role="group"
+      >
+        {dragHandle}
+        {block.content ? (
+          <Box px={4} py={3}>
+            <AudioPlayer
+              src={block.content}
+              fileName={decodeURIComponent(
+                block.content.split("/").pop() || "Audio",
+              )}
+            />
+            <Input
+              mt={2}
+              w="full"
+              size="sm"
+              value={block.content}
+              onChange={(e) => onUrlChange(e.target.value)}
+              placeholder="Audio URL"
+            />
+          </Box>
+        ) : (
+          <FileUploadZone type="audio" onUploaded={(url) => onUrlChange(url)} />
         )}
       </Box>
     );

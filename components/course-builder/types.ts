@@ -39,6 +39,7 @@ export type BlockType =
   | "heading"
   | "video"
   | "image"
+  | "audio"
   | "embed"
   | "document"
   | "ielts_practice";

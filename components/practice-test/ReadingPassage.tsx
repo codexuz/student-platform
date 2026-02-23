@@ -46,7 +46,7 @@ const ReadingPassage = memo(function ReadingPassage({
             dangerouslySetInnerHTML={{ __html: content }}
             css={{
               "& p": {
-                fontSize: "0.9rem",
+                fontSize: "0.9em",
                 lineHeight: "1.75",
                 marginBottom: "1rem",
                 color: colors.text,
@@ -57,8 +57,8 @@ const ReadingPassage = memo(function ReadingPassage({
                 marginTop: "1rem",
                 color: colors.text,
               },
-              "& h2": { fontSize: "1.1rem" },
-              "& h3": { fontSize: "1rem" },
+              "& h2": { fontSize: "1.1em" },
+              "& h3": { fontSize: "1em" },
               "& strong, & b": { fontWeight: "bold" },
               "& em, & i": { fontStyle: "italic" },
               "& ul, & ol": {
@@ -66,7 +66,7 @@ const ReadingPassage = memo(function ReadingPassage({
                 marginBottom: "1rem",
               },
               "& li": {
-                fontSize: "0.9rem",
+                fontSize: "0.9em",
                 lineHeight: "1.75",
                 marginBottom: "0.25rem",
                 color: colors.text,
@@ -86,7 +86,7 @@ const ReadingPassage = memo(function ReadingPassage({
               "& th, & td": {
                 border: "1px solid #e2e8f0",
                 padding: "0.5rem",
-                fontSize: "0.85rem",
+                fontSize: "0.85em",
               },
               "& th": {
                 backgroundColor: colors.hoverBg,

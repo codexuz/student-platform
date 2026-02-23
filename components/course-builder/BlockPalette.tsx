@@ -11,6 +11,7 @@ interface Props {
 const paletteItems: { icon: string; label: string; type: BlockType }[] = [
   { icon: "🎬", label: "Video", type: "video" },
   { icon: "🖼️", label: "Image", type: "image" },
+  { icon: "🎵", label: "Audio", type: "audio" },
   { icon: "📝", label: "Text", type: "paragraph" },
   { icon: "✨", label: "Heading", type: "heading" },
   { icon: "</>", label: "Embed", type: "embed" },

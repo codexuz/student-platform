@@ -38,14 +38,10 @@ function ReadingPracticeContent() {
   const [error, setError] = useState<string | null>(null);
   const [parts, setParts] = useState<PartData[]>([]);
   const [partMappings, setPartMappings] = useState<PartQuestionMapping[]>([]);
+  const [timerMinutes, setTimerMinutes] = useState(20);
 
-  const {
-    attempt,
-    isSaving,
-    createAttempt,
-    saveReadingAnswers,
-    submitAttempt,
-  } = useIeltsAttempt({ scope: "PART", entityId: id });
+  const { attempt, createAttempt, saveReadingAnswers, submitAttempt } =
+    useIeltsAttempt({ scope: "PART", entityId: id });
 
   useEffect(() => {
     if (!id) return;
@@ -65,6 +61,9 @@ function ReadingPracticeContent() {
         const partData = transformReadingPart(part);
         setParts([partData]);
         setPartMappings(buildPartMappings([partData]));
+        if (part.timeLimitMinutes) {
+          setTimerMinutes(part.timeLimitMinutes);
+        }
       } catch (err: unknown) {
         console.error("Failed to load reading part:", err);
         setError("Failed to load reading part. Please try again.");
@@ -138,7 +137,7 @@ function ReadingPracticeContent() {
   return (
     <ReadingTestLayout
       parts={parts}
-      timerMinutes={20}
+      timerMinutes={timerMinutes}
       onSubmit={handleSubmit}
       onSaveProgress={handleSaveProgress}
       onStartAttempt={createAttempt}
