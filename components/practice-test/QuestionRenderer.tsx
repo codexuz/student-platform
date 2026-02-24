@@ -18,6 +18,7 @@ import {
   TableCompletion,
   MatchingFeatures,
   MatchingSentenceEndings,
+  PlanMapLabelling,
 } from "./questions";
 
 const QUESTION_COMPONENTS: Record<
@@ -40,7 +41,7 @@ const QUESTION_COMPONENTS: Record<
   DIAGRAM_LABELLING: ShortAnswer, // reuse short answer UI
   MATCHING_FEATURES: MatchingFeatures,
   MATCHING_SENTENCE_ENDINGS: MatchingSentenceEndings,
-  PLAN_MAP_LABELLING: ShortAnswer, // reuse short answer UI
+  PLAN_MAP_LABELLING: PlanMapLabelling,
 };
 
 /**
