@@ -44,6 +44,10 @@ export default function SummaryCompletionDragDrop({
   );
   const displayValue = (key: string) => optionTextMap.get(key) ?? key;
 
+  /* ── Detect variant: inline blanks in passage vs statement list ── */
+  const rawHtml = question.questionText ?? "";
+  const hasInlineBlanks = /_{2,}/.test(rawHtml);
+
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(String(event.active.id));
   };
@@ -75,6 +79,63 @@ export default function SummaryCompletionDragDrop({
     }
   };
 
+  /* ── Variant 2: render passage with inline droppable gaps ── */
+  const renderInlinePassage = () => {
+    // Convert <p> boundaries to <br/> so content flows inline
+    const processed = rawHtml
+      .replace(/<\/p>\s*<p>/gi, "<br/><br/>")
+      .replace(/<p>/gi, "")
+      .replace(/<\/p>/gi, "");
+
+    const segments = processed.split(/_{2,}/);
+
+    return (
+      <Box
+        fontSize="sm"
+        lineHeight="2"
+        mb={6}
+        css={{
+          "& strong": { fontWeight: "bold" },
+          "& em": { fontStyle: "italic" },
+        }}
+      >
+        {segments.map((htmlFrag, i) => {
+          const sub = i < subQuestions.length ? subQuestions[i] : null;
+          const qNum = sub?.questionNumber ?? 0;
+          const answer = sub ? (answers[qNum] ?? "") : "";
+          const isCorrect = showResults && answer === sub?.correctAnswer;
+          const isWrong = showResults && !!answer && !isCorrect;
+          const correctKey = sub?.correctAnswer ?? "";
+
+          return (
+            <span key={i}>
+              <span dangerouslySetInnerHTML={{ __html: htmlFrag }} />
+              {i < segments.length - 1 && sub && (
+                <>
+                  <DroppableGap
+                    id={qNum}
+                    value={answer}
+                    displayValue={answer ? displayValue(answer) : ""}
+                    isCorrect={!!isCorrect}
+                    isWrong={!!isWrong}
+                    onClick={() => handleGapClick(qNum)}
+                    disabled={disabled}
+                    placeholder={String(qNum)}
+                  />
+                  {showResults && isWrong && (
+                    <Text as="span" fontSize="xs" color="green.600" ml={1}>
+                      ({correctKey}. {displayValue(correctKey)})
+                    </Text>
+                  )}
+                </>
+              )}
+            </span>
+          );
+        })}
+      </Box>
+    );
+  };
+
   return (
     <Box>
       <Heading size="md" mb={2}>
@@ -100,39 +161,50 @@ export default function SummaryCompletionDragDrop({
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        {/* Sentences with droppable gaps */}
-        <VStack align="stretch" gap={3} mb={6}>
-          {subQuestions.map((sub) => {
-            const qNum = sub.questionNumber ?? 0;
-            const answer = answers[qNum] ?? "";
-            const text = sub.questionText ?? "";
-            const isCorrect = showResults && answer === sub.correctAnswer;
-            const isWrong = showResults && answer && !isCorrect;
+        {hasInlineBlanks ? (
+          /* Variant 2: passage with inline droppable gaps */
+          renderInlinePassage()
+        ) : (
+          /* Variant 1: statement list with gaps beside each */
+          <VStack align="stretch" gap={3} mb={6}>
+            {subQuestions.map((sub) => {
+              const qNum = sub.questionNumber ?? 0;
+              const answer = answers[qNum] ?? "";
+              const text = sub.questionText ?? "";
+              const isCorrect = showResults && answer === sub.correctAnswer;
+              const isWrong = showResults && answer && !isCorrect;
+              const correctKey = sub.correctAnswer ?? "";
 
-            return (
-              <HStack
-                key={qNum}
-                align="center"
-                flexWrap="wrap"
-                gap={1}
-                fontSize="sm"
-                lineHeight="2"
-              >
-                <Text as="span">{text}</Text>
-                <DroppableGap
-                  id={qNum}
-                  value={answer}
-                  displayValue={answer ? displayValue(answer) : ""}
-                  isCorrect={!!isCorrect}
-                  isWrong={!!isWrong}
-                  onClick={() => handleGapClick(qNum)}
-                  disabled={disabled}
-                  placeholder={String(qNum)}
-                />
-              </HStack>
-            );
-          })}
-        </VStack>
+              return (
+                <HStack
+                  key={qNum}
+                  align="center"
+                  flexWrap="wrap"
+                  gap={1}
+                  fontSize="sm"
+                  lineHeight="2"
+                >
+                  <Text as="span">{text}</Text>
+                  <DroppableGap
+                    id={qNum}
+                    value={answer}
+                    displayValue={answer ? displayValue(answer) : ""}
+                    isCorrect={!!isCorrect}
+                    isWrong={!!isWrong}
+                    onClick={() => handleGapClick(qNum)}
+                    disabled={disabled}
+                    placeholder={String(qNum)}
+                  />
+                  {showResults && isWrong && (
+                    <Text as="span" fontSize="xs" color="green.600" ml={1}>
+                      Correct: {correctKey}. {displayValue(correctKey)}
+                    </Text>
+                  )}
+                </HStack>
+              );
+            })}
+          </VStack>
+        )}
 
         {/* Word bank */}
         <Box

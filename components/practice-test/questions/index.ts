@@ -13,3 +13,4 @@ export { default as TableCompletion } from "./TableCompletion";
 export { default as MatchingFeatures } from "./MatchingFeatures";
 export { default as MatchingSentenceEndings } from "./MatchingSentenceEndings";
 export { default as PlanMapLabelling } from "./PlanMapLabelling";
+export { default as DiagramLabelling } from "./DiagramLabelling";

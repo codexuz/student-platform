@@ -19,6 +19,7 @@ import {
   MatchingFeatures,
   MatchingSentenceEndings,
   PlanMapLabelling,
+  DiagramLabelling,
 } from "./questions";
 
 const QUESTION_COMPONENTS: Record<
@@ -38,7 +39,7 @@ const QUESTION_COMPONENTS: Record<
   SHORT_ANSWER: ShortAnswer,
   TABLE_COMPLETION: TableCompletion,
   FLOW_CHART_COMPLETION: SentenceCompletion, // reuse sentence completion UI
-  DIAGRAM_LABELLING: ShortAnswer, // reuse short answer UI
+  DIAGRAM_LABELLING: DiagramLabelling,
   MATCHING_FEATURES: MatchingFeatures,
   MATCHING_SENTENCE_ENDINGS: MatchingSentenceEndings,
   PLAN_MAP_LABELLING: PlanMapLabelling,
