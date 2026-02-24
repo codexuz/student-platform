@@ -536,7 +536,7 @@ function ReviewContent() {
       {moduleType === "listening" &&
         !currentPart?.transcriptUrl &&
         (() => {
-          const audioSrc = audioUrlFromQuery || currentPart?.audioUrl;
+          const audioSrc = currentPart?.audioUrl || audioUrlFromQuery;
           return audioSrc ? (
             <Box
               px={4}
@@ -573,7 +573,7 @@ function ReviewContent() {
         />
       ) : moduleType === "listening" && currentPart?.transcriptUrl ? (
         <ListeningSplitView
-          audioUrl={audioUrlFromQuery || currentPart?.audioUrl}
+          audioUrl={currentPart?.audioUrl || audioUrlFromQuery || undefined}
           transcriptUrl={currentPart.transcriptUrl}
           partTitle={currentPart?.title}
           questions={parts.length > 0 ? currentQuestions : allQuestions}

@@ -375,12 +375,14 @@ function ResultsListContent() {
                                   attempt.module?.type ||
                                   (attempt.task ? "writing" : "");
                                 if (t) params.set("type", t);
-                                if (t === "listening") {
-                                  const audioUrl =
-                                    attempt.module?.full_audio_url ||
-                                    attempt.part?.audio_url;
-                                  if (audioUrl)
-                                    params.set("audio_url", audioUrl);
+                                if (
+                                  t === "listening" &&
+                                  attempt.part?.audio_url
+                                ) {
+                                  params.set(
+                                    "audio_url",
+                                    attempt.part.audio_url,
+                                  );
                                 }
                                 const qs = params.toString();
                                 router.push(
