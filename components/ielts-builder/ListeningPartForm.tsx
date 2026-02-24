@@ -16,7 +16,7 @@ import {
   Spinner,
   createListCollection,
 } from "@chakra-ui/react";
-import { Save, Upload, X, Plus, ChevronsUpDown } from "lucide-react";
+import { Save, Upload, X, Plus, ChevronsUpDown, FileText } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { ieltsListeningPartsAPI, ieltsListeningAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
@@ -48,6 +48,8 @@ export default function ListeningPartForm({
   const [audioUrl, setAudioUrl] = useState("");
   const [audioName, setAudioName] = useState("");
   const [audioDuration, setAudioDuration] = useState("");
+  const [transcriptUrl, setTranscriptUrl] = useState("");
+  const [transcriptName, setTranscriptName] = useState("");
   const [timeLimitMinutes, setTimeLimitMinutes] = useState("");
   const [difficulty, setDifficulty] = useState<DifficultyLevel>("MEDIUM");
   const [isActive, setIsActive] = useState(true);
@@ -57,6 +59,7 @@ export default function ListeningPartForm({
   const [listenings, setListenings] = useState<IELTSListening[]>([]);
   const [loadingListenings, setLoadingListenings] = useState(true);
   const [showAudioUpload, setShowAudioUpload] = useState(false);
+  const [showTranscriptUpload, setShowTranscriptUpload] = useState(false);
   const [listeningSearchInput, setListeningSearchInput] = useState("");
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isEdit = !!editId;
@@ -113,6 +116,8 @@ export default function ListeningPartForm({
           setAudioUrl((p.audio_url as string) || "");
           setAudioName("");
           setAudioDuration("");
+          setTranscriptUrl((p.transcript_url as string) || "");
+          setTranscriptName("");
           // Ensure the linked listening appears in the combobox list
           if (p.listening_id) {
             ieltsListeningAPI
@@ -150,6 +155,7 @@ export default function ListeningPartForm({
         difficulty,
         isActive,
         audio_url: audioUrl || null,
+        transcript_url: transcriptUrl || null,
       };
       if (timeLimitMinutes) body.timeLimitMinutes = parseInt(timeLimitMinutes);
       if (totalQuestions) body.totalQuestions = parseInt(totalQuestions);
@@ -388,6 +394,64 @@ export default function ListeningPartForm({
               )}
             </Box>
 
+            <Box>
+              <Text
+                fontSize="xs"
+                fontWeight="600"
+                color="gray.600"
+                _dark={{ color: "gray.400" }}
+                mb={1}
+                textTransform="uppercase"
+                letterSpacing="0.3px"
+              >
+                Transcript
+              </Text>
+              {transcriptUrl ? (
+                <VStack gap={2} alignItems="stretch">
+                  <HStack
+                    gap={2}
+                    p={2}
+                    bg="gray.50"
+                    _dark={{ bg: "gray.700" }}
+                    rounded="md"
+                    borderWidth="1px"
+                  >
+                    <Icon as={FileText} fontSize="sm" color="blue.500" />
+                    <Text
+                      fontSize="sm"
+                      color="gray.600"
+                      _dark={{ color: "gray.300" }}
+                      wordBreak="break-all"
+                      flex="1"
+                    >
+                      {transcriptName || transcriptUrl}
+                    </Text>
+                  </HStack>
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    color="red.400"
+                    _hover={{ color: "red.600" }}
+                    onClick={() => {
+                      setTranscriptUrl("");
+                      setTranscriptName("");
+                    }}
+                    alignSelf="flex-start"
+                  >
+                    <Icon as={X} fontSize="xs" /> Remove
+                  </Button>
+                </VStack>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowTranscriptUpload(true)}
+                >
+                  <Icon as={Upload} fontSize="sm" /> Upload Transcript
+                </Button>
+              )}
+            </Box>
+
             <Flex gap={3} direction={{ base: "column", md: "row" }}>
               <Box flex="1">
                 <Text
@@ -521,6 +585,16 @@ export default function ListeningPartForm({
         onUploaded={(url, fileName) => {
           setAudioUrl(url);
           if (fileName) setAudioName(fileName);
+        }}
+      />
+
+      <FileUploadModal
+        open={showTranscriptUpload}
+        onClose={() => setShowTranscriptUpload(false)}
+        type="transcript"
+        onUploaded={(url, fileName) => {
+          setTranscriptUrl(url);
+          if (fileName) setTranscriptName(fileName);
         }}
       />
     </Box>

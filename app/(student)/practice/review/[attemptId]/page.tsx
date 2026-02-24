@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import {
@@ -27,6 +27,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Maximize2,
+  Play,
+  Pause,
+  RotateCcw,
 } from "lucide-react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import {
@@ -106,6 +109,7 @@ interface PartInfo {
   instruction?: string;
   questionRange: [number, number];
   audioUrl?: string;
+  transcriptUrl?: string;
 }
 
 interface WritingTaskDetail {
@@ -174,6 +178,10 @@ function ReviewContent() {
                 ? "listening"
                 : null);
 
+        // Resolve the entity ID for module-level fetches
+        const resolvedModuleId =
+          attemptResult.moduleId || attemptResult.module_id;
+
         if (
           effectiveType === "writing" &&
           attemptResult.writingAnswers?.length > 0
@@ -197,11 +205,14 @@ function ReviewContent() {
             ),
           );
           setWritingTasks(taskMap);
-        } else if (effectiveType === "reading" && attemptResult.readingId) {
+        } else if (
+          effectiveType === "reading" &&
+          (attemptResult.readingId || resolvedModuleId)
+        ) {
           setModuleType("reading");
           try {
             const readingData = await ieltsAPI.getReadingTestById(
-              attemptResult.readingId,
+              (attemptResult.readingId || resolvedModuleId)!,
             );
             const reading = readingData?.data ?? readingData;
             if (reading?.parts?.length) {
@@ -243,11 +254,14 @@ function ReviewContent() {
           } catch {
             // Module data fetch failed, still show questions
           }
-        } else if (effectiveType === "listening" && attemptResult.listeningId) {
+        } else if (
+          effectiveType === "listening" &&
+          (attemptResult.listeningId || resolvedModuleId)
+        ) {
           setModuleType("listening");
           try {
             const listeningData = await ieltsAPI.getListeningTestById(
-              attemptResult.listeningId,
+              (attemptResult.listeningId || resolvedModuleId)!,
             );
             const listening = listeningData?.data ?? listeningData;
             if (listening?.parts?.length) {
@@ -261,6 +275,7 @@ function ReviewContent() {
                   part?: string;
                   title?: string;
                   audio_url?: string;
+                  transcript_url?: string;
                   questions?: {
                     questionNumber?: number;
                     questions?: { questionNumber?: number }[];
@@ -273,6 +288,7 @@ function ReviewContent() {
                     partLabel: `Part ${partNum}`,
                     title: p.title,
                     audioUrl: p.audio_url,
+                    transcriptUrl: p.transcript_url,
                     instruction:
                       allNums.length > 0
                         ? `Listen and answer questions ${allNums[0]}-${allNums[allNums.length - 1]}.`
@@ -341,6 +357,7 @@ function ReviewContent() {
                   partLabel: `Part ${partNum}`,
                   title: lp.title,
                   audioUrl: lp.audio_url,
+                  transcriptUrl: lp.transcript_url,
                   instruction:
                     allNums.length > 0
                       ? `Listen and answer questions ${allNums[0]}-${allNums[allNums.length - 1]}.`
@@ -515,8 +532,9 @@ function ReviewContent() {
         </Box>
       )}
 
-      {/* Audio player for listening reviews */}
+      {/* Audio player for listening reviews (only when no transcript split view) */}
       {moduleType === "listening" &&
+        !currentPart?.transcriptUrl &&
         (() => {
           const audioSrc = audioUrlFromQuery || currentPart?.audioUrl;
           return audioSrc ? (
@@ -551,6 +569,14 @@ function ReviewContent() {
           passage={currentPart?.content}
           passageTitle={currentPart?.title}
           questions={currentQuestions}
+          showCorrectAnswers={showCorrectAnswers}
+        />
+      ) : moduleType === "listening" && currentPart?.transcriptUrl ? (
+        <ListeningSplitView
+          audioUrl={audioUrlFromQuery || currentPart?.audioUrl}
+          transcriptUrl={currentPart.transcriptUrl}
+          partTitle={currentPart?.title}
+          questions={parts.length > 0 ? currentQuestions : allQuestions}
           showCorrectAnswers={showCorrectAnswers}
         />
       ) : (
@@ -699,6 +725,404 @@ function ReadingSplitView({
 
       <Splitter.ResizeTrigger
         id="passage:questions"
+        display={{ base: "none", lg: "flex" }}
+      />
+
+      {/* Right — Questions with answers */}
+      <Splitter.Panel id="questions">
+        <Box h="100%" overflowY="auto" px={{ base: 4, md: 6 }} py={4}>
+          <ReviewQuestionsList
+            questions={questions}
+            showCorrectAnswers={showCorrectAnswers}
+          />
+        </Box>
+      </Splitter.Panel>
+    </Splitter.RootProvider>
+  );
+}
+
+// ─── VTT Parser ───────────────────────────────────────────────────────────
+
+interface VttCue {
+  startTime: number;
+  endTime: number;
+  text: string;
+}
+
+function parseVtt(raw: string): VttCue[] {
+  const cues: VttCue[] = [];
+  // Normalise line endings
+  const lines = raw.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+  let i = 0;
+
+  // Skip WEBVTT header and any metadata lines
+  while (i < lines.length && !lines[i].includes("-->")) i++;
+
+  while (i < lines.length) {
+    const line = lines[i];
+    if (line.includes("-->")) {
+      const [startStr, endStr] = line.split("-->").map((s) => s.trim());
+      const startTime = vttTimeToSeconds(startStr);
+      const endTime = vttTimeToSeconds(endStr);
+      i++;
+      const textLines: string[] = [];
+      while (i < lines.length && lines[i].trim() !== "") {
+        textLines.push(lines[i].trim());
+        i++;
+      }
+      if (textLines.length > 0) {
+        cues.push({ startTime, endTime, text: textLines.join(" ") });
+      }
+    } else {
+      i++;
+    }
+  }
+  return cues;
+}
+
+function vttTimeToSeconds(timeStr: string): number {
+  // Supports both HH:MM:SS.mmm and MM:SS.mmm
+  const parts = timeStr.split(":");
+  if (parts.length === 3) {
+    const h = parseFloat(parts[0]);
+    const m = parseFloat(parts[1]);
+    const s = parseFloat(parts[2]);
+    return h * 3600 + m * 60 + s;
+  }
+  if (parts.length === 2) {
+    const m = parseFloat(parts[0]);
+    const s = parseFloat(parts[1]);
+    return m * 60 + s;
+  }
+  return parseFloat(timeStr) || 0;
+}
+
+function formatTimestamp(seconds: number): string {
+  if (!isFinite(seconds) || seconds < 0) return "0:00";
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+// ─── Listening Split View (Transcript + Questions) ────────────────────────
+
+function ListeningSplitView({
+  audioUrl,
+  transcriptUrl,
+  partTitle,
+  questions,
+  showCorrectAnswers,
+}: {
+  audioUrl?: string;
+  transcriptUrl: string;
+  partTitle?: string;
+  questions: QuestionResult[];
+  showCorrectAnswers: boolean;
+}) {
+  const splitter = useSplitter({
+    defaultSize: [50, 50],
+    panels: [{ id: "transcript" }, { id: "questions", minSize: 20 }],
+  });
+
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const activeCueRef = useRef<HTMLDivElement>(null);
+  const transcriptContainerRef = useRef<HTMLDivElement>(null);
+  const userScrollingRef = useRef(false);
+  const userScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [cues, setCues] = useState<VttCue[]>([]);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [vttLoading, setVttLoading] = useState(!!transcriptUrl);
+  const [vttError, setVttError] = useState<string | null>(null);
+
+  // Fetch & parse VTT
+  useEffect(() => {
+    if (!transcriptUrl) return;
+    let cancelled = false;
+    fetch(transcriptUrl)
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to fetch transcript");
+        return r.text();
+      })
+      .then((raw) => {
+        if (!cancelled) {
+          setCues(parseVtt(raw));
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) setVttError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setVttLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [transcriptUrl]);
+
+  // Audio events
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const onTime = () => setCurrentTime(audio.currentTime);
+    const onMeta = () => setDuration(audio.duration);
+    const onPlay = () => setPlaying(true);
+    const onPause = () => setPlaying(false);
+    const onEnded = () => setPlaying(false);
+    audio.addEventListener("timeupdate", onTime);
+    audio.addEventListener("loadedmetadata", onMeta);
+    audio.addEventListener("play", onPlay);
+    audio.addEventListener("pause", onPause);
+    audio.addEventListener("ended", onEnded);
+    return () => {
+      audio.removeEventListener("timeupdate", onTime);
+      audio.removeEventListener("loadedmetadata", onMeta);
+      audio.removeEventListener("play", onPlay);
+      audio.removeEventListener("pause", onPause);
+      audio.removeEventListener("ended", onEnded);
+    };
+  }, [audioUrl]);
+
+  // Auto-scroll to active cue (pauses when user scrolls manually)
+  useEffect(() => {
+    if (userScrollingRef.current) return;
+    activeCueRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, [currentTime, cues]);
+
+  // Detect user scroll to temporarily disable auto-scroll
+  useEffect(() => {
+    const container = transcriptContainerRef.current;
+    if (!container) return;
+    const onWheel = () => {
+      userScrollingRef.current = true;
+      if (userScrollTimerRef.current) clearTimeout(userScrollTimerRef.current);
+      userScrollTimerRef.current = setTimeout(() => {
+        userScrollingRef.current = false;
+      }, 5000);
+    };
+    const onTouchMove = () => onWheel();
+    container.addEventListener("wheel", onWheel, { passive: true });
+    container.addEventListener("touchmove", onTouchMove, { passive: true });
+    return () => {
+      container.removeEventListener("wheel", onWheel);
+      container.removeEventListener("touchmove", onTouchMove);
+      if (userScrollTimerRef.current) clearTimeout(userScrollTimerRef.current);
+    };
+  }, []);
+
+  const togglePlay = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) audio.pause();
+    else audio.play().catch(() => {});
+  }, [playing]);
+
+  const seekTo = useCallback((time: number) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.currentTime = time;
+    setCurrentTime(time);
+    if (!audio.paused) return;
+    audio.play().catch(() => {});
+  }, []);
+
+  const restart = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.currentTime = 0;
+    setCurrentTime(0);
+  }, []);
+
+  const activeCueIndex = cues.findIndex(
+    (c) => currentTime >= c.startTime && currentTime < c.endTime,
+  );
+
+  return (
+    <Splitter.RootProvider value={splitter} flex={1} overflow="hidden">
+      {/* Hidden audio element */}
+      {audioUrl && <audio ref={audioRef} src={audioUrl} preload="metadata" />}
+
+      {/* Left — Transcript with audio controls */}
+      <Splitter.Panel id="transcript">
+        <Flex direction="column" h="100%">
+          {/* Audio controls bar */}
+          {audioUrl && (
+            <Box
+              px={4}
+              py={2.5}
+              borderBottomWidth="1px"
+              borderColor="gray.200"
+              bg="gray.50"
+              _dark={{ bg: "gray.800" }}
+              flexShrink={0}
+            >
+              <HStack gap={2}>
+                <IconButton
+                  size="sm"
+                  variant="ghost"
+                  aria-label={playing ? "Pause" : "Play"}
+                  onClick={togglePlay}
+                  colorPalette="blue"
+                >
+                  {playing ? <Pause size={16} /> : <Play size={16} />}
+                </IconButton>
+                <IconButton
+                  size="sm"
+                  variant="ghost"
+                  aria-label="Restart"
+                  onClick={restart}
+                >
+                  <RotateCcw size={14} />
+                </IconButton>
+                {/* Progress bar */}
+                <Box
+                  flex={1}
+                  h="6px"
+                  bg="gray.200"
+                  _dark={{ bg: "gray.600" }}
+                  borderRadius="full"
+                  cursor="pointer"
+                  position="relative"
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const pct = (e.clientX - rect.left) / rect.width;
+                    seekTo(pct * duration);
+                  }}
+                >
+                  <Box
+                    h="100%"
+                    bg="blue.500"
+                    borderRadius="full"
+                    w={duration ? `${(currentTime / duration) * 100}%` : "0%"}
+                    transition="width 0.1s linear"
+                  />
+                </Box>
+                <Text fontSize="xs" color="gray.500" flexShrink={0}>
+                  {formatTimestamp(currentTime)} / {formatTimestamp(duration)}
+                </Text>
+              </HStack>
+            </Box>
+          )}
+
+          {/* Transcript cues */}
+          <Box
+            ref={transcriptContainerRef}
+            flex={1}
+            overflowY="auto"
+            px={{ base: 4, md: 5 }}
+            py={4}
+          >
+            {partTitle && (
+              <Heading size="sm" mb={3}>
+                {partTitle}
+              </Heading>
+            )}
+            <Badge colorPalette="purple" mb={3} fontSize="2xs">
+              Transcript
+            </Badge>
+
+            {vttLoading && (
+              <HStack gap={2} py={4}>
+                <Spinner size="sm" />
+                <Text fontSize="sm" color="gray.400">
+                  Loading transcript...
+                </Text>
+              </HStack>
+            )}
+
+            {vttError && (
+              <Text fontSize="sm" color="red.500" py={4}>
+                Failed to load transcript: {vttError}
+              </Text>
+            )}
+
+            {!vttLoading && !vttError && cues.length === 0 && (
+              <Text fontSize="sm" color="gray.400" py={4}>
+                No transcript cues found.
+              </Text>
+            )}
+
+            <VStack gap={0} align="stretch">
+              {cues.map((cue, idx) => {
+                const isActive = idx === activeCueIndex;
+                const isPast =
+                  activeCueIndex >= 0
+                    ? idx < activeCueIndex
+                    : currentTime > cue.endTime;
+                return (
+                  <Box
+                    key={idx}
+                    ref={isActive ? activeCueRef : undefined}
+                    px={3}
+                    py={2}
+                    borderRadius="md"
+                    cursor="pointer"
+                    transition="all 0.15s"
+                    bg="transparent"
+                    _hover={{
+                      bg: "gray.50",
+                      _dark: {
+                        bg: "gray.700",
+                      },
+                    }}
+                    onClick={() => seekTo(cue.startTime)}
+                  >
+                    <HStack gap={2} align="flex-start">
+                      <Text
+                        fontSize="2xs"
+                        color={isActive ? "blue.600" : "gray.400"}
+                        _dark={{
+                          color: isActive ? "blue.300" : "gray.500",
+                        }}
+                        fontFamily="mono"
+                        flexShrink={0}
+                        mt={0.5}
+                        minW="40px"
+                      >
+                        {formatTimestamp(cue.startTime)}
+                      </Text>
+                      <Text
+                        as="mark"
+                        fontSize="sm"
+                        lineHeight="1.6"
+                        fontWeight={isActive ? "semibold" : "normal"}
+                        bg={isActive ? "yellow.200" : "transparent"}
+                        color={
+                          isActive
+                            ? "gray.900"
+                            : isPast
+                              ? "gray.500"
+                              : "gray.800"
+                        }
+                        _dark={{
+                          bg: isActive ? "yellow.800/60" : "transparent",
+                          color: isActive
+                            ? "yellow.100"
+                            : isPast
+                              ? "gray.400"
+                              : "gray.200",
+                        }}
+                        px={isActive ? 1 : 0}
+                        borderRadius="sm"
+                        transition="background-color 0.4s ease, color 0.4s ease, font-weight 0.4s ease, padding 0.4s ease"
+                      >
+                        {cue.text}
+                      </Text>
+                    </HStack>
+                  </Box>
+                );
+              })}
+            </VStack>
+          </Box>
+        </Flex>
+      </Splitter.Panel>
+
+      <Splitter.ResizeTrigger
+        id="transcript:questions"
         display={{ base: "none", lg: "flex" }}
       />
 

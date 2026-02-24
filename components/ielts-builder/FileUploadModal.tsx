@@ -16,7 +16,7 @@ import { Upload, FileAudio, ImageIcon, CheckCircle } from "lucide-react";
 import { useRef, useState, useCallback } from "react";
 import { uploadAPI } from "@/lib/teacher-api";
 
-type UploadType = "audio" | "image";
+type UploadType = "audio" | "image" | "transcript";
 
 interface FileUploadModalProps {
   open: boolean;
@@ -42,12 +42,20 @@ export default function FileUploadModal({
   const accept =
     type === "audio"
       ? "audio/*,.mp3,.wav,.ogg,.flac,.m4a"
-      : "image/*,.jpg,.jpeg,.png,.gif,.webp,.svg";
+      : type === "transcript"
+        ? ".vtt,.srt,.txt"
+        : "image/*,.jpg,.jpeg,.png,.gif,.webp,.svg";
 
-  const label = type === "audio" ? "audio" : "image";
+  const label =
+    type === "audio" ? "audio" : type === "transcript" ? "transcript" : "image";
   const maxSize = type === "audio" ? 100 : 10; // MB
 
-  const LabelIcon = type === "audio" ? FileAudio : ImageIcon;
+  const LabelIcon =
+    type === "audio"
+      ? FileAudio
+      : type === "transcript"
+        ? FileAudio
+        : ImageIcon;
 
   const reset = () => {
     setError("");
@@ -68,8 +76,10 @@ export default function FileUploadModal({
         type === "audio"
           ? file.type.startsWith("audio/") ||
             /\.(mp3|wav|ogg|flac|m4a)$/i.test(file.name)
-          : file.type.startsWith("image/") ||
-            /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name);
+          : type === "transcript"
+            ? /\.(vtt|srt|txt)$/i.test(file.name)
+            : file.type.startsWith("image/") ||
+              /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name);
 
       if (!isValid) {
         setError(`Please select a valid ${label} file`);
@@ -148,7 +158,14 @@ export default function FileUploadModal({
               <Dialog.Title>
                 <HStack gap={2}>
                   <Icon as={LabelIcon} />
-                  <Text>Upload {type === "audio" ? "Audio" : "Image"}</Text>
+                  <Text>
+                    Upload{" "}
+                    {type === "audio"
+                      ? "Audio"
+                      : type === "transcript"
+                        ? "Transcript"
+                        : "Image"}
+                  </Text>
                 </HStack>
               </Dialog.Title>
             </Dialog.Header>
@@ -262,7 +279,7 @@ export default function FileUploadModal({
                     Or paste a URL directly:
                   </Text>
                   <Input
-                    placeholder={`https://example.com/${label}.${type === "audio" ? "mp3" : "jpg"}`}
+                    placeholder={`https://example.com/${label}.${type === "audio" ? "mp3" : type === "transcript" ? "vtt" : "jpg"}`}
                     value={uploadedUrl}
                     onChange={(e) => {
                       setUploadedUrl(e.target.value);

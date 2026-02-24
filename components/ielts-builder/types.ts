@@ -149,6 +149,7 @@ export interface IELTSListeningPart {
   mode: IELTSMode;
   title?: string;
   audio_url?: string;
+  transcript_url?: string;
   timeLimitMinutes?: number;
   difficulty?: DifficultyLevel;
   isActive?: boolean;
