@@ -31,6 +31,7 @@ import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import { ieltsVocabStudentAPI } from "@/lib/api";
+import { toaster } from "@/components/ui/toaster";
 import type {
   IeltsVocabularyDeck,
   IeltsDeckWord,
@@ -314,9 +315,21 @@ export default function StudentDeckPlayPage() {
                         alternateRowStyles: { fillColor: [245, 247, 250] },
                       });
 
-                      doc.save(
-                        `${(deck?.title ?? "vocabulary").replace(/\s+/g, "_")}.pdf`,
-                      );
+                      const fileName = `${(deck?.title ?? "vocabulary").replace(/\s+/g, "_")}.pdf`;
+                      doc.save(fileName);
+
+                      const blobUrl = doc.output(
+                        "bloburl",
+                      ) as unknown as string;
+                      toaster.success({
+                        title: "PDF downloaded!",
+                        description: fileName,
+                        action: {
+                          label: "Open file",
+                          onClick: () => window.open(blobUrl, "_blank"),
+                        },
+                        closable: true,
+                      });
                     }}
                   >
                     <Download size={16} />
