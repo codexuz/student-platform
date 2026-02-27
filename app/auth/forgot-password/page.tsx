@@ -5,6 +5,7 @@ import {
   Button,
   Field,
   Heading,
+  IconButton,
   Input,
   Stack,
   Text,
@@ -15,7 +16,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toaster } from "@/components/ui/toaster";
 import { authAPI } from "@/lib/api";
-import { ArrowLeft, Phone, ShieldCheck, Lock } from "lucide-react";
+import { ArrowLeft, Phone, ShieldCheck, Lock, Eye, EyeOff } from "lucide-react";
 
 type Step = "phone" | "verify" | "reset";
 
@@ -31,6 +32,8 @@ export default function ForgotPasswordPage() {
   const [code, setCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   // Timer
   const [countdown, setCountdown] = useState(0);
@@ -385,7 +388,7 @@ export default function ForgotPasswordPage() {
                     otp
                   >
                     <PinInput.HiddenInput />
-                    <PinInput.Control>
+                    <PinInput.Control display="flex" justifyContent="center">
                       <PinInput.Input index={0} />
                       <PinInput.Input index={1} />
                       <PinInput.Input index={2} />
@@ -435,23 +438,38 @@ export default function ForgotPasswordPage() {
               <Stack gap={4}>
                 <Field.Root invalid={!!errors.newPassword}>
                   <Field.Label>New Password</Field.Label>
-                  <Input
-                    type="password"
-                    placeholder="Enter new password"
-                    value={newPassword}
-                    onChange={(e) => {
-                      setNewPassword(e.target.value);
-                      if (errors.newPassword) {
-                        setErrors(
-                          Object.fromEntries(
-                            Object.entries(errors).filter(
-                              ([k]) => k !== "newPassword",
+                  <Box position="relative" w="full">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter new password"
+                      pr="10"
+                      value={newPassword}
+                      onChange={(e) => {
+                        setNewPassword(e.target.value);
+                        if (errors.newPassword) {
+                          setErrors(
+                            Object.fromEntries(
+                              Object.entries(errors).filter(
+                                ([k]) => k !== "newPassword",
+                              ),
                             ),
-                          ),
-                        );
-                      }
-                    }}
-                  />
+                          );
+                        }
+                      }}
+                    />
+                    <IconButton
+                      aria-label="Toggle password visibility"
+                      variant="ghost"
+                      size="sm"
+                      position="absolute"
+                      right="1"
+                      top="50%"
+                      transform="translateY(-50%)"
+                      onClick={() => setShowPassword((p) => !p)}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </IconButton>
+                  </Box>
                   {errors.newPassword && (
                     <Field.ErrorText>{errors.newPassword}</Field.ErrorText>
                   )}
@@ -459,23 +477,38 @@ export default function ForgotPasswordPage() {
 
                 <Field.Root invalid={!!errors.confirmPassword}>
                   <Field.Label>Confirm Password</Field.Label>
-                  <Input
-                    type="password"
-                    placeholder="Confirm new password"
-                    value={confirmPassword}
-                    onChange={(e) => {
-                      setConfirmPassword(e.target.value);
-                      if (errors.confirmPassword) {
-                        setErrors(
-                          Object.fromEntries(
-                            Object.entries(errors).filter(
-                              ([k]) => k !== "confirmPassword",
+                  <Box position="relative" w="full">
+                    <Input
+                      type={showConfirm ? "text" : "password"}
+                      placeholder="Confirm new password"
+                      pr="10"
+                      value={confirmPassword}
+                      onChange={(e) => {
+                        setConfirmPassword(e.target.value);
+                        if (errors.confirmPassword) {
+                          setErrors(
+                            Object.fromEntries(
+                              Object.entries(errors).filter(
+                                ([k]) => k !== "confirmPassword",
+                              ),
                             ),
-                          ),
-                        );
-                      }
-                    }}
-                  />
+                          );
+                        }
+                      }}
+                    />
+                    <IconButton
+                      aria-label="Toggle confirm password visibility"
+                      variant="ghost"
+                      size="sm"
+                      position="absolute"
+                      right="1"
+                      top="50%"
+                      transform="translateY(-50%)"
+                      onClick={() => setShowConfirm((p) => !p)}
+                    >
+                      {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </IconButton>
+                  </Box>
                   {errors.confirmPassword && (
                     <Field.ErrorText>{errors.confirmPassword}</Field.ErrorText>
                   )}
