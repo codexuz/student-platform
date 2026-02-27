@@ -12,6 +12,7 @@ import {
   Icon,
 } from "@chakra-ui/react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { LuGraduationCap, LuUserCog } from "react-icons/lu";
 import { toaster } from "@/components/ui/toaster";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,6 +20,7 @@ import { useAuth } from "@/contexts/AuthContext";
 type UserRole = "student" | "teacher";
 
 export default function LoginPage() {
+  const router = useRouter();
   const { login } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -201,6 +203,20 @@ export default function LoginPage() {
                   <Field.ErrorText>{errors.password}</Field.ErrorText>
                 )}
               </Field.Root>
+
+              <Box textAlign="right" mt={-1}>
+                <Button
+                  variant="plain"
+                  size="sm"
+                  color="blue.500"
+                  fontWeight="normal"
+                  onClick={() => router.push("/auth/forgot-password")}
+                  p={0}
+                  h="auto"
+                >
+                  Forgot Password?
+                </Button>
+              </Box>
 
               <Button
                 type="submit"
