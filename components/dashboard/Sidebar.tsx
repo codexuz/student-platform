@@ -23,6 +23,7 @@ import {
   ClipboardList,
   BarChart3,
   UserPlus,
+  BookA,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -44,6 +45,7 @@ const studentMenuItems = [
     section: "MAIN",
   },
   { icon: BookOpen, label: "Courses", href: "/courses", section: "MAIN" },
+  { icon: BookA, label: "Vocabulary", href: "/vocab", section: "MAIN" },
   { icon: Bookmark, label: "Resources", href: "/resources", section: "MAIN" },
 ];
 
@@ -72,6 +74,12 @@ const teacherMenuItems = [
     icon: UserPlus,
     label: "Mock Assign",
     href: "/mock-assign",
+    section: "MAIN",
+  },
+  {
+    icon: BookA,
+    label: "Vocabulary",
+    href: "/vocabulary",
     section: "MAIN",
   },
 ];
