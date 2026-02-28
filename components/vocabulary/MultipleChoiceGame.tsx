@@ -230,21 +230,25 @@ export default function MultipleChoiceGame({
       <VStack w="full" maxW="500px" gap={3}>
         {q.options.map((opt, idx) => {
           let borderColor = "gray.200";
+          let darkBorderColor = "gray.600";
           let bg = "white";
           let darkBg = "gray.800";
 
           if (answered) {
             if (idx === q.correctIndex) {
               borderColor = "green.400";
+              darkBorderColor = "green.400";
               bg = "green.50";
               darkBg = "green.900";
             } else if (idx === selected && idx !== q.correctIndex) {
               borderColor = "red.400";
+              darkBorderColor = "red.400";
               bg = "red.50";
               darkBg = "red.900";
             }
           } else if (idx === selected) {
             borderColor = "brand.400";
+            darkBorderColor = "brand.400";
           }
 
           return (
@@ -255,7 +259,7 @@ export default function MultipleChoiceGame({
               borderWidth="2px"
               borderColor={borderColor}
               bg={bg}
-              _dark={{ bg: darkBg }}
+              _dark={{ bg: darkBg, borderColor: darkBorderColor }}
               borderRadius="xl"
               cursor={answered ? "default" : "pointer"}
               onClick={() => handleSelect(idx)}

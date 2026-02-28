@@ -174,6 +174,7 @@ export default function MatchingGame({ words, onComplete }: MatchingGameProps) {
         bg: "green.50",
         darkBg: "green.900",
         borderColor: "green.400",
+        darkBorderColor: "green.400",
         opacity: 0.6,
       };
     }
@@ -182,6 +183,7 @@ export default function MatchingGame({ words, onComplete }: MatchingGameProps) {
         bg: "red.50",
         darkBg: "red.900",
         borderColor: "red.400",
+        darkBorderColor: "red.400",
         opacity: 1,
       };
     }
@@ -190,6 +192,7 @@ export default function MatchingGame({ words, onComplete }: MatchingGameProps) {
         bg: "brand.50",
         darkBg: "brand.900",
         borderColor: "brand.400",
+        darkBorderColor: "brand.400",
         opacity: 1,
       };
     }
@@ -197,6 +200,7 @@ export default function MatchingGame({ words, onComplete }: MatchingGameProps) {
       bg: "white",
       darkBg: "gray.800",
       borderColor: "gray.200",
+      darkBorderColor: "gray.600",
       opacity: 1,
     };
   };
@@ -290,7 +294,7 @@ export default function MatchingGame({ words, onComplete }: MatchingGameProps) {
                 borderWidth="2px"
                 borderColor={style.borderColor}
                 bg={style.bg}
-                _dark={{ bg: style.darkBg, borderColor: style.borderColor }}
+                _dark={{ bg: style.darkBg, borderColor: style.darkBorderColor }}
                 borderRadius="xl"
                 cursor={matchedIds.has(item.id) ? "default" : "pointer"}
                 opacity={style.opacity}
@@ -331,7 +335,7 @@ export default function MatchingGame({ words, onComplete }: MatchingGameProps) {
                 borderWidth="2px"
                 borderColor={style.borderColor}
                 bg={style.bg}
-                _dark={{ bg: style.darkBg, borderColor: style.borderColor }}
+                _dark={{ bg: style.darkBg, borderColor: style.darkBorderColor }}
                 borderRadius="xl"
                 cursor={matchedIds.has(item.id) ? "default" : "pointer"}
                 opacity={style.opacity}

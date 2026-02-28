@@ -134,8 +134,9 @@ export default function StudentDeckPlayPage() {
             alignItems="center"
             justifyContent="space-between"
             bg="white"
-            _dark={{ bg: "gray.800" }}
+            _dark={{ bg: "gray.800", borderColor: "gray.700" }}
             borderBottomWidth="1px"
+            borderColor="gray.200"
           >
             <HStack gap={2}>
               <Button
@@ -187,7 +188,9 @@ export default function StudentDeckPlayPage() {
                 gap={4}
               >
                 <Spinner size="xl" color="brand.500" />
-                <Text color="gray.500">Loading deck...</Text>
+                <Text color="gray.500" _dark={{ color: "gray.400" }}>
+                  Loading deck...
+                </Text>
               </Flex>
             )}
 

@@ -81,8 +81,9 @@ export default function StudentVocabularyDetailPage() {
             alignItems="center"
             justifyContent="space-between"
             bg="white"
-            _dark={{ bg: "gray.800" }}
+            _dark={{ bg: "gray.800", borderColor: "gray.700" }}
             borderBottomWidth="1px"
+            borderColor="gray.200"
           >
             <HStack gap={2}>
               <Button
@@ -118,7 +119,9 @@ export default function StudentVocabularyDetailPage() {
                   gap={4}
                 >
                   <Spinner size="xl" color="brand.500" />
-                  <Text color="gray.500">Loading...</Text>
+                  <Text color="gray.500" _dark={{ color: "gray.400" }}>
+                    Loading...
+                  </Text>
                 </Flex>
               )}
 

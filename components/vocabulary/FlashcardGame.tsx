@@ -153,7 +153,7 @@ export default function FlashcardGame({
             align="center"
             justify="center"
             bg="white"
-            _dark={{ bg: "gray.800" }}
+            _dark={{ bg: "gray.800", borderColor: "brand.700" }}
             borderWidth="2px"
             borderColor="brand.200"
             _hover={{ borderColor: "brand.400" }}
@@ -199,7 +199,7 @@ export default function FlashcardGame({
             align="center"
             justify="center"
             bg="white"
-            _dark={{ bg: "gray.800" }}
+            _dark={{ bg: "gray.800", borderColor: "green.700" }}
             borderWidth="2px"
             borderColor="green.200"
             borderRadius="2xl"

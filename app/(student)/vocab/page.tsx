@@ -81,8 +81,9 @@ export default function StudentVocabularyPage() {
             alignItems="center"
             justifyContent="space-between"
             bg="white"
-            _dark={{ bg: "gray.800" }}
+            _dark={{ bg: "gray.800", borderColor: "gray.700" }}
             borderBottomWidth="1px"
+            borderColor="gray.200"
           >
             <Heading size={{ base: "sm", md: "md" }}>Vocabulary</Heading>
             <HStack gap={{ base: 2, md: 4 }}>

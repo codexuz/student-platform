@@ -939,7 +939,11 @@ function DeckDetailContent() {
                   {importing && (
                     <HStack gap={3}>
                       <Spinner size="sm" />
-                      <Text fontSize="sm" color="gray.600">
+                      <Text
+                        fontSize="sm"
+                        color="gray.600"
+                        _dark={{ color: "gray.400" }}
+                      >
                         Importing {importProgress} / {parsedWords.length}...
                       </Text>
                     </HStack>
