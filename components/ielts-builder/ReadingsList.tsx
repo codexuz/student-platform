@@ -14,7 +14,14 @@ import {
   Pagination,
   ButtonGroup,
 } from "@chakra-ui/react";
-import { Plus, Trash2, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Pencil,
+  Link2,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ieltsReadingAPI } from "@/lib/ielts-api";
@@ -261,6 +268,20 @@ export default function ReadingsList({ onNavigate }: ReadingsListProps) {
                         >
                           <Plus size={12} /> Part
                         </Button>
+                        <IconButton
+                          size="xs"
+                          colorPalette="teal"
+                          variant="ghost"
+                          onClick={() =>
+                            onNavigate("reading-linked-parts", {
+                              readingId: r.id,
+                            })
+                          }
+                          aria-label="Manage linked parts"
+                          title="Manage linked parts (many-to-many)"
+                        >
+                          <Link2 size={14} />
+                        </IconButton>
                         <IconButton
                           size="xs"
                           colorPalette="blue"

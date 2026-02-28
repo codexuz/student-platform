@@ -40,6 +40,9 @@ export function pageIdToRoute(
       const rpQs = data?.readingId ? `?readingId=${data.readingId}` : "";
       return `${BASE}/reading-parts/create${rpQs}`;
 
+    case "reading-linked-parts":
+      return `${BASE}/readings/${data?.readingId}/linked-parts`;
+
     case "listenings":
       return `${BASE}/listenings`;
 
@@ -56,6 +59,9 @@ export function pageIdToRoute(
       if (data?.editId) return `${BASE}/listening-parts/${data.editId}/edit`;
       const lpQs = data?.listeningId ? `?listeningId=${data.listeningId}` : "";
       return `${BASE}/listening-parts/create${lpQs}`;
+
+    case "listening-linked-parts":
+      return `${BASE}/listenings/${data?.listeningId}/linked-parts`;
 
     case "reading-part-questions":
       return `${BASE}/reading-parts/${data?.partId}/questions`;
@@ -80,6 +86,9 @@ export function pageIdToRoute(
       const qs = data?.writingId ? `?writingId=${data.writingId}` : "";
       return `${BASE}/writing-tasks/create${qs}`;
     }
+
+    case "writing-linked-tasks":
+      return `${BASE}/writings/${data?.writingId}/linked-tasks`;
 
     default:
       return `${BASE}/tests`;

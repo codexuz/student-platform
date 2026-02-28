@@ -36,19 +36,21 @@ The IELTS Tests module is a **NestJS** module (`IeltsTestsModule`) using **Seque
 ```
 IeltsTest (top-level container)
 ├── IeltsReading (reading module)
-│   └── IeltsReadingPart (Part 1/2/3)
+│   └── IeltsReadingPart (Part 1/2/3)          ← many-to-many via junction table
 │       └── IeltsQuestion (question group)
 │           ├── IeltsSubQuestion (individual sub-questions)
 │           └── IeltsQuestionOption (choices: A/B/C/D)
 ├── IeltsListening (listening module)
-│   └── IeltsListeningPart (Part 1/2/3/4)
+│   └── IeltsListeningPart (Part 1/2/3/4)      ← many-to-many via junction table
 │       ├── IeltsAudio (audio file)
 │       └── IeltsQuestion (question group)
 │           ├── IeltsSubQuestion (individual sub-questions)
 │           └── IeltsQuestionOption (choices: A/B/C/D)
 └── IeltsWriting (writing module)
-    └── IeltsWritingTask (Task 1/Task 2)
+    └── IeltsWritingTask (Task 1/Task 2)        ← many-to-many via junction table
 ```
+
+> **Many-to-Many:** Reading parts, listening parts, and writing tasks can be **reused across multiple parent sections** via junction tables. This means you can create a reading part once and link it to multiple readings without duplicating data. The original one-to-many FK (`reading_id`, `listening_id`, `writing_id`) is preserved for backward compatibility.
 
 ### Controllers
 
@@ -154,6 +156,33 @@ IeltsTest (top-level container)
 | `image_url`    | STRING                         | no       | Chart/graph image          |
 | `min_words`    | INTEGER                        | no       | e.g., 150 or 250           |
 | `suggested_time`| INTEGER                       | no       | Minutes                    |
+
+### `ielts_reading_reading_parts` (Junction — Many-to-Many)
+
+| Column            | Type    | Required | Notes                          |
+|-------------------|---------|----------|--------------------------------|
+| `id`              | UUID    | auto     | Primary key                    |
+| `reading_id`      | UUID    | **yes**  | FK → `ielts_reading`          |
+| `reading_part_id` | UUID    | **yes**  | FK → `ielts_reading_parts`    |
+| `order`           | INTEGER | no       | Display order                  |
+
+### `ielts_listening_listening_parts` (Junction — Many-to-Many)
+
+| Column               | Type    | Required | Notes                            |
+|----------------------|---------|----------|----------------------------------|
+| `id`                 | UUID    | auto     | Primary key                      |
+| `listening_id`       | UUID    | **yes**  | FK → `ielts_listening`          |
+| `listening_part_id`  | UUID    | **yes**  | FK → `ielts_listening_parts`    |
+| `order`              | INTEGER | no       | Display order                    |
+
+### `ielts_writing_writing_tasks` (Junction — Many-to-Many)
+
+| Column            | Type    | Required | Notes                          |
+|-------------------|---------|----------|--------------------------------|
+| `id`              | UUID    | auto     | Primary key                    |
+| `writing_id`      | UUID    | **yes**  | FK → `ielts_writing`          |
+| `writing_task_id` | UUID    | **yes**  | FK → `ielts_writing_tasks`    |
+| `order`           | INTEGER | no       | Display order                  |
 
 ### `ielts_questions`
 
@@ -447,6 +476,53 @@ Roles: ADMIN
 Status: 204 No Content
 ```
 
+#### Link an Existing Reading Part to a Reading (Many-to-Many)
+```
+POST /ielts-reading/link-part
+Roles: ADMIN, TEACHER
+```
+
+This allows **reusing** an existing reading part across multiple reading sections without duplicating it.
+
+```json
+{
+  "reading_id": "uuid-of-reading",
+  "reading_part_id": "uuid-of-reading-part",
+  "order": 1
+}
+```
+
+| Field             | Type   | Required | Description                       |
+|-------------------|--------|----------|-----------------------------------|
+| `reading_id`      | UUID   | **yes**  | The reading section to link to    |
+| `reading_part_id` | UUID   | **yes**  | The reading part to link          |
+| `order`           | number | no       | Display order (for sorting)       |
+
+**Response:** `201 Created` — returns the junction record.
+**Error:** `409 Conflict` if already linked.
+
+#### Unlink a Reading Part from a Reading
+```
+DELETE /ielts-reading/unlink-part
+Roles: ADMIN, TEACHER
+Status: 204 No Content
+```
+
+```json
+{
+  "reading_id": "uuid-of-reading",
+  "reading_part_id": "uuid-of-reading-part"
+}
+```
+
+#### Get All Linked Reading Parts (Many-to-Many)
+```
+GET /ielts-reading/:id/linked-parts
+Roles: ADMIN, TEACHER, STUDENT, GUEST
+```
+
+Returns all reading parts linked via the junction table (ordered by `order` ASC), with the full reading part data included.
+
 ---
 
 ### 4.3 Reading Parts
@@ -655,6 +731,53 @@ Roles: ADMIN
 Status: 204 No Content
 ```
 
+#### Link an Existing Listening Part to a Listening (Many-to-Many)
+```
+POST /ielts-listening/link-part
+Roles: ADMIN, TEACHER
+```
+
+This allows **reusing** an existing listening part across multiple listening sections.
+
+```json
+{
+  "listening_id": "uuid-of-listening",
+  "listening_part_id": "uuid-of-listening-part",
+  "order": 1
+}
+```
+
+| Field               | Type   | Required | Description                         |
+|---------------------|--------|----------|-------------------------------------|
+| `listening_id`      | UUID   | **yes**  | The listening section to link to    |
+| `listening_part_id` | UUID   | **yes**  | The listening part to link          |
+| `order`             | number | no       | Display order (for sorting)         |
+
+**Response:** `201 Created` — returns the junction record.
+**Error:** `409 Conflict` if already linked.
+
+#### Unlink a Listening Part from a Listening
+```
+DELETE /ielts-listening/unlink-part
+Roles: ADMIN, TEACHER
+Status: 204 No Content
+```
+
+```json
+{
+  "listening_id": "uuid-of-listening",
+  "listening_part_id": "uuid-of-listening-part"
+}
+```
+
+#### Get All Linked Listening Parts (Many-to-Many)
+```
+GET /ielts-listening/:id/linked-parts
+Roles: ADMIN, TEACHER, STUDENT, GUEST
+```
+
+Returns all listening parts linked via the junction table (ordered by `order` ASC), with the full listening part data included.
+
 ---
 
 ### 4.5 Listening Parts
@@ -790,6 +913,53 @@ DELETE /ielts-writing/:id
 Roles: ADMIN
 Status: 204 No Content
 ```
+
+#### Link an Existing Writing Task to a Writing (Many-to-Many)
+```
+POST /ielts-writing/link-task
+Roles: ADMIN, TEACHER
+```
+
+This allows **reusing** an existing writing task across multiple writing sections.
+
+```json
+{
+  "writing_id": "uuid-of-writing",
+  "writing_task_id": "uuid-of-writing-task",
+  "order": 1
+}
+```
+
+| Field             | Type   | Required | Description                       |
+|-------------------|--------|----------|-----------------------------------|
+| `writing_id`      | UUID   | **yes**  | The writing section to link to    |
+| `writing_task_id` | UUID   | **yes**  | The writing task to link          |
+| `order`           | number | no       | Display order (for sorting)       |
+
+**Response:** `201 Created` — returns the junction record.
+**Error:** `409 Conflict` if already linked.
+
+#### Unlink a Writing Task from a Writing
+```
+DELETE /ielts-writing/unlink-task
+Roles: ADMIN, TEACHER
+Status: 204 No Content
+```
+
+```json
+{
+  "writing_id": "uuid-of-writing",
+  "writing_task_id": "uuid-of-writing-task"
+}
+```
+
+#### Get All Linked Writing Tasks (Many-to-Many)
+```
+GET /ielts-writing/:id/linked-tasks
+Roles: ADMIN, TEACHER, STUDENT, GUEST
+```
+
+Returns all writing tasks linked via the junction table (ordered by `order` ASC), with the full writing task data included.
 
 ---
 

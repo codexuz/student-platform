@@ -14,7 +14,14 @@ import {
   Pagination,
   ButtonGroup,
 } from "@chakra-ui/react";
-import { Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Link2,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ieltsWritingAPI } from "@/lib/ielts-api";
@@ -256,6 +263,20 @@ export default function WritingsList({ onNavigate }: WritingsListProps) {
                         >
                           <Plus size={12} /> Task
                         </Button>
+                        <IconButton
+                          size="xs"
+                          colorPalette="teal"
+                          variant="ghost"
+                          onClick={() =>
+                            onNavigate("writing-linked-tasks", {
+                              writingId: w.id,
+                            })
+                          }
+                          aria-label="Manage linked tasks"
+                          title="Manage linked tasks (many-to-many)"
+                        >
+                          <Link2 size={14} />
+                        </IconButton>
                         <IconButton
                           size="xs"
                           colorPalette="blue"

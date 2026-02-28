@@ -198,13 +198,42 @@ export type PageId =
   | "reading-form"
   | "reading-parts"
   | "reading-part-form"
+  | "reading-linked-parts"
   | "listenings"
   | "listening-form"
   | "listening-parts"
   | "listening-part-form"
+  | "listening-linked-parts"
   | "writings"
   | "writing-form"
   | "writing-tasks"
   | "writing-task-form"
+  | "writing-linked-tasks"
   | "reading-part-questions"
   | "listening-part-questions";
+
+// ─── Junction Table Records ───────────────────────────────────────────────
+
+export interface ReadingReadingPartLink {
+  id: string;
+  reading_id: string;
+  reading_part_id: string;
+  order?: number;
+  readingPart?: IELTSReadingPart;
+}
+
+export interface ListeningListeningPartLink {
+  id: string;
+  listening_id: string;
+  listening_part_id: string;
+  order?: number;
+  listeningPart?: IELTSListeningPart;
+}
+
+export interface WritingWritingTaskLink {
+  id: string;
+  writing_id: string;
+  writing_task_id: string;
+  order?: number;
+  writingTask?: IELTSWritingTask;
+}
