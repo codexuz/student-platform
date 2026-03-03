@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
@@ -108,7 +108,13 @@ export default function PracticePage() {
 }
 
 function PracticeContent() {
-  const [activeCategory, setActiveCategory] = useState<string>("full-tests");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const validTabs = ["full-tests", "listening", "reading", "writing"];
+  const tabFromUrl = searchParams.get("tab") || "";
+  const initialTab = validTabs.includes(tabFromUrl) ? tabFromUrl : "full-tests";
+
+  const [activeCategory, setActiveCategory] = useState<string>(initialTab);
   const [items, setItems] = useState<PracticeItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
@@ -121,7 +127,6 @@ function PracticeContent() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const router = useRouter();
 
   /* debounce search input */
   useEffect(() => {
@@ -157,6 +162,7 @@ function PracticeContent() {
             limit: PAGE_SIZE,
             mode: "practice",
             ...(listeningPart && { part: listeningPart }),
+            ...(debouncedSearch && { search: debouncedSearch }),
           });
           break;
         case "reading":
@@ -165,6 +171,7 @@ function PracticeContent() {
             limit: PAGE_SIZE,
             mode: "practice",
             ...(readingPart && { part: readingPart }),
+            ...(debouncedSearch && { search: debouncedSearch }),
           });
           break;
         case "writing":
@@ -173,6 +180,7 @@ function PracticeContent() {
             limit: PAGE_SIZE,
             mode: "practice",
             ...(writingTask && { task: writingTask }),
+            ...(debouncedSearch && { search: debouncedSearch }),
           });
           break;
       }
@@ -214,9 +222,13 @@ function PracticeContent() {
     if (category !== "full-tests") {
       setTestCategory("");
       setSkillType("");
-      setSearchQuery("");
-      setDebouncedSearch("");
     }
+    setSearchQuery("");
+    setDebouncedSearch("");
+    // Update URL query param so back-navigation restores the active tab
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", category);
+    router.replace(`/practice?${params.toString()}`, { scroll: false });
   };
 
   const handleTestCategoryChange = (
@@ -383,8 +395,37 @@ function PracticeContent() {
 
           {/* Listening Part Filter */}
           {activeCategory === "listening" && (
-            <Box mb={4}>
-              <NativeSelect.Root size="sm" width="200px">
+            <Flex
+              mb={4}
+              gap={3}
+              direction={{ base: "column", md: "row" }}
+              align={{ base: "stretch", md: "center" }}
+              flexWrap="wrap"
+            >
+              {/* Search */}
+              <Box position="relative" width={{ base: "100%", md: "280px" }}>
+                <Box
+                  position="absolute"
+                  left="10px"
+                  top="50%"
+                  transform="translateY(-50%)"
+                  color="gray.400"
+                  zIndex={1}
+                  pointerEvents="none"
+                >
+                  <Search size={16} />
+                </Box>
+                <Input
+                  size="sm"
+                  pl="34px"
+                  placeholder="Search by title..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  borderRadius="md"
+                />
+              </Box>
+
+              <NativeSelect.Root size="sm" width={{ base: "100%", md: "200px" }}>
                 <NativeSelect.Field
                   value={listeningPart}
                   onChange={handleListeningPartChange}
@@ -397,13 +438,42 @@ function PracticeContent() {
                 </NativeSelect.Field>
                 <NativeSelect.Indicator />
               </NativeSelect.Root>
-            </Box>
+            </Flex>
           )}
 
           {/* Reading Part Filter */}
           {activeCategory === "reading" && (
-            <Box mb={4}>
-              <NativeSelect.Root size="sm" width="200px">
+            <Flex
+              mb={4}
+              gap={3}
+              direction={{ base: "column", md: "row" }}
+              align={{ base: "stretch", md: "center" }}
+              flexWrap="wrap"
+            >
+              {/* Search */}
+              <Box position="relative" width={{ base: "100%", md: "280px" }}>
+                <Box
+                  position="absolute"
+                  left="10px"
+                  top="50%"
+                  transform="translateY(-50%)"
+                  color="gray.400"
+                  zIndex={1}
+                  pointerEvents="none"
+                >
+                  <Search size={16} />
+                </Box>
+                <Input
+                  size="sm"
+                  pl="34px"
+                  placeholder="Search by title..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  borderRadius="md"
+                />
+              </Box>
+
+              <NativeSelect.Root size="sm" width={{ base: "100%", md: "200px" }}>
                 <NativeSelect.Field
                   value={readingPart}
                   onChange={handleReadingPartChange}
@@ -415,13 +485,42 @@ function PracticeContent() {
                 </NativeSelect.Field>
                 <NativeSelect.Indicator />
               </NativeSelect.Root>
-            </Box>
+            </Flex>
           )}
 
           {/* Writing Task Filter */}
           {activeCategory === "writing" && (
-            <Box mb={4}>
-              <NativeSelect.Root size="sm" width="200px">
+            <Flex
+              mb={4}
+              gap={3}
+              direction={{ base: "column", md: "row" }}
+              align={{ base: "stretch", md: "center" }}
+              flexWrap="wrap"
+            >
+              {/* Search */}
+              <Box position="relative" width={{ base: "100%", md: "280px" }}>
+                <Box
+                  position="absolute"
+                  left="10px"
+                  top="50%"
+                  transform="translateY(-50%)"
+                  color="gray.400"
+                  zIndex={1}
+                  pointerEvents="none"
+                >
+                  <Search size={16} />
+                </Box>
+                <Input
+                  size="sm"
+                  pl="34px"
+                  placeholder="Search by title..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  borderRadius="md"
+                />
+              </Box>
+
+              <NativeSelect.Root size="sm" width={{ base: "100%", md: "200px" }}>
                 <NativeSelect.Field
                   value={writingTask}
                   onChange={handleWritingTaskChange}
@@ -432,7 +531,7 @@ function PracticeContent() {
                 </NativeSelect.Field>
                 <NativeSelect.Indicator />
               </NativeSelect.Root>
-            </Box>
+            </Flex>
           )}
 
           {/* Practice Questions Header */}
@@ -553,7 +652,7 @@ function PracticeContent() {
                                 const label = item.skill || item.type;
                                 return label
                                   ? label.charAt(0).toUpperCase() +
-                                      label.slice(1).toLowerCase()
+                                  label.slice(1).toLowerCase()
                                   : meta.label;
                               })()}
                             </Badge>

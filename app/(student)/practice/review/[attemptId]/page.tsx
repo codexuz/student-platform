@@ -170,7 +170,7 @@ function ReviewContent() {
         const effectiveType =
           typeFromQuery ||
           (attemptResult.writingAnswers?.length > 0 &&
-          !attemptResult.questionResults?.length
+            !attemptResult.questionResults?.length
             ? "writing"
             : attemptResult.readingId
               ? "reading"
@@ -695,6 +695,12 @@ function ReadingSplitView({
     panels: [{ id: "passage" }, { id: "questions", minSize: 20 }],
   });
 
+  // Build highlighted passage when showCorrectAnswers is on
+  const highlightedPassage =
+    passage && showCorrectAnswers
+      ? buildHighlightedPassage(passage, questions)
+      : passage;
+
   return (
     <Splitter.RootProvider value={splitter} flex={1} overflow="hidden">
       {/* Left — Passage */}
@@ -705,10 +711,10 @@ function ReadingSplitView({
               {passageTitle}
             </Heading>
           )}
-          {passage && (
+          {highlightedPassage && (
             <Box
               className="reading-passage"
-              dangerouslySetInnerHTML={{ __html: passage }}
+              dangerouslySetInnerHTML={{ __html: highlightedPassage }}
               fontSize="sm"
               lineHeight="1.8"
               css={{
@@ -716,6 +722,27 @@ function ReadingSplitView({
                 "& h1, & h2, & h3": {
                   fontWeight: "bold",
                   marginBottom: "0.5em",
+                },
+                "& mark.from-passage-highlight": {
+                  backgroundColor: "#FED7AA",
+                  borderRadius: "2px",
+                  padding: "1px 2px",
+                  position: "relative",
+                },
+                "& .from-passage-qnum": {
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "18px",
+                  height: "18px",
+                  borderRadius: "50%",
+                  backgroundColor: "#EA580C",
+                  color: "white",
+                  fontSize: "10px",
+                  fontWeight: "bold",
+                  marginLeft: "3px",
+                  verticalAlign: "middle",
+                  lineHeight: 1,
                 },
               }}
             />
@@ -734,6 +761,7 @@ function ReadingSplitView({
           <ReviewQuestionsList
             questions={questions}
             showCorrectAnswers={showCorrectAnswers}
+            hideFromPassage
           />
         </Box>
       </Splitter.Panel>
@@ -918,7 +946,7 @@ function ListeningSplitView({
     const audio = audioRef.current;
     if (!audio) return;
     if (playing) audio.pause();
-    else audio.play().catch(() => {});
+    else audio.play().catch(() => { });
   }, [playing]);
 
   const seekTo = useCallback((time: number) => {
@@ -927,7 +955,7 @@ function ListeningSplitView({
     audio.currentTime = time;
     setCurrentTime(time);
     if (!audio.paused) return;
-    audio.play().catch(() => {});
+    audio.play().catch(() => { });
   }, []);
 
   const restart = useCallback(() => {
@@ -1144,9 +1172,11 @@ function ListeningSplitView({
 function ReviewQuestionsList({
   questions,
   showCorrectAnswers,
+  hideFromPassage = false,
 }: {
   questions: QuestionResult[];
   showCorrectAnswers: boolean;
+  hideFromPassage?: boolean;
 }) {
   // Group consecutive questions by type for shared headers
   const groups = groupQuestionsByType(questions);
@@ -1188,6 +1218,7 @@ function ReviewQuestionsList({
                 question={qr}
                 questionType={group.type}
                 showCorrectAnswers={showCorrectAnswers}
+                hideFromPassage={hideFromPassage}
               />
             ))}
           </VStack>
@@ -1205,10 +1236,12 @@ function ReviewQuestionItem({
   question,
   questionType,
   showCorrectAnswers,
+  hideFromPassage = false,
 }: {
   question: QuestionResult;
   questionType: string;
   showCorrectAnswers: boolean;
+  hideFromPassage?: boolean;
 }) {
   const { questionNumber, userAnswer, correctAnswer, isCorrect, questionText } =
     question;
@@ -1350,7 +1383,7 @@ function ReviewQuestionItem({
             )}
 
             {/* FROM PASSAGE hint */}
-            {question.fromPassage && showCorrectAnswers && (
+            {question.fromPassage && showCorrectAnswers && !hideFromPassage && (
               <Box
                 mt={2}
                 p={2}
@@ -1727,6 +1760,201 @@ function ScorePill({
       </Text>
     </Flex>
   );
+}
+
+// ─── Passage Highlighting Helper ──────────────────────────────────────────
+
+function buildHighlightedPassage(
+  passageHtml: string,
+  questions: QuestionResult[],
+): string {
+  // Collect all fromPassage entries with their question numbers
+  const entries: { questionNumber: number; text: string }[] = [];
+  for (const q of questions) {
+    if (q.fromPassage) {
+      entries.push({ questionNumber: q.questionNumber, text: q.fromPassage });
+    }
+  }
+  if (entries.length === 0) return passageHtml;
+
+  // Helper: strip HTML tags and decode entities
+  const stripHtml = (html: string) =>
+    html
+      .replace(/<[^>]*>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  // Aggressive normalization for fuzzy matching (dashes, quotes, etc.)
+  const normalize = (text: string) =>
+    text
+      .replace(/[\u2013\u2014\u2012\u2015]/g, "-")   // en-dash, em-dash → hyphen
+      .replace(/[\u2018\u2019\u201A\u0060\u00B4]/g, "'") // curly single quotes → straight
+      .replace(/[\u201C\u201D\u201E]/g, '"')          // curly double quotes → straight
+      .replace(/\s+/g, " ")
+      .toLowerCase();
+
+  // Get plain text of the entire passage
+  const passagePlain = stripHtml(passageHtml);
+  // Normalized version for searching (same length, char-for-char mapping)
+  const passageNorm = normalize(passagePlain);
+
+  // Build individual ranges per question
+  type RawRange = { start: number; end: number; questionNumber: number };
+  const rawRanges: RawRange[] = [];
+
+  for (const entry of entries) {
+    const needle = stripHtml(entry.text);
+    if (!needle) continue;
+    const needleNorm = normalize(needle);
+
+    // 1) Try normalized match
+    let idx = passageNorm.indexOf(needleNorm);
+
+    // 2) Fallback: try first 80 chars
+    if (idx === -1 && needleNorm.length > 80) {
+      const shorter = needleNorm.substring(0, 80);
+      idx = passageNorm.indexOf(shorter);
+    }
+
+    // 3) Fallback: try first 40 chars
+    if (idx === -1 && needleNorm.length > 40) {
+      const shorter = needleNorm.substring(0, 40);
+      idx = passageNorm.indexOf(shorter);
+    }
+
+    if (idx !== -1) {
+      // For short prefix matches, use needle length but clamp to passage length
+      rawRanges.push({
+        start: idx,
+        end: Math.min(idx + needleNorm.length, passagePlain.length),
+        questionNumber: entry.questionNumber,
+      });
+    }
+  }
+
+  if (rawRanges.length === 0) return passageHtml;
+
+  // Sort by start position
+  rawRanges.sort((a, b) => a.start - b.start);
+
+  // Merge overlapping / touching ranges, collecting all question numbers
+  type MergedRange = { start: number; end: number; questionNumbers: number[] };
+  const merged: MergedRange[] = [];
+
+  for (const r of rawRanges) {
+    const last = merged[merged.length - 1];
+    if (last && r.start <= last.end) {
+      // Overlapping or touching — merge
+      last.end = Math.max(last.end, r.end);
+      if (!last.questionNumbers.includes(r.questionNumber)) {
+        last.questionNumbers.push(r.questionNumber);
+      }
+    } else {
+      merged.push({
+        start: r.start,
+        end: r.end,
+        questionNumbers: [r.questionNumber],
+      });
+    }
+  }
+
+  // Sort question numbers within each merged range
+  for (const m of merged) {
+    m.questionNumbers.sort((a, b) => a - b);
+  }
+
+  // Now walk through the HTML, tracking plain text offset, and inject <mark> highlights
+  let result = "";
+  let plainIdx = 0;
+  let htmlIdx = 0;
+  let rangeIdx = 0;
+
+  while (htmlIdx < passageHtml.length && rangeIdx < merged.length) {
+    const range = merged[rangeIdx];
+
+    if (passageHtml[htmlIdx] === "<") {
+      // HTML tag — copy verbatim
+      const tagEnd = passageHtml.indexOf(">", htmlIdx);
+      if (tagEnd === -1) {
+        result += passageHtml.substring(htmlIdx);
+        htmlIdx = passageHtml.length;
+      } else {
+        result += passageHtml.substring(htmlIdx, tagEnd + 1);
+        htmlIdx = tagEnd + 1;
+      }
+    } else if (passageHtml[htmlIdx] === "&") {
+      // HTML entity — counts as one plain-text character
+      const entityEnd = passageHtml.indexOf(";", htmlIdx);
+      const entityStr =
+        entityEnd !== -1
+          ? passageHtml.substring(htmlIdx, entityEnd + 1)
+          : passageHtml[htmlIdx];
+      const entityLen = entityEnd !== -1 ? entityEnd + 1 - htmlIdx : 1;
+
+      if (plainIdx === range.start) {
+        result += `<mark class="from-passage-highlight">${entityStr}`;
+      } else if (plainIdx >= range.start && plainIdx < range.end) {
+        result += entityStr;
+      } else {
+        result += entityStr;
+      }
+      plainIdx++;
+      htmlIdx += entityLen;
+
+      if (plainIdx >= range.end) {
+        const badges = range.questionNumbers
+          .map((n) => `<span class="from-passage-qnum">${n}</span>`)
+          .join("");
+        result += `${badges}</mark>`;
+        rangeIdx++;
+      }
+    } else {
+      // Regular character
+      const ch = passageHtml[htmlIdx];
+      const isWhitespace = /\s/.test(ch);
+
+      if (plainIdx === range.start) {
+        result += `<mark class="from-passage-highlight">`;
+      }
+
+      result += ch;
+      htmlIdx++;
+
+      // Consume consecutive whitespace as a single plain-text space
+      if (isWhitespace) {
+        while (
+          htmlIdx < passageHtml.length &&
+          /\s/.test(passageHtml[htmlIdx]) &&
+          passageHtml[htmlIdx] !== "<"
+        ) {
+          result += passageHtml[htmlIdx];
+          htmlIdx++;
+        }
+      }
+      plainIdx++;
+
+      if (plainIdx >= range.end) {
+        const badges = range.questionNumbers
+          .map((n) => `<span class="from-passage-qnum">${n}</span>`)
+          .join("");
+        result += `${badges}</mark>`;
+        rangeIdx++;
+      }
+    }
+  }
+
+  // Append remaining HTML
+  if (htmlIdx < passageHtml.length) {
+    result += passageHtml.substring(htmlIdx);
+  }
+
+  return result;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
