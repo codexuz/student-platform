@@ -35,8 +35,13 @@ export default function SummaryCompletionDragDrop({
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
 
-  // Items already placed in gaps
-  const placedItems = new Set(Object.values(answers));
+  // Items already placed in gaps (only from THIS question's sub-questions)
+  const ownQNums = new Set(subQuestions.map((sq) => sq.questionNumber ?? 0));
+  const placedItems = new Set(
+    Object.entries(answers)
+      .filter(([qn, val]) => ownQNums.has(Number(qn)) && val)
+      .map(([, val]) => val),
+  );
 
   // Lookup optionKey → optionText for display
   const optionTextMap = new Map(
