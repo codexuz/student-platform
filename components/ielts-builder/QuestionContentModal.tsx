@@ -201,7 +201,7 @@ export default function QuestionContentModal({
   );
   const [instruction, setInstruction] = useState(
     editData?.instruction ||
-      defaultInstructions[editData?.type || "TRUE_FALSE_NOT_GIVEN"],
+    defaultInstructions[editData?.type || "TRUE_FALSE_NOT_GIVEN"],
   );
   const [questionNumber, setQuestionNumber] = useState(
     editData?.questionNumber ? String(editData.questionNumber) : "",
@@ -218,9 +218,9 @@ export default function QuestionContentModal({
   >(
     editData?.headingOptions
       ? Object.entries(editData.headingOptions).map(([key, text]) => ({
-          key,
-          text: text as string,
-        }))
+        key,
+        text: text as string,
+      }))
       : [],
   );
   const [tableHeaders, setTableHeaders] = useState<string[]>(
@@ -234,29 +234,31 @@ export default function QuestionContentModal({
   const [subQuestions, setSubQuestions] = useState<IELTSSubQuestion[]>(
     editData?.questions?.length
       ? editData.questions.map((sq) => ({
-          questionNumber: sq.questionNumber,
-          questionText: sq.questionText || "",
-          correctAnswer: sq.correctAnswer || "",
-          explanation: sq.explanation || "",
-          fromPassage: sq.fromPassage || "",
-          points: sq.points
-            ? typeof sq.points === "string"
-              ? parseFloat(sq.points)
-              : sq.points
-            : 1,
-          order: sq.order || 1,
-        }))
+        id: sq.id,
+        questionNumber: sq.questionNumber,
+        questionText: sq.questionText || "",
+        correctAnswer: sq.correctAnswer || "",
+        explanation: sq.explanation || "",
+        fromPassage: sq.fromPassage || "",
+        points: sq.points
+          ? typeof sq.points === "string"
+            ? parseFloat(sq.points)
+            : sq.points
+          : 1,
+        order: sq.order || 1,
+      }))
       : [],
   );
   // Options (choices)
   const [options, setOptions] = useState<IELTSQuestionOption[]>(
     editData?.options?.length
       ? editData.options.map((o) => ({
-          optionKey: o.optionKey,
-          optionText: o.optionText,
-          isCorrect: o.isCorrect || false,
-          orderIndex: o.orderIndex || 0,
-        }))
+        id: o.id,
+        optionKey: o.optionKey,
+        optionText: o.optionText,
+        isCorrect: o.isCorrect || false,
+        orderIndex: o.orderIndex || 0,
+      }))
       : [],
   );
 
@@ -760,12 +762,12 @@ export default function QuestionContentModal({
             <Box>
               <FieldLabel>
                 {type === "NOTE_COMPLETION" ||
-                type === "SUMMARY_COMPLETION" ||
-                type === "SUMMARY_COMPLETION_DRAG_DROP" ||
-                type === "FLOW_CHART_COMPLETION"
+                  type === "SUMMARY_COMPLETION" ||
+                  type === "SUMMARY_COMPLETION_DRAG_DROP" ||
+                  type === "FLOW_CHART_COMPLETION"
                   ? "Question Text (HTML with ____ blanks)"
                   : type === "DIAGRAM_LABELLING" ||
-                      type === "PLAN_MAP_LABELLING"
+                    type === "PLAN_MAP_LABELLING"
                     ? "Question Text (image/diagram HTML)"
                     : "Question Text"}
               </FieldLabel>
@@ -820,74 +822,74 @@ export default function QuestionContentModal({
             {/* ── MATCHING_HEADINGS / MATCHING_INFORMATION: Options ── */}
             {(type === "MATCHING_HEADINGS" ||
               type === "MATCHING_INFORMATION") && (
-              <Box
-                borderWidth="1px"
-                borderColor="orange.200"
-                _dark={{ borderColor: "orange.700" }}
-                rounded="md"
-                p={3}
-              >
-                <Flex justifyContent="space-between" alignItems="center" mb={2}>
-                  <FieldLabel>
-                    {type === "MATCHING_INFORMATION"
-                      ? "Paragraph Options (A, B, C…)"
-                      : "Heading Options (i, ii, iii…)"}
-                  </FieldLabel>
-                  <Button
-                    size="xs"
-                    variant="outline"
-                    onClick={addHeadingOption}
-                  >
-                    <Plus size={12} />{" "}
-                    {type === "MATCHING_INFORMATION"
-                      ? "Add Paragraph"
-                      : "Add Heading"}
-                  </Button>
-                </Flex>
-                <VStack gap={2} alignItems="stretch">
-                  {headingOptions.map((h, i) => (
-                    <HStack key={i}>
-                      <Input
-                        size="sm"
-                        w="60px"
-                        fontWeight="700"
-                        textAlign="center"
-                        value={h.key}
-                        onChange={(e) =>
-                          updateHeadingOption(i, "key", e.target.value)
-                        }
-                        placeholder="i"
-                      />
-                      <Input
-                        size="sm"
-                        flex="1"
-                        placeholder="Heading text"
-                        value={h.text}
-                        onChange={(e) =>
-                          updateHeadingOption(i, "text", e.target.value)
-                        }
-                      />
-                      <IconButton
-                        size="xs"
-                        variant="ghost"
-                        colorPalette="red"
-                        onClick={() => removeHeadingOption(i)}
-                        aria-label="Remove heading"
-                      >
-                        <X size={14} />
-                      </IconButton>
-                    </HStack>
-                  ))}
-                  {headingOptions.length === 0 && (
-                    <Text fontSize="xs" color="gray.400" textAlign="center">
+                <Box
+                  borderWidth="1px"
+                  borderColor="orange.200"
+                  _dark={{ borderColor: "orange.700" }}
+                  rounded="md"
+                  p={3}
+                >
+                  <Flex justifyContent="space-between" alignItems="center" mb={2}>
+                    <FieldLabel>
                       {type === "MATCHING_INFORMATION"
-                        ? 'No paragraphs yet. Click "Add Paragraph" to create the list.'
-                        : 'No headings yet. Click "Add Heading" to create the list.'}
-                    </Text>
-                  )}
-                </VStack>
-              </Box>
-            )}
+                        ? "Paragraph Options (A, B, C…)"
+                        : "Heading Options (i, ii, iii…)"}
+                    </FieldLabel>
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      onClick={addHeadingOption}
+                    >
+                      <Plus size={12} />{" "}
+                      {type === "MATCHING_INFORMATION"
+                        ? "Add Paragraph"
+                        : "Add Heading"}
+                    </Button>
+                  </Flex>
+                  <VStack gap={2} alignItems="stretch">
+                    {headingOptions.map((h, i) => (
+                      <HStack key={i}>
+                        <Input
+                          size="sm"
+                          w="60px"
+                          fontWeight="700"
+                          textAlign="center"
+                          value={h.key}
+                          onChange={(e) =>
+                            updateHeadingOption(i, "key", e.target.value)
+                          }
+                          placeholder="i"
+                        />
+                        <Input
+                          size="sm"
+                          flex="1"
+                          placeholder="Heading text"
+                          value={h.text}
+                          onChange={(e) =>
+                            updateHeadingOption(i, "text", e.target.value)
+                          }
+                        />
+                        <IconButton
+                          size="xs"
+                          variant="ghost"
+                          colorPalette="red"
+                          onClick={() => removeHeadingOption(i)}
+                          aria-label="Remove heading"
+                        >
+                          <X size={14} />
+                        </IconButton>
+                      </HStack>
+                    ))}
+                    {headingOptions.length === 0 && (
+                      <Text fontSize="xs" color="gray.400" textAlign="center">
+                        {type === "MATCHING_INFORMATION"
+                          ? 'No paragraphs yet. Click "Add Paragraph" to create the list.'
+                          : 'No headings yet. Click "Add Heading" to create the list.'}
+                      </Text>
+                    )}
+                  </VStack>
+                </Box>
+              )}
 
             {/* ── TABLE_COMPLETION: Table Data ──────────────── */}
             {type === "TABLE_COMPLETION" && (
@@ -961,8 +963,8 @@ export default function QuestionContentModal({
                               prev.map((r, rIdx) =>
                                 rIdx === ri
                                   ? r.map((c, cIdx) =>
-                                      cIdx === ci ? e.target.value : c,
-                                    )
+                                    cIdx === ci ? e.target.value : c,
+                                  )
                                   : r,
                               ),
                             )
@@ -1100,7 +1102,7 @@ export default function QuestionContentModal({
                 <Flex justifyContent="space-between" alignItems="center" mb={2}>
                   <FieldLabel>
                     {type === "TRUE_FALSE_NOT_GIVEN" ||
-                    type === "YES_NO_NOT_GIVEN"
+                      type === "YES_NO_NOT_GIVEN"
                       ? "Statements"
                       : type === "MATCHING_INFORMATION"
                         ? "Statements (match to paragraph)"
@@ -1151,7 +1153,7 @@ export default function QuestionContentModal({
                             flex="2"
                             placeholder={
                               type === "TRUE_FALSE_NOT_GIVEN" ||
-                              type === "YES_NO_NOT_GIVEN"
+                                type === "YES_NO_NOT_GIVEN"
                                 ? "Statement text"
                                 : type === "MATCHING_HEADINGS"
                                   ? "e.g. Paragraph A"
