@@ -41,18 +41,16 @@ export default function LinkedReadingParts({
         ieltsReadingAPI.getById(readingId),
       ]);
       // linkedRes may be an array of junction records with nested readingPart
-      const parts = Array.isArray(linkedRes)
-        ? linkedRes.map(
-            (link: {
-              readingPart?: IELTSReadingPart;
-              reading_part_id: string;
-              order?: number;
-            }) =>
-              link.readingPart
-                ? { ...link.readingPart, _junctionOrder: link.order }
-                : { id: link.reading_part_id, _junctionOrder: link.order },
-          )
-        : ((linkedRes as { data?: IELTSReadingPart[] }).data ?? []);
+      const rawData = Array.isArray(linkedRes) ? linkedRes : (linkedRes as any).data || [];
+      const parts = rawData.map((item: any) => {
+        if (item.readingPart) {
+          return { ...item.readingPart, _junctionOrder: item.order };
+        }
+        return {
+          ...item,
+          _junctionOrder: item.IeltsReadingReadingPart?.order ?? item.order,
+        };
+      }).sort((a: any, b: any) => (a._junctionOrder ?? 999) - (b._junctionOrder ?? 999));
       setLinkedParts(parts as IELTSReadingPart[]);
       setReadingTitle(readingRes?.title || "");
     } catch {
