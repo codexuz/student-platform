@@ -27,6 +27,7 @@ import {
   PenTool,
   ClipboardList,
   Search,
+  Share2,
 } from "lucide-react";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 
@@ -36,6 +37,7 @@ import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
 import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import { ieltsAPI } from "@/lib/api";
+import { toaster } from "@/components/ui/toaster";
 
 const PAGE_SIZE = 12;
 
@@ -573,22 +575,52 @@ function PracticeContent() {
               >
                 {items.map((item) => {
                   const itemId = item.id || item._id;
+
+                  let itemPath = "";
+                  if (activeCategory === "full-tests") {
+                    const skill = item.skill?.toLowerCase();
+                    if (skill === "reading") {
+                      itemPath = `/practice/reading/test/${itemId}`;
+                    } else if (skill === "listening") {
+                      itemPath = `/practice/listening/test/${itemId}`;
+                    } else if (skill === "writing") {
+                      itemPath = `/practice/writing/test/${itemId}`;
+                    }
+                  } else if (activeCategory === "reading") {
+                    itemPath = `/practice/reading/${itemId}`;
+                  } else if (activeCategory === "listening") {
+                    itemPath = `/practice/listening/${itemId}`;
+                  } else if (activeCategory === "writing") {
+                    itemPath = `/practice/writing/${itemId}`;
+                  }
+
                   const handleClick = () => {
-                    if (activeCategory === "full-tests") {
-                      const skill = item.skill?.toLowerCase();
-                      if (skill === "reading") {
-                        router.push(`/practice/reading/test/${itemId}`);
-                      } else if (skill === "listening") {
-                        router.push(`/practice/listening/test/${itemId}`);
-                      } else if (skill === "writing") {
-                        router.push(`/practice/writing/test/${itemId}`);
+                    if (itemPath) router.push(itemPath);
+                  };
+
+                  const handleShare = async (e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    if (!itemPath) return;
+
+                    const url = `${window.location.origin}${itemPath}`;
+                    try {
+                      if (navigator.share) {
+                        await navigator.share({
+                          title: item.title || item.name || "Practice Test",
+                          url: url,
+                        });
+                      } else {
+                        await navigator.clipboard.writeText(url);
+                        toaster.create({
+                          title: "Link copied",
+                          description: "The link has been copied to your clipboard.",
+                          type: "success",
+                        });
                       }
-                    } else if (activeCategory === "reading") {
-                      router.push(`/practice/reading/${itemId}`);
-                    } else if (activeCategory === "listening") {
-                      router.push(`/practice/listening/${itemId}`);
-                    } else if (activeCategory === "writing") {
-                      router.push(`/practice/writing/${itemId}`);
+                    } catch (error) {
+                      if (error instanceof Error && error.name !== "AbortError") {
+                        console.error("Error sharing:", error);
+                      }
                     }
                   };
 
@@ -606,11 +638,30 @@ function PracticeContent() {
                       borderRadius="2xl"
                       overflow="hidden"
                       onClick={handleClick}
+                      position="relative"
                       _hover={{
                         transform: "translateY(-4px)",
                         shadow: "lg",
                       }}
                     >
+                      <IconButton
+                        position="absolute"
+                        top={2}
+                        right={2}
+                        size="sm"
+                        variant="ghost"
+                        colorPalette="gray"
+                        rounded="full"
+                        onClick={handleShare}
+                        aria-label="Share"
+                        zIndex={2}
+                        bg="white/80"
+                        backdropFilter="blur(4px)"
+                        _hover={{ bg: "white", transform: "scale(1.05)" }}
+                        _dark={{ bg: "black/30", _hover: { bg: "black/50" } }}
+                      >
+                        <Share2 size={16} />
+                      </IconButton>
                       {/* Icon banner */}
                       <Flex align="center" justify="center" bg={meta.bg} py={6}>
                         <Flex
