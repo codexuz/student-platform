@@ -24,6 +24,7 @@ import {
   BarChart3,
   UserPlus,
   BookA,
+  Trophy,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -47,6 +48,7 @@ const studentMenuItems = [
   { icon: BookOpen, label: "Courses", href: "/courses", section: "MAIN" },
   { icon: BookA, label: "Vocabulary", href: "/vocab", section: "MAIN" },
   { icon: Bookmark, label: "Resources", href: "/resources", section: "MAIN" },
+  { icon: Trophy, label: "Leaderboard", href: "/leaderboard", section: "MAIN" },
 ];
 
 const teacherMenuItems = [
