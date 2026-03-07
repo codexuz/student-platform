@@ -39,12 +39,12 @@ const studentMenuItems = [
     href: "/practice/results",
     section: "MAIN",
   },
-  {
-    icon: ClipboardList,
-    label: "Mock Tests",
-    href: "/mock-tests",
-    section: "MAIN",
-  },
+  // {
+  //   icon: ClipboardList,
+  //   label: "Mock Tests",
+  //   href: "/mock-tests",
+  //   section: "MAIN",
+  // },
   { icon: BookOpen, label: "Courses", href: "/courses", section: "MAIN" },
   { icon: BookA, label: "Vocabulary", href: "/vocab", section: "MAIN" },
   { icon: Bookmark, label: "Resources", href: "/resources", section: "MAIN" },
