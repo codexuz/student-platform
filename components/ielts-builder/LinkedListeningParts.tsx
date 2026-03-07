@@ -43,14 +43,16 @@ export default function LinkedListeningParts({
         ieltsListeningAPI.getLinkedParts(listeningId),
         ieltsListeningAPI.getById(listeningId),
       ]);
-      const parts = Array.isArray(linkedRes)
-        ? linkedRes.map(
-            (link: { listeningPart?: IELTSListeningPart; listening_part_id: string; order?: number }) =>
-              link.listeningPart
-                ? { ...link.listeningPart, _junctionOrder: link.order }
-                : { id: link.listening_part_id, _junctionOrder: link.order },
-          )
-        : (linkedRes as { data?: IELTSListeningPart[] }).data ?? [];
+      const rawData = Array.isArray(linkedRes) ? linkedRes : (linkedRes as any).data || [];
+      const parts = rawData.map((item: any) => {
+        if (item.listeningPart) {
+          return { ...item.listeningPart, _junctionOrder: item.order };
+        }
+        return {
+          ...item,
+          _junctionOrder: item.IeltsListeningListeningPart?.order ?? item.order,
+        };
+      }).sort((a: any, b: any) => (a._junctionOrder ?? 999) - (b._junctionOrder ?? 999));
       setLinkedParts(parts as IELTSListeningPart[]);
       setListeningTitle(listeningRes?.title || "");
     } catch {
