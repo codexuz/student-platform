@@ -107,10 +107,12 @@ function ResultsListContent() {
       };
       if (scopeFilter) params.scope = scopeFilter;
 
-      const data = await ieltsAnswersAPI.getAttempts(params);
-      const result = data?.data ?? data;
-      setAttempts(result?.data ?? result ?? []);
-      setTotal(result?.total ?? 0);
+      const response = await ieltsAnswersAPI.getAttempts(params);
+      const items = response?.data ?? response ?? [];
+      const totalCount = response?.total ?? (Array.isArray(response) ? response.length : 0);
+      
+      setAttempts(items);
+      setTotal(totalCount);
     } catch (err) {
       console.error("Failed to fetch attempts:", err);
       setAttempts([]);

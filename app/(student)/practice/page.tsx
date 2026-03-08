@@ -123,7 +123,6 @@ function PracticeContent() {
   const [listeningPart, setListeningPart] = useState<string>("");
   const [writingTask, setWritingTask] = useState<string>("");
   const [testCategory, setTestCategory] = useState<string>("");
-  const [skillType, setSkillType] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -147,12 +146,11 @@ function PracticeContent() {
 
       switch (activeCategory) {
         case "full-tests":
-          response = await ieltsAPI.getSkills({
+          response = await ieltsAPI.getTests({
             page,
             limit: PAGE_SIZE,
             mode: "practice",
             ...(debouncedSearch && { search: debouncedSearch }),
-            ...(skillType && { type: skillType }),
             ...(testCategory && { category: testCategory }),
           });
           break;
@@ -188,7 +186,7 @@ function PracticeContent() {
       if (response) {
         setItems(response.data || response.results || response || []);
         setTotalCount(
-          response.total || response.count || response.totalCount || 0,
+          response.total ?? response.count ?? response.totalCount ?? 0,
         );
       }
     } catch (error) {
@@ -205,7 +203,6 @@ function PracticeContent() {
     listeningPart,
     writingTask,
     testCategory,
-    skillType,
     debouncedSearch,
   ]);
 
@@ -221,7 +218,6 @@ function PracticeContent() {
     if (category !== "writing") setWritingTask("");
     if (category !== "full-tests") {
       setTestCategory("");
-      setSkillType("");
     }
     setSearchQuery("");
     setDebouncedSearch("");
@@ -235,11 +231,6 @@ function PracticeContent() {
     e: React.ChangeEvent<HTMLSelectElement>,
   ) => {
     setTestCategory(e.target.value);
-    setPage(1);
-  };
-
-  const handleSkillTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSkillType(e.target.value);
     setPage(1);
   };
 
@@ -281,7 +272,7 @@ function PracticeContent() {
         </Flex>
 
         {/* Main Content */}
-        <Box p={{ base: 4, md: 6 }} maxW="1400px" mx="auto">
+        <Box p={{ base: 4, md: 6 }} pb={{ base: 24, md: 12 }} maxW="1400px" mx="auto">
           {/* Category Tabs */}
           <HStack
             gap={4}
@@ -356,23 +347,6 @@ function PracticeContent() {
                   borderRadius="md"
                 />
               </Box>
-
-              {/* Type filter */}
-              <NativeSelect.Root
-                size="sm"
-                width={{ base: "100%", md: "160px" }}
-              >
-                <NativeSelect.Field
-                  value={skillType}
-                  onChange={handleSkillTypeChange}
-                >
-                  <option value="">All Types</option>
-                  <option value="reading">Reading</option>
-                  <option value="listening">Listening</option>
-                  <option value="writing">Writing</option>
-                </NativeSelect.Field>
-                <NativeSelect.Indicator />
-              </NativeSelect.Root>
 
               {/* Category filter */}
               <NativeSelect.Root
@@ -576,14 +550,7 @@ function PracticeContent() {
 
                   let itemPath = "";
                   if (activeCategory === "full-tests") {
-                    const skill = item.skill?.toLowerCase();
-                    if (skill === "reading") {
-                      itemPath = `/practice/reading/test/${itemId}`;
-                    } else if (skill === "listening") {
-                      itemPath = `/practice/listening/test/${itemId}`;
-                    } else if (skill === "writing") {
-                      itemPath = `/practice/writing/test/${itemId}`;
-                    }
+                    itemPath = `/practice/full-test/${itemId}`;
                   } else if (activeCategory === "reading") {
                     itemPath = `/practice/reading/${itemId}`;
                   } else if (activeCategory === "listening") {
@@ -709,8 +676,8 @@ function PracticeContent() {
               </Grid>
 
               {/* Pagination */}
-              {totalCount > PAGE_SIZE && (
-                <Flex justify="center" mt={8}>
+              {totalCount > 0 && (
+                <Flex justify="center" mt={8} mb={10}>
                   <Pagination.Root
                     count={totalCount}
                     pageSize={PAGE_SIZE}
