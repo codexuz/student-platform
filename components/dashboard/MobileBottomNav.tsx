@@ -4,13 +4,9 @@ import { Box, Icon, Text, VStack } from "@chakra-ui/react";
 import {
   Home,
   BookOpen,
-  ClipboardCheck,
   BookMarked,
   Target,
   Users,
-  FileText,
-  BarChart3,
-  Calendar,
   ClipboardList,
 } from "lucide-react";
 import Link from "next/link";
