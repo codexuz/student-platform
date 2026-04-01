@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   Box,
   Button,
+  Combobox,
   Flex,
   Heading,
   HStack,
@@ -15,6 +16,8 @@ import {
   NativeSelect,
   Pagination,
   ButtonGroup,
+  Portal,
+  createListCollection,
 } from "@chakra-ui/react";
 import {
   Plus,
@@ -23,12 +26,13 @@ import {
   Eye,
   ChevronLeft,
   ChevronRight,
+  ChevronsUpDown,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ieltsWritingTasksAPI } from "@/lib/ielts-api";
+import { ieltsWritingTasksAPI, ieltsWritingAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
-import type { PageId, IELTSWritingTask } from "./types";
+import type { PageId, IELTSWritingTask, IELTSWriting } from "./types";
 
 interface WritingTasksListProps {
   onNavigate: (page: PageId, data?: Record<string, string>) => void;
@@ -43,14 +47,29 @@ export default function WritingTasksList({
   const [searchTerm, setSearchTerm] = useState("");
   const [taskFilter, setTaskFilter] = useState("");
   const [modeFilter, setModeFilter] = useState("");
+  const [selectedWritingId, setSelectedWritingId] = useState("");
+  const [writings, setWritings] = useState<IELTSWriting[]>([]);
+  const [loadingWritings, setLoadingWritings] = useState(true);
+  const [writingSearchInput, setWritingSearchInput] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const PAGE_SIZE = 10;
 
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const writingSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const writingCollection = useMemo(
+    () =>
+      createListCollection({
+        items: writings,
+        itemToValue: (w) => w.id,
+        itemToString: (w) => w.title,
+      }),
+    [writings],
+  );
 
   const load = useCallback(
-    async (currentPage: number, search: string, task: string, mode: string) => {
+    async (currentPage: number, search: string, task: string, mode: string, writingId?: string) => {
       setLoading(true);
       try {
         const params: Record<string, string | number> = {
@@ -60,6 +79,7 @@ export default function WritingTasksList({
         if (search.trim()) params.search = search.trim();
         if (task) params.task = task;
         if (mode) params.mode = mode;
+        if (writingId) params.writingId = writingId;
 
         const res = await ieltsWritingTasksAPI.getAll(params);
         setTasks(res?.data || []);
@@ -73,30 +93,59 @@ export default function WritingTasksList({
     [],
   );
 
-  // Reload when page changes
+  // Load writings for combobox
   useEffect(() => {
-    load(page, searchTerm, taskFilter, modeFilter);
+    ieltsWritingAPI
+      .getAll({ limit: 20 })
+      .then((res: IELTSWriting[] | { data: IELTSWriting[] }) => {
+        const list = Array.isArray(res) ? res : res.data || [];
+        setWritings(list);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingWritings(false));
+  }, []);
+
+  // Debounced search for writings combobox
+  useEffect(() => {
+    if (writingSearchTimer.current) clearTimeout(writingSearchTimer.current);
+    writingSearchTimer.current = setTimeout(() => {
+      ieltsWritingAPI
+        .getAll({ limit: 20, search: writingSearchInput || undefined })
+        .then((res: IELTSWriting[] | { data: IELTSWriting[] }) => {
+          const list = Array.isArray(res) ? res : res.data || [];
+          setWritings(list);
+        })
+        .catch(() => {});
+    }, 400);
+    return () => {
+      if (writingSearchTimer.current) clearTimeout(writingSearchTimer.current);
+    };
+  }, [writingSearchInput]);
+
+  // Reload when page or filters change
+  useEffect(() => {
+    load(page, searchTerm, taskFilter, modeFilter, selectedWritingId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, load]);
+  }, [page, taskFilter, modeFilter, selectedWritingId, load]);
 
   // Debounced search / filter: reset to page 1
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => {
       setPage(1);
-      load(1, searchTerm, taskFilter, modeFilter);
+      load(1, searchTerm, taskFilter, modeFilter, selectedWritingId);
     }, 400);
     return () => {
       if (searchTimer.current) clearTimeout(searchTimer.current);
     };
-  }, [searchTerm, taskFilter, modeFilter, load]);
+  }, [searchTerm, taskFilter, modeFilter, selectedWritingId, load]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this writing task?")) return;
     try {
       await ieltsWritingTasksAPI.delete(id);
       toaster.success({ title: "Writing task deleted" });
-      load(page, searchTerm, taskFilter, modeFilter);
+      load(page, searchTerm, taskFilter, modeFilter, selectedWritingId);
     } catch {
       toaster.error({ title: "Error deleting task" });
     }
@@ -169,9 +218,58 @@ export default function WritingTasksList({
           </NativeSelect.Field>
           <NativeSelect.Indicator />
         </NativeSelect.Root>
+        <Box w="220px">
+          {loadingWritings ? (
+            <HStack gap={2} py={2}>
+              <Spinner size="xs" />
+              <Text fontSize="sm" color="gray.400">
+                Loading writings...
+              </Text>
+            </HStack>
+          ) : (
+            <Combobox.Root
+              collection={writingCollection}
+              value={selectedWritingId ? [selectedWritingId] : []}
+              onValueChange={(details) => {
+                setSelectedWritingId(details.value[0] || "");
+                setPage(1);
+              }}
+              onInputValueChange={(details) => {
+                setWritingSearchInput(details.inputValue);
+              }}
+              inputBehavior="autohighlight"
+              openOnClick
+              size="sm"
+              w="full"
+            >
+              <Combobox.Control>
+                <Combobox.Input placeholder="Filter by writing..." />
+                <Combobox.IndicatorGroup>
+                  <Combobox.ClearTrigger />
+                  <Combobox.Trigger>
+                    <ChevronsUpDown />
+                  </Combobox.Trigger>
+                </Combobox.IndicatorGroup>
+              </Combobox.Control>
+              <Portal>
+                <Combobox.Positioner>
+                  <Combobox.Content>
+                    <Combobox.Empty>No writings found</Combobox.Empty>
+                    {writingCollection.items.map((w) => (
+                      <Combobox.Item key={w.id} item={w}>
+                        {w.title}
+                        <Combobox.ItemIndicator />
+                      </Combobox.Item>
+                    ))}
+                  </Combobox.Content>
+                </Combobox.Positioner>
+              </Portal>
+            </Combobox.Root>
+          )}
+        </Box>
       </Flex>
 
-      {tasks.length === 0 && !searchTerm && !taskFilter && !modeFilter ? (
+      {tasks.length === 0 && !searchTerm && !taskFilter && !modeFilter && !selectedWritingId ? (
         <Box textAlign="center" py={12} color="gray.400">
           <Text fontSize="4xl" mb={3}>
             📝

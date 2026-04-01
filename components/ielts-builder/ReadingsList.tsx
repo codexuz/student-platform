@@ -3,6 +3,7 @@
 import {
   Box,
   Button,
+  Combobox,
   Flex,
   Heading,
   HStack,
@@ -13,6 +14,8 @@ import {
   Input,
   Pagination,
   ButtonGroup,
+  Portal,
+  createListCollection,
 } from "@chakra-ui/react";
 import {
   Plus,
@@ -21,12 +24,13 @@ import {
   Link2,
   ChevronLeft,
   ChevronRight,
+  ChevronsUpDown,
 } from "lucide-react";
 import Link from "next/link";
-import { useState, useEffect, useCallback, useRef } from "react";
-import { ieltsReadingAPI } from "@/lib/ielts-api";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { ieltsReadingAPI, ieltsTestsAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
-import type { IELTSReading, PageId } from "./types";
+import type { IELTSReading, IELTSTest, PageId } from "./types";
 
 interface ReadingsListProps {
   onNavigate: (page: PageId, data?: Record<string, string>) => void;
@@ -39,10 +43,25 @@ export default function ReadingsList({ onNavigate }: ReadingsListProps) {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const PAGE_SIZE = 10;
+  const [selectedTestId, setSelectedTestId] = useState("");
+  const [tests, setTests] = useState<IELTSTest[]>([]);
+  const [loadingTests, setLoadingTests] = useState(true);
+  const [testSearchInput, setTestSearchInput] = useState("");
 
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const testSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const load = useCallback(async (currentPage: number, search: string) => {
+  const testCollection = useMemo(
+    () =>
+      createListCollection({
+        items: tests,
+        itemToValue: (t) => t.id,
+        itemToString: (t) => t.title,
+      }),
+    [tests],
+  );
+
+  const load = useCallback(async (currentPage: number, search: string, testId?: string) => {
     setLoading(true);
     try {
       const params: Record<string, string | number> = {
@@ -50,6 +69,7 @@ export default function ReadingsList({ onNavigate }: ReadingsListProps) {
         limit: PAGE_SIZE,
       };
       if (search.trim()) params.search = search.trim();
+      if (testId) params.testId = testId;
 
       const res = await ieltsReadingAPI.getAll(params);
       setItems(res?.data || []);
@@ -61,30 +81,59 @@ export default function ReadingsList({ onNavigate }: ReadingsListProps) {
     }
   }, []);
 
-  // Reload when page changes
+  // Load tests for combobox
   useEffect(() => {
-    load(page, searchTerm);
+    ieltsTestsAPI
+      .getAll({ limit: 20 })
+      .then((res: IELTSTest[] | { data: IELTSTest[] }) => {
+        const list = Array.isArray(res) ? res : res.data || [];
+        setTests(list);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingTests(false));
+  }, []);
+
+  // Debounced search for tests combobox
+  useEffect(() => {
+    if (testSearchTimer.current) clearTimeout(testSearchTimer.current);
+    testSearchTimer.current = setTimeout(() => {
+      ieltsTestsAPI
+        .getAll({ limit: 20, search: testSearchInput || undefined })
+        .then((res: IELTSTest[] | { data: IELTSTest[] }) => {
+          const list = Array.isArray(res) ? res : res.data || [];
+          setTests(list);
+        })
+        .catch(() => {});
+    }, 400);
+    return () => {
+      if (testSearchTimer.current) clearTimeout(testSearchTimer.current);
+    };
+  }, [testSearchInput]);
+
+  // Reload when page or testId changes
+  useEffect(() => {
+    load(page, searchTerm, selectedTestId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, load]);
+  }, [page, selectedTestId, load]);
 
   // Debounced search: reset to page 1
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => {
       setPage(1);
-      load(1, searchTerm);
+      load(1, searchTerm, selectedTestId);
     }, 400);
     return () => {
       if (searchTimer.current) clearTimeout(searchTimer.current);
     };
-  }, [searchTerm, load]);
+  }, [searchTerm, load, selectedTestId]);
 
   const deleteItem = async (id: string) => {
     if (!confirm("Delete this reading?")) return;
     try {
       await ieltsReadingAPI.delete(id);
       toaster.success({ title: "Deleted!" });
-      load(page, searchTerm);
+      load(page, searchTerm, selectedTestId);
     } catch (e: unknown) {
       toaster.error({ title: "Error", description: (e as Error).message });
     }
@@ -129,6 +178,55 @@ export default function ReadingsList({ onNavigate }: ReadingsListProps) {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
+        <Box w="220px">
+          {loadingTests ? (
+            <HStack gap={2} py={2}>
+              <Spinner size="xs" />
+              <Text fontSize="sm" color="gray.400">
+                Loading tests...
+              </Text>
+            </HStack>
+          ) : (
+            <Combobox.Root
+              collection={testCollection}
+              value={selectedTestId ? [selectedTestId] : []}
+              onValueChange={(details) => {
+                setSelectedTestId(details.value[0] || "");
+                setPage(1);
+              }}
+              onInputValueChange={(details) => {
+                setTestSearchInput(details.inputValue);
+              }}
+              inputBehavior="autohighlight"
+              openOnClick
+              size="sm"
+              w="full"
+            >
+              <Combobox.Control>
+                <Combobox.Input placeholder="Filter by test..." />
+                <Combobox.IndicatorGroup>
+                  <Combobox.ClearTrigger />
+                  <Combobox.Trigger>
+                    <ChevronsUpDown />
+                  </Combobox.Trigger>
+                </Combobox.IndicatorGroup>
+              </Combobox.Control>
+              <Portal>
+                <Combobox.Positioner>
+                  <Combobox.Content>
+                    <Combobox.Empty>No tests found</Combobox.Empty>
+                    {testCollection.items.map((t) => (
+                      <Combobox.Item key={t.id} item={t}>
+                        {t.title}
+                        <Combobox.ItemIndicator />
+                      </Combobox.Item>
+                    ))}
+                  </Combobox.Content>
+                </Combobox.Positioner>
+              </Portal>
+            </Combobox.Root>
+          )}
+        </Box>
       </Flex>
 
       {items.length === 0 && !searchTerm ? (

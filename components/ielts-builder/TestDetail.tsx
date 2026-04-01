@@ -10,7 +10,7 @@ import {
   Badge,
   Spinner,
 } from "@chakra-ui/react";
-import { Plus, Copy } from "lucide-react";
+import { Plus, Copy, Download } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { ieltsTestsAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
@@ -47,6 +47,20 @@ export default function TestDetail({ testId, onNavigate }: TestDetailProps) {
   };
 
   const truncId = (id: string) => (id ? id.substring(0, 8) + "..." : "-");
+
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownloadJson = async () => {
+    setDownloading(true);
+    try {
+      await ieltsTestsAPI.downloadJson(testId);
+      toaster.success({ title: "JSON downloaded!" });
+    } catch (e: unknown) {
+      toaster.error({ title: "Download failed", description: (e as Error).message });
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -197,6 +211,17 @@ export default function TestDetail({ testId, onNavigate }: TestDetailProps) {
               onClick={() => onNavigate("writing-form", { testId: test.id })}
             >
               <Plus size={14} /> Writing
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              borderColor="#4f46e5"
+              color="#4f46e5"
+              _hover={{ bg: "#eef2ff" }}
+              onClick={handleDownloadJson}
+              loading={downloading}
+            >
+              <Download size={14} /> Download JSON
             </Button>
           </HStack>
         </Box>

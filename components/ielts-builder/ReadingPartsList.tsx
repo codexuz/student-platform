@@ -3,6 +3,7 @@
 import {
   Box,
   Button,
+  Combobox,
   Flex,
   Heading,
   HStack,
@@ -14,6 +15,8 @@ import {
   NativeSelect,
   Pagination,
   ButtonGroup,
+  Portal,
+  createListCollection,
 } from "@chakra-ui/react";
 import {
   Plus,
@@ -22,13 +25,14 @@ import {
   Eye,
   ChevronLeft,
   ChevronRight,
+  ChevronsUpDown,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useCallback, useRef } from "react";
-import { ieltsReadingPartsAPI } from "@/lib/ielts-api";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { ieltsReadingPartsAPI, ieltsReadingAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
-import type { IELTSReadingPart, PageId } from "./types";
+import type { IELTSReadingPart, IELTSReading, PageId } from "./types";
 
 interface ReadingPartsListProps {
   onNavigate: (page: PageId, data?: Record<string, string>) => void;
@@ -43,14 +47,29 @@ export default function ReadingPartsList({
   const [searchTerm, setSearchTerm] = useState("");
   const [partFilter, setPartFilter] = useState("");
   const [modeFilter, setModeFilter] = useState("");
+  const [selectedReadingId, setSelectedReadingId] = useState("");
+  const [readings, setReadings] = useState<IELTSReading[]>([]);
+  const [loadingReadings, setLoadingReadings] = useState(true);
+  const [readingSearchInput, setReadingSearchInput] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const PAGE_SIZE = 10;
 
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const readingSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const readingCollection = useMemo(
+    () =>
+      createListCollection({
+        items: readings,
+        itemToValue: (r) => r.id,
+        itemToString: (r) => r.title,
+      }),
+    [readings],
+  );
 
   const load = useCallback(
-    async (currentPage: number, search: string, part: string, mode: string) => {
+    async (currentPage: number, search: string, part: string, mode: string, readingId?: string) => {
       setLoading(true);
       try {
         const params: Record<string, string | number> = {
@@ -60,6 +79,7 @@ export default function ReadingPartsList({
         if (search.trim()) params.search = search.trim();
         if (part) params.part = part;
         if (mode) params.mode = mode;
+        if (readingId) params.readingId = readingId;
 
         const res = await ieltsReadingPartsAPI.getAll(params);
         setItems(res?.data || []);
@@ -73,35 +93,64 @@ export default function ReadingPartsList({
     [],
   );
 
+  // Load readings for combobox
+  useEffect(() => {
+    ieltsReadingAPI
+      .getAll({ limit: 20 })
+      .then((res: IELTSReading[] | { data: IELTSReading[] }) => {
+        const list = Array.isArray(res) ? res : res.data || [];
+        setReadings(list);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingReadings(false));
+  }, []);
+
+  // Debounced search for readings combobox
+  useEffect(() => {
+    if (readingSearchTimer.current) clearTimeout(readingSearchTimer.current);
+    readingSearchTimer.current = setTimeout(() => {
+      ieltsReadingAPI
+        .getAll({ limit: 20, search: readingSearchInput || undefined })
+        .then((res: IELTSReading[] | { data: IELTSReading[] }) => {
+          const list = Array.isArray(res) ? res : res.data || [];
+          setReadings(list);
+        })
+        .catch(() => {});
+    }, 400);
+    return () => {
+      if (readingSearchTimer.current) clearTimeout(readingSearchTimer.current);
+    };
+  }, [readingSearchInput]);
+
   // Reload when page or dropdown filters change
   useEffect(() => {
-    load(page, searchTerm, partFilter, modeFilter);
+    load(page, searchTerm, partFilter, modeFilter, selectedReadingId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, partFilter, modeFilter, load]);
+  }, [page, partFilter, modeFilter, selectedReadingId, load]);
 
   // Debounced search: reset to page 1
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => {
       setPage(1);
-      load(1, searchTerm, partFilter, modeFilter);
+      load(1, searchTerm, partFilter, modeFilter, selectedReadingId);
     }, 400);
     return () => {
       if (searchTimer.current) clearTimeout(searchTimer.current);
     };
-  }, [searchTerm, partFilter, modeFilter, load]);
+  }, [searchTerm, partFilter, modeFilter, selectedReadingId, load]);
 
   // Reset to page 1 when dropdown filters change
   useEffect(() => {
     setPage(1);
-  }, [partFilter, modeFilter]);
+  }, [partFilter, modeFilter, selectedReadingId]);
 
   const deleteItem = async (id: string) => {
     if (!confirm("Delete this reading part?")) return;
     try {
       await ieltsReadingPartsAPI.delete(id);
       toaster.success({ title: "Deleted!" });
-      load(page, searchTerm, partFilter, modeFilter);
+      load(page, searchTerm, partFilter, modeFilter, selectedReadingId);
     } catch (e: unknown) {
       toaster.error({ title: "Error", description: (e as Error).message });
     }
@@ -169,9 +218,58 @@ export default function ReadingPartsList({
           </NativeSelect.Field>
           <NativeSelect.Indicator />
         </NativeSelect.Root>
+        <Box w="220px">
+          {loadingReadings ? (
+            <HStack gap={2} py={2}>
+              <Spinner size="xs" />
+              <Text fontSize="sm" color="gray.400">
+                Loading readings...
+              </Text>
+            </HStack>
+          ) : (
+            <Combobox.Root
+              collection={readingCollection}
+              value={selectedReadingId ? [selectedReadingId] : []}
+              onValueChange={(details) => {
+                setSelectedReadingId(details.value[0] || "");
+                setPage(1);
+              }}
+              onInputValueChange={(details) => {
+                setReadingSearchInput(details.inputValue);
+              }}
+              inputBehavior="autohighlight"
+              openOnClick
+              size="sm"
+              w="full"
+            >
+              <Combobox.Control>
+                <Combobox.Input placeholder="Filter by reading..." />
+                <Combobox.IndicatorGroup>
+                  <Combobox.ClearTrigger />
+                  <Combobox.Trigger>
+                    <ChevronsUpDown />
+                  </Combobox.Trigger>
+                </Combobox.IndicatorGroup>
+              </Combobox.Control>
+              <Portal>
+                <Combobox.Positioner>
+                  <Combobox.Content>
+                    <Combobox.Empty>No readings found</Combobox.Empty>
+                    {readingCollection.items.map((r) => (
+                      <Combobox.Item key={r.id} item={r}>
+                        {r.title}
+                        <Combobox.ItemIndicator />
+                      </Combobox.Item>
+                    ))}
+                  </Combobox.Content>
+                </Combobox.Positioner>
+              </Portal>
+            </Combobox.Root>
+          )}
+        </Box>
       </Flex>
 
-      {items.length === 0 && !searchTerm && !partFilter && !modeFilter ? (
+      {items.length === 0 && !searchTerm && !partFilter && !modeFilter && !selectedReadingId ? (
         <Box textAlign="center" py={12} color="gray.400">
           <Text fontSize="4xl" mb={3}>
             📄

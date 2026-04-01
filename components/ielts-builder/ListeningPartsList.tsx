@@ -3,6 +3,7 @@
 import {
   Box,
   Button,
+  Combobox,
   Flex,
   Heading,
   HStack,
@@ -14,6 +15,8 @@ import {
   NativeSelect,
   Pagination,
   ButtonGroup,
+  Portal,
+  createListCollection,
 } from "@chakra-ui/react";
 import {
   Plus,
@@ -22,13 +25,14 @@ import {
   Eye,
   ChevronLeft,
   ChevronRight,
+  ChevronsUpDown,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useCallback, useRef } from "react";
-import { ieltsListeningPartsAPI } from "@/lib/ielts-api";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { ieltsListeningPartsAPI, ieltsListeningAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
-import type { IELTSListeningPart, PageId } from "./types";
+import type { IELTSListeningPart, IELTSListening, PageId } from "./types";
 
 interface ListeningPartsListProps {
   onNavigate: (page: PageId, data?: Record<string, string>) => void;
@@ -43,14 +47,29 @@ export default function ListeningPartsList({
   const [searchTerm, setSearchTerm] = useState("");
   const [partFilter, setPartFilter] = useState("");
   const [modeFilter, setModeFilter] = useState("");
+  const [selectedListeningId, setSelectedListeningId] = useState("");
+  const [listenings, setListenings] = useState<IELTSListening[]>([]);
+  const [loadingListenings, setLoadingListenings] = useState(true);
+  const [listeningSearchInput, setListeningSearchInput] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const PAGE_SIZE = 10;
 
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const listeningSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const listeningCollection = useMemo(
+    () =>
+      createListCollection({
+        items: listenings,
+        itemToValue: (l) => l.id,
+        itemToString: (l) => l.title,
+      }),
+    [listenings],
+  );
 
   const load = useCallback(
-    async (currentPage: number, search: string, part: string, mode: string) => {
+    async (currentPage: number, search: string, part: string, mode: string, listeningId?: string) => {
       setLoading(true);
       try {
         const params: Record<string, string | number> = {
@@ -60,6 +79,7 @@ export default function ListeningPartsList({
         if (search.trim()) params.search = search.trim();
         if (part) params.part = part;
         if (mode) params.mode = mode;
+        if (listeningId) params.listeningId = listeningId;
 
         const res = await ieltsListeningPartsAPI.getAll(params);
         setItems(res?.data || []);
@@ -73,35 +93,64 @@ export default function ListeningPartsList({
     [],
   );
 
+  // Load listenings for combobox
+  useEffect(() => {
+    ieltsListeningAPI
+      .getAll({ limit: 20 })
+      .then((res: IELTSListening[] | { data: IELTSListening[] }) => {
+        const list = Array.isArray(res) ? res : res.data || [];
+        setListenings(list);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingListenings(false));
+  }, []);
+
+  // Debounced search for listenings combobox
+  useEffect(() => {
+    if (listeningSearchTimer.current) clearTimeout(listeningSearchTimer.current);
+    listeningSearchTimer.current = setTimeout(() => {
+      ieltsListeningAPI
+        .getAll({ limit: 20, search: listeningSearchInput || undefined })
+        .then((res: IELTSListening[] | { data: IELTSListening[] }) => {
+          const list = Array.isArray(res) ? res : res.data || [];
+          setListenings(list);
+        })
+        .catch(() => {});
+    }, 400);
+    return () => {
+      if (listeningSearchTimer.current) clearTimeout(listeningSearchTimer.current);
+    };
+  }, [listeningSearchInput]);
+
   // Reload when page or dropdown filters change
   useEffect(() => {
-    load(page, searchTerm, partFilter, modeFilter);
+    load(page, searchTerm, partFilter, modeFilter, selectedListeningId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, partFilter, modeFilter, load]);
+  }, [page, partFilter, modeFilter, selectedListeningId, load]);
 
   // Debounced search: reset to page 1
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => {
       setPage(1);
-      load(1, searchTerm, partFilter, modeFilter);
+      load(1, searchTerm, partFilter, modeFilter, selectedListeningId);
     }, 400);
     return () => {
       if (searchTimer.current) clearTimeout(searchTimer.current);
     };
-  }, [searchTerm, partFilter, modeFilter, load]);
+  }, [searchTerm, partFilter, modeFilter, selectedListeningId, load]);
 
   // Reset to page 1 when dropdown filters change
   useEffect(() => {
     setPage(1);
-  }, [partFilter, modeFilter]);
+  }, [partFilter, modeFilter, selectedListeningId]);
 
   const deleteItem = async (id: string) => {
     if (!confirm("Delete this listening part?")) return;
     try {
       await ieltsListeningPartsAPI.delete(id);
       toaster.success({ title: "Deleted!" });
-      load(page, searchTerm, partFilter, modeFilter);
+      load(page, searchTerm, partFilter, modeFilter, selectedListeningId);
     } catch (e: unknown) {
       toaster.error({ title: "Error", description: (e as Error).message });
     }
@@ -170,9 +219,58 @@ export default function ListeningPartsList({
           </NativeSelect.Field>
           <NativeSelect.Indicator />
         </NativeSelect.Root>
+        <Box w="220px">
+          {loadingListenings ? (
+            <HStack gap={2} py={2}>
+              <Spinner size="xs" />
+              <Text fontSize="sm" color="gray.400">
+                Loading listenings...
+              </Text>
+            </HStack>
+          ) : (
+            <Combobox.Root
+              collection={listeningCollection}
+              value={selectedListeningId ? [selectedListeningId] : []}
+              onValueChange={(details) => {
+                setSelectedListeningId(details.value[0] || "");
+                setPage(1);
+              }}
+              onInputValueChange={(details) => {
+                setListeningSearchInput(details.inputValue);
+              }}
+              inputBehavior="autohighlight"
+              openOnClick
+              size="sm"
+              w="full"
+            >
+              <Combobox.Control>
+                <Combobox.Input placeholder="Filter by listening..." />
+                <Combobox.IndicatorGroup>
+                  <Combobox.ClearTrigger />
+                  <Combobox.Trigger>
+                    <ChevronsUpDown />
+                  </Combobox.Trigger>
+                </Combobox.IndicatorGroup>
+              </Combobox.Control>
+              <Portal>
+                <Combobox.Positioner>
+                  <Combobox.Content>
+                    <Combobox.Empty>No listenings found</Combobox.Empty>
+                    {listeningCollection.items.map((l) => (
+                      <Combobox.Item key={l.id} item={l}>
+                        {l.title}
+                        <Combobox.ItemIndicator />
+                      </Combobox.Item>
+                    ))}
+                  </Combobox.Content>
+                </Combobox.Positioner>
+              </Portal>
+            </Combobox.Root>
+          )}
+        </Box>
       </Flex>
 
-      {items.length === 0 && !searchTerm && !partFilter && !modeFilter ? (
+      {items.length === 0 && !searchTerm && !partFilter && !modeFilter && !selectedListeningId ? (
         <Box textAlign="center" py={12} color="gray.400">
           <Text fontSize="4xl" mb={3}>
             🔊
