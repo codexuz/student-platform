@@ -162,6 +162,16 @@ export default function WritingTaskForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editId]);
 
+  // Sync prompt into editor once editor is ready (handles race condition in edit mode)
+  useEffect(() => {
+    if (promptEditor && prompt && !promptEditor.isDestroyed) {
+      const currentContent = promptEditor.getHTML();
+      if (currentContent !== prompt && currentContent === "<p></p>") {
+        promptEditor.commands.setContent(prompt);
+      }
+    }
+  }, [promptEditor, prompt]);
+
   const handleSave = async () => {
     setSaving(true);
     try {
