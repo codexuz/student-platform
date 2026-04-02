@@ -134,4 +134,4 @@ export function formatTime(seconds: number): string {
 
 /** Blank placeholder regex */
 export const BLANK_PATTERN =
-  /_{3,}|\{blank\}|\{answer\}|\[blank\]|\(\.\.\.\)/gi;
+  /_{3,}|\.{3,}|\{blank\}|\{answer\}|\[blank\]|\(\.\.\.\)/gi;

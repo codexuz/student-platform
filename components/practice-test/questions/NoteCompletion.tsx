@@ -8,7 +8,7 @@ import { getQuestionRange } from "../types";
 /**
  * Regex that matches blanks in text content.
  */
-const BLANK_RE = /_{3,}(?:\u00a0)?|\{blank\}|\{answer\}|\[blank\]/gi;
+const BLANK_RE = /_{3,}(?:\u00a0)?|\.{3,}|\{blank\}|\{answer\}|\[blank\]/gi;
 
 /**
  * Strip HTML tags, decode common entities, and split into logical lines.

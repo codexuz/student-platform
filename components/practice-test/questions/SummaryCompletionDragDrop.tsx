@@ -51,7 +51,7 @@ export default function SummaryCompletionDragDrop({
 
   /* ── Detect variant: inline blanks in passage vs statement list ── */
   const rawHtml = question.questionText ?? "";
-  const hasInlineBlanks = /_{2,}/.test(rawHtml);
+  const hasInlineBlanks = /_{2,}|\.{3,}/.test(rawHtml);
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(String(event.active.id));
