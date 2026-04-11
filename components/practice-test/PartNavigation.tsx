@@ -27,144 +27,141 @@ export default function PartNavigation({
   return (
     <Flex
       h="auto"
-      minH="52px"
-      px={{ base: 2, md: 4 }}
-      py={2}
-      alignItems="center"
-      justifyContent="space-between"
+      minH="44px"
+      alignItems="stretch"
       bg={colors.navBg}
       borderTopWidth="1px"
       borderColor={colors.border}
       position="sticky"
       bottom={0}
       zIndex={20}
-      gap={3}
     >
-      {/* Part tabs + question indicators */}
-      <HStack
-        gap={4}
-        flex={1}
-        overflowX="auto"
-        py={0.5}
-        css={{
-          "&::-webkit-scrollbar": { display: "none" },
-          scrollbarWidth: "none",
-        }}
-      >
-        {parts.map((part, idx) => {
-          const isActive = idx === currentPartIndex;
-          const questionNums = getAllQuestionNumbers(part.questions);
-          const answeredCount = questionNums.filter((n) => !!answers[n]).length;
+      {/* Part tabs — full width, equally divided */}
+      {parts.map((part, idx) => {
+        const isActive = idx === currentPartIndex;
+        const questionNums = getAllQuestionNumbers(part.questions);
+        const answeredCount = questionNums.filter((n) => !!answers[n]).length;
 
-          return (
-            <HStack key={part.id} gap={2} flexShrink={0}>
-              {/* Part label */}
-              <Box
-                cursor="pointer"
-                onClick={() => onPartChange(idx)}
-                display="flex"
-                alignItems="center"
-                gap={1.5}
-                py={1}
-              >
-                <Text
-                  fontWeight="bold"
-                  fontSize="sm"
-                  color={isActive ? colors.text : colors.textSecondary}
-                  whiteSpace="nowrap"
-                  transition="color 0.15s"
-                >
-                  {part.partLabel}
-                </Text>
+        return (
+          <Flex
+            key={part.id}
+            flex={1}
+            align="center"
+            px={{ base: 2, md: 3 }}
+            py={1.5}
+            gap={2}
+            cursor="pointer"
+            onClick={() => onPartChange(idx)}
+            borderRightWidth={idx < parts.length - 1 ? "1px" : "0px"}
+            borderRightColor={colors.border}
+            borderTopWidth={isActive ? "3px" : "0px"}
+            borderTopColor={colors.accentColor}
+            transition="all 0.15s"
+            minW="0"
+          >
+            {/* Part label */}
+            <Text
+              fontWeight={isActive ? "bold" : "medium"}
+              fontSize="sm"
+              color={isActive ? colors.text : colors.textSecondary}
+              whiteSpace="nowrap"
+              flexShrink={0}
+            >
+              {part.partLabel}
+            </Text>
 
-                {/* Answered count badge (collapsed parts) */}
-                {!isActive && (
-                  <Text
-                    fontSize="xs"
-                    color={colors.textSecondary}
-                    fontWeight="medium"
-                    whiteSpace="nowrap"
-                  >
-                    {answeredCount}/{part.totalQuestions}
-                  </Text>
-                )}
-              </Box>
+            {/* Question number pills (active part only) */}
+            {isActive && (
+              <HStack gap={0.5} flexWrap="wrap" flexShrink={1} minW="0">
+                {questionNums.map((num) => {
+                  const isAnswered = !!answers[num];
+                  const isCurrent = num === currentQuestionNumber;
 
-              {/* Question number pills (active part only) */}
-              {isActive && (
-                <HStack gap={0.5}>
-                  {questionNums.map((num) => {
-                    const isAnswered = !!answers[num];
-                    const isCurrent = num === currentQuestionNumber;
-
-                    return (
-                      <Box
-                        key={num}
-                        w="30px"
-                        h="30px"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                        borderRadius="full"
-                        fontSize="xs"
-                        fontWeight="semibold"
-                        cursor="pointer"
-                        onClick={() => onQuestionClick(num)}
-                        userSelect="none"
-                        transition="all 0.15s ease"
-                        bg={
-                          isAnswered
-                            ? "teal.500"
-                            : isCurrent
-                              ? colors.accentColor
-                              : "transparent"
-                        }
-                        color={
-                          isAnswered
+                  return (
+                    <Box
+                      key={num}
+                      w="24px"
+                      h="24px"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                      borderRadius="sm"
+                      fontSize="2xs"
+                      fontWeight="semibold"
+                      cursor="pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onQuestionClick(num);
+                      }}
+                      userSelect="none"
+                      transition="all 0.15s ease"
+                      bg={
+                        isAnswered
+                          ? "teal.500"
+                          : isCurrent
+                            ? colors.accentColor
+                            : "transparent"
+                      }
+                      color={
+                        isAnswered
+                          ? "white"
+                          : isCurrent
                             ? "white"
-                            : isCurrent
-                              ? "white"
-                              : colors.textSecondary
-                        }
-                        borderWidth="1.5px"
-                        borderColor={
-                          isAnswered
-                            ? "teal.500"
-                            : isCurrent
-                              ? colors.accentColor
-                              : colors.border
-                        }
-                        _hover={{
-                          bg: isAnswered
-                            ? "teal.600"
-                            : isCurrent
-                              ? colors.accentColor
-                              : colors.hoverBg,
-                          borderColor: isAnswered
-                            ? "teal.600"
-                            : isCurrent
-                              ? colors.accentColor
-                              : colors.textSecondary,
-                        }}
-                      >
-                        {num}
-                      </Box>
-                    );
-                  })}
-                </HStack>
-              )}
+                            : colors.textSecondary
+                      }
+                      borderWidth="1.5px"
+                      borderColor={
+                        isAnswered
+                          ? "teal.500"
+                          : isCurrent
+                            ? colors.accentColor
+                            : colors.border
+                      }
+                      _hover={{
+                        bg: isAnswered
+                          ? "teal.600"
+                          : isCurrent
+                            ? colors.accentColor
+                            : colors.hoverBg,
+                        borderColor: isAnswered
+                          ? "teal.600"
+                          : isCurrent
+                            ? colors.accentColor
+                            : colors.textSecondary,
+                      }}
+                      flexShrink={0}
+                    >
+                      {num}
+                    </Box>
+                  );
+                })}
+              </HStack>
+            )}
 
-              {/* Separator between parts */}
-              {idx < parts.length - 1 && (
-                <Box w="1px" h="24px" bg={colors.border} ml={1} />
-              )}
-            </HStack>
-          );
-        })}
-      </HStack>
+            {/* Answered count (inactive parts) */}
+            {!isActive && (
+              <Text
+                fontSize="xs"
+                color={colors.textSecondary}
+                fontWeight="medium"
+                whiteSpace="nowrap"
+              >
+                {answeredCount} of {part.totalQuestions}
+              </Text>
+            )}
+          </Flex>
+        );
+      })}
 
-      {/* Navigation controls */}
-      <HStack gap={1} flexShrink={0}>
+      {/* Submit / nav controls */}
+      <Flex
+        align="center"
+        gap={1}
+        flexShrink={0}
+        px={2}
+        borderLeftWidth="1px"
+        borderLeftColor={colors.border}
+      >
         <IconButton
           variant="ghost"
           size="sm"
@@ -187,7 +184,7 @@ export default function PartNavigation({
         >
           <ChevronRight size={20} />
         </IconButton>
-      </HStack>
+      </Flex>
     </Flex>
   );
 }

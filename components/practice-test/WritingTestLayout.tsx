@@ -376,65 +376,58 @@ function WritingPartNavigation({
   return (
     <Flex
       h="auto"
-      minH="52px"
-      px={{ base: 2, md: 4 }}
-      py={2}
-      alignItems="center"
-      justifyContent="space-between"
+      minH="44px"
+      alignItems="stretch"
       bg={colors.navBg}
       borderTopWidth="1px"
       borderColor={colors.border}
       position="sticky"
       bottom={0}
       zIndex={20}
-      gap={3}
     >
-      {/* Part tabs */}
-      <HStack
-        gap={4}
-        flex={1}
-        overflowX="auto"
-        py={0.5}
-        css={{
-          "&::-webkit-scrollbar": { display: "none" },
-          scrollbarWidth: "none",
-        }}
-      >
-        {parts.map((part, idx) => {
-          const isActive = idx === currentPartIndex;
+      {/* Part tabs — full width, equally divided */}
+      {parts.map((part, idx) => {
+        const isActive = idx === currentPartIndex;
 
-          return (
-            <HStack key={part.id} gap={2} flexShrink={0}>
-              <Box
-                cursor="pointer"
-                onClick={() => onPartChange(idx)}
-                display="flex"
-                alignItems="center"
-                gap={1.5}
-                py={1}
-              >
-                <Text
-                  fontWeight="bold"
-                  fontSize="sm"
-                  color={isActive ? colors.text : colors.textSecondary}
-                  whiteSpace="nowrap"
-                  transition="color 0.15s"
-                >
-                  {part.partLabel}
-                </Text>
-              </Box>
-
-              {/* Separator */}
-              {idx < parts.length - 1 && (
-                <Box w="1px" h="24px" bg={colors.border} ml={1} />
-              )}
-            </HStack>
-          );
-        })}
-      </HStack>
+        return (
+          <Flex
+            key={part.id}
+            flex={1}
+            align="center"
+            justify="center"
+            px={{ base: 2, md: 3 }}
+            py={1.5}
+            gap={2}
+            cursor="pointer"
+            onClick={() => onPartChange(idx)}
+            borderRightWidth={idx < parts.length - 1 ? "1px" : "0px"}
+            borderRightColor={colors.border}
+            borderTopWidth={isActive ? "3px" : "0px"}
+            borderTopColor={colors.accentColor}
+            transition="all 0.15s"
+            minW="0"
+          >
+            <Text
+              fontWeight={isActive ? "bold" : "medium"}
+              fontSize="sm"
+              color={isActive ? colors.text : colors.textSecondary}
+              whiteSpace="nowrap"
+            >
+              {part.partLabel}
+            </Text>
+          </Flex>
+        );
+      })}
 
       {/* Navigation controls */}
-      <HStack gap={1} flexShrink={0}>
+      <Flex
+        align="center"
+        gap={1}
+        flexShrink={0}
+        px={2}
+        borderLeftWidth="1px"
+        borderLeftColor={colors.border}
+      >
         <IconButton
           variant="ghost"
           size="sm"
@@ -459,7 +452,7 @@ function WritingPartNavigation({
         >
           <ChevronRight size={20} />
         </IconButton>
-      </HStack>
+      </Flex>
     </Flex>
   );
 }

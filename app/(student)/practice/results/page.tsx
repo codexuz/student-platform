@@ -367,18 +367,16 @@ function ResultsListContent() {
                               size="xs"
                               variant="outline"
                               onClick={() => {
-                                const params = new URLSearchParams();
-                                if (attempt.part_id)
-                                  params.set("part_id", attempt.part_id);
-                                if (attempt.scope)
-                                  params.set("scope", attempt.scope);
                                 const t =
                                   attempt.part?.type ||
                                   attempt.module?.type ||
                                   (attempt.task ? "writing" : "");
-                                if (t) params.set("type", t);
+                                const reviewType = t || "reading";
+                                const params = new URLSearchParams();
+                                if (attempt.part_id)
+                                  params.set("part_id", attempt.part_id);
                                 if (
-                                  t === "listening" &&
+                                  reviewType === "listening" &&
                                   attempt.part?.audio_url
                                 ) {
                                   params.set(
@@ -388,7 +386,7 @@ function ResultsListContent() {
                                 }
                                 const qs = params.toString();
                                 router.push(
-                                  `/practice/review/${attempt.id}${qs ? `?${qs}` : ""}`,
+                                  `/practice/review/${reviewType}/${attempt.id}${qs ? `?${qs}` : ""}`,
                                 );
                               }}
                             >
