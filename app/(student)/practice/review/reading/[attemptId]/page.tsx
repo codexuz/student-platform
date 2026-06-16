@@ -96,6 +96,7 @@ function ReadingReviewContent() {
                     headingOptions?: Record<string, string>;
                     options?: { optionKey: string; optionText: string; isCorrect: boolean }[];
                     questions?: { questionNumber?: number; correctAnswer?: string }[];
+                    tableData?: { headers: string[]; rows: string[][] } | null;
                   }[];
                 }) => {
                   const allNums = getQuestionNums(p.questions ?? []);
@@ -129,6 +130,7 @@ function ReadingReviewContent() {
                         correctAnswer: sq.correctAnswer ?? "",
                       })),
                       headingOptions: q.headingOptions ?? undefined,
+                      tableData: q.tableData ?? null,
                     })),
                   };
                 },
@@ -167,7 +169,7 @@ function ReadingReviewContent() {
                     allNums.length > 0
                       ? [allNums[0], allNums[allNums.length - 1]]
                       : ([0, 0] as [number, number]),
-                  rawQuestions: (p.questions ?? []).map((q: { id?: string; questionNumber?: number; type?: string; questionText?: string; instruction?: string; headingOptions?: Record<string, string>; options?: { optionKey: string; optionText: string; isCorrect: boolean }[]; questions?: { questionNumber?: number; correctAnswer?: string }[] }) => ({
+                  rawQuestions: (p.questions ?? []).map((q: { id?: string; questionNumber?: number; type?: string; questionText?: string; instruction?: string; headingOptions?: Record<string, string>; options?: { optionKey: string; optionText: string; isCorrect: boolean }[]; questions?: { questionNumber?: number; correctAnswer?: string }[]; tableData?: { headers: string[]; rows: string[][] } | null }) => ({
                     id: q.id ?? "",
                     questionNumber: q.questionNumber ?? 0,
                     type: q.type ?? "",
@@ -183,6 +185,7 @@ function ReadingReviewContent() {
                       correctAnswer: sq.correctAnswer ?? "",
                     })),
                     headingOptions: q.headingOptions ?? undefined,
+                    tableData: q.tableData ?? null,
                   })),
                 },
               ]);

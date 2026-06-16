@@ -91,6 +91,11 @@ export interface RawSubQuestion {
   correctAnswer: string;
 }
 
+export interface RawTableData {
+  headers: string[];
+  rows: string[][];
+}
+
 export interface RawQuestionGroup {
   id: string;
   questionNumber: number;
@@ -100,4 +105,5 @@ export interface RawQuestionGroup {
   options: RawOption[];
   questions: RawSubQuestion[];
   headingOptions?: Record<string, string>;
+  tableData?: RawTableData | null;
 }

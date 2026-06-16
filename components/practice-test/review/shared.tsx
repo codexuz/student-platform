@@ -14,6 +14,7 @@ import {
   Circle,
   Separator,
   IconButton,
+  Table,
 } from "@chakra-ui/react";
 import {
   ArrowLeft,
@@ -21,7 +22,14 @@ import {
   Maximize2,
   XCircle,
 } from "lucide-react";
-import type { QuestionResult, PartInfo, RawQuestionGroup, RawOption } from "./types";
+import { BLANK_PATTERN } from "../types";
+import type {
+  QuestionResult,
+  PartInfo,
+  RawQuestionGroup,
+  RawOption,
+  RawTableData,
+} from "./types";
 
 // ─── Header ───────────────────────────────────────────────────────────────
 
@@ -157,8 +165,27 @@ export function ReviewQuestionsList({
         const hasRawInstruction =
           rawInstruction && rawInstruction.length > 0;
 
+        const isTableCompletion =
+          group.type === "TABLE_COMPLETION" && !!firstRawGroup?.tableData;
+
+        const isDragDrop = group.type === "SUMMARY_COMPLETION_DRAG_DROP";
+
+        // Drag-drop keeps its passage (with blanks) on the raw group, not on
+        // the per-question results, so fall back to it for the inline source.
+        const inlineSource = isDragDrop
+          ? (firstRawGroup?.questionText ?? group.sharedText)
+          : group.sharedText;
+
+        // Map option keys (A, B, …) → text so gaps can show "C. age".
+        const dragDropOptionMap =
+          isDragDrop && firstRawGroup?.options?.length
+            ? new Map(
+                firstRawGroup.options.map((o) => [o.optionKey, o.optionText]),
+              )
+            : undefined;
+
         const isInlineGapFill =
-          GAP_FILL_TYPES.includes(group.type) && group.sharedText;
+          GAP_FILL_TYPES.includes(group.type) && !!inlineSource;
 
         return (
           <Box key={gIdx}>
@@ -217,12 +244,51 @@ export function ReviewQuestionsList({
                 </Box>
               )}
 
-            {isInlineGapFill ? (
+            {isTableCompletion ? (
+              <ReviewTableCompletion
+                tableData={firstRawGroup!.tableData!}
+                questions={group.questions}
+                showCorrectAnswers={showCorrectAnswers}
+              />
+            ) : isInlineGapFill ? (
               <>
-                {/* For drag-drop, show available option pool */}
-                {group.type === "SUMMARY_COMPLETION_DRAG_DROP" &&
-                  firstRawGroup?.options?.length && (
-                    <Flex gap={2} flexWrap="wrap" mb={4}>
+                <Box
+                  dangerouslySetInnerHTML={{
+                    __html: buildInlineGapFillHtml(
+                      inlineSource!,
+                      group.questions,
+                      showCorrectAnswers,
+                      dragDropOptionMap,
+                    ),
+                  }}
+                  fontSize="sm"
+                  lineHeight="2"
+                  css={{
+                    "& p": { marginBottom: "0.5em" },
+                    "& strong": { fontWeight: "bold" },
+                    "& em": { fontStyle: "italic" },
+                    "& ul, & ol": {
+                      paddingLeft: "1.5em",
+                      marginBottom: "0.5em",
+                    },
+                  }}
+                />
+
+                {/* For drag-drop, list all options below the passage */}
+                {isDragDrop && firstRawGroup?.options?.length && (
+                  <Box
+                    mt={4}
+                    p={3}
+                    bg="gray.50"
+                    _dark={{ bg: "gray.700" }}
+                    borderRadius="md"
+                    borderWidth="1px"
+                    borderColor="gray.200"
+                  >
+                    <Text fontSize="sm" fontWeight="semibold" mb={2}>
+                      Options
+                    </Text>
+                    <Flex gap={2} flexWrap="wrap">
                       {(firstRawGroup.options ?? []).map((opt) => (
                         <Badge
                           key={opt.optionKey}
@@ -240,28 +306,8 @@ export function ReviewQuestionsList({
                         </Badge>
                       ))}
                     </Flex>
-                  )}
-
-                <Box
-                  dangerouslySetInnerHTML={{
-                    __html: buildInlineGapFillHtml(
-                      group.sharedText!,
-                      group.questions,
-                      showCorrectAnswers,
-                    ),
-                  }}
-                  fontSize="sm"
-                  lineHeight="2"
-                  css={{
-                    "& p": { marginBottom: "0.5em" },
-                    "& strong": { fontWeight: "bold" },
-                    "& em": { fontStyle: "italic" },
-                    "& ul, & ol": {
-                      paddingLeft: "1.5em",
-                      marginBottom: "0.5em",
-                    },
-                  }}
-                />
+                  </Box>
+                )}
               </>
             ) : (
               <>
@@ -646,6 +692,130 @@ function ReviewQuestionItem({
   );
 }
 
+// ─── Table Completion Review ──────────────────────────────────────────────
+
+function ReviewTableCompletion({
+  tableData,
+  questions,
+  showCorrectAnswers,
+}: {
+  tableData: RawTableData;
+  questions: QuestionResult[];
+  showCorrectAnswers: boolean;
+}) {
+  // Walk cells in order; each cell containing a blank maps to the next
+  // question (same ordering the live test uses).
+  let blankCounter = 0;
+
+  return (
+    <Box overflowX="auto" mb={2}>
+      <Table.Root size="sm" variant="outline">
+        <Table.Header>
+          <Table.Row>
+            {tableData.headers.map((h, i) => (
+              <Table.ColumnHeader
+                key={i}
+                bg="gray.50"
+                _dark={{ bg: "gray.700" }}
+              >
+                {h}
+              </Table.ColumnHeader>
+            ))}
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          {tableData.rows.map((row, ri) => (
+            <Table.Row key={ri}>
+              {row.map((cell, ci) => {
+                BLANK_PATTERN.lastIndex = 0;
+                const hasBlank = BLANK_PATTERN.test(cell);
+                BLANK_PATTERN.lastIndex = 0;
+
+                if (hasBlank && blankCounter < questions.length) {
+                  const q = questions[blankCounter++];
+                  return (
+                    <Table.Cell key={ci} verticalAlign="middle">
+                      {renderReviewCell(cell, q, showCorrectAnswers)}
+                    </Table.Cell>
+                  );
+                }
+
+                return (
+                  <Table.Cell key={ci} verticalAlign="middle">
+                    <Text fontSize="sm">{cell}</Text>
+                  </Table.Cell>
+                );
+              })}
+            </Table.Row>
+          ))}
+        </Table.Body>
+      </Table.Root>
+    </Box>
+  );
+}
+
+function renderReviewCell(
+  cell: string,
+  q: QuestionResult,
+  showCorrectAnswers: boolean,
+) {
+  BLANK_PATTERN.lastIndex = 0;
+  const match = BLANK_PATTERN.exec(cell);
+  BLANK_PATTERN.lastIndex = 0;
+
+  const before = match ? cell.slice(0, match.index) : cell;
+  const after = match ? cell.slice(match.index + match[0].length) : "";
+
+  const answered = q.userAnswer != null && q.userAnswer !== "";
+  const correct = q.isCorrect === true;
+  const wrong = q.isCorrect === false;
+
+  return (
+    <Flex as="span" align="center" flexWrap="wrap" gap={1} fontSize="sm">
+      {before && <Text as="span">{before}</Text>}
+      <Flex
+        as="span"
+        align="center"
+        gap={1}
+        px={2}
+        py={0.5}
+        borderWidth="2px"
+        borderColor={correct ? "green.400" : wrong ? "red.400" : "gray.300"}
+        borderRadius="md"
+        bg={correct ? "green.50" : wrong ? "red.50" : "gray.50"}
+        _dark={{
+          bg: correct ? "green.900/30" : wrong ? "red.900/30" : "gray.700",
+          borderColor: correct ? "green.400" : wrong ? "red.400" : "gray.600",
+        }}
+      >
+        <Circle
+          size="18px"
+          bg={correct ? "green.500" : wrong ? "red.500" : "gray.400"}
+          color="white"
+          fontSize="2xs"
+          fontWeight="bold"
+          flexShrink={0}
+        >
+          {q.questionNumber}
+        </Circle>
+        <Text as="span" fontWeight={500}>
+          {answered ? q.userAnswer : "N/A"}
+        </Text>
+      </Flex>
+      {showCorrectAnswers && !correct && (
+        <Text as="span" color="green.600" fontWeight="semibold" fontSize="xs">
+          (Correct:{" "}
+          <Text as="span" fontWeight="bold" textDecoration="underline">
+            {q.correctAnswer}
+          </Text>
+          )
+        </Text>
+      )}
+      {after && <Text as="span">{after}</Text>}
+    </Flex>
+  );
+}
+
 // ─── Part Navigation for Review ───────────────────────────────────────────
 
 export function ReviewPartNavigation({
@@ -818,15 +988,22 @@ function buildInlineGapFillHtml(
   html: string,
   questions: QuestionResult[],
   showCorrectAnswers: boolean,
+  optionMap?: Map<string, string>,
 ): string {
+  // For drag-drop, answers are option keys (e.g. "C"); show "C. age".
+  const display = (val: string) => {
+    const text = optionMap?.get(val);
+    return text ? `${escapeHtml(val)}. ${escapeHtml(text)}` : escapeHtml(val);
+  };
+
   let qIdx = 0;
   return html.replace(/_{3,}/g, () => {
     if (qIdx >= questions.length) return "___";
     const q = questions[qIdx++];
     const answered = q.userAnswer != null && q.userAnswer !== "";
     const correct = q.isCorrect === true;
-    const userText = answered ? escapeHtml(q.userAnswer!) : "N/A";
-    const correctText = escapeHtml(q.correctAnswer);
+    const userText = answered ? display(q.userAnswer!) : "N/A";
+    const correctText = display(q.correctAnswer);
 
     const borderColor = correct ? "#68d391" : "#fc8181";
     const bgColor = correct ? "#f0fff4" : "#fff5f5";

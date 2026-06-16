@@ -101,6 +101,7 @@ function ListeningReviewContent() {
                     instruction?: string;
                     options?: { optionKey: string; optionText: string; isCorrect: boolean }[];
                     questions?: { questionNumber?: number; correctAnswer?: string }[];
+                    tableData?: { headers: string[]; rows: string[][] } | null;
                   }[];
                 }) => {
                   const allNums = getQuestionNums(p.questions ?? []);
@@ -134,6 +135,7 @@ function ListeningReviewContent() {
                         questionNumber: sq.questionNumber ?? 0,
                         correctAnswer: sq.correctAnswer ?? "",
                       })),
+                      tableData: q.tableData ?? null,
                     })),
                   };
                 },
@@ -174,7 +176,7 @@ function ListeningReviewContent() {
                     allNums.length > 0
                       ? [allNums[0], allNums[allNums.length - 1]]
                       : ([0, 0] as [number, number]),
-                  rawQuestions: (lp.questions ?? []).map((q: { id?: string; questionNumber?: number; type?: string; questionText?: string; instruction?: string; options?: { optionKey: string; optionText: string; isCorrect: boolean }[]; questions?: { questionNumber?: number; correctAnswer?: string }[] }) => ({
+                  rawQuestions: (lp.questions ?? []).map((q: { id?: string; questionNumber?: number; type?: string; questionText?: string; instruction?: string; options?: { optionKey: string; optionText: string; isCorrect: boolean }[]; questions?: { questionNumber?: number; correctAnswer?: string }[]; tableData?: { headers: string[]; rows: string[][] } | null }) => ({
                     id: q.id ?? "",
                     questionNumber: q.questionNumber ?? 0,
                     type: q.type ?? "",
@@ -189,6 +191,7 @@ function ListeningReviewContent() {
                       questionNumber: sq.questionNumber ?? 0,
                       correctAnswer: sq.correctAnswer ?? "",
                     })),
+                    tableData: q.tableData ?? null,
                   })),
                 },
               ]);
