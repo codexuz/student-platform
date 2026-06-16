@@ -66,9 +66,15 @@ export default function SummaryCompletionDragDrop({
     const targetQNum = Number(over.id);
 
     if (!isNaN(targetQNum)) {
-      // Remove from any other gap first
+      // Remove from any other gap first — but only within THIS question's
+      // sub-questions, otherwise we'd clear same-valued answers (e.g. "A",
+      // "TRUE") belonging to other question groups across the test.
       Object.entries(answers).forEach(([qn, val]) => {
-        if (val === droppedValue && Number(qn) !== targetQNum) {
+        if (
+          val === droppedValue &&
+          Number(qn) !== targetQNum &&
+          ownQNums.has(Number(qn))
+        ) {
           onAnswer(Number(qn), "");
         }
       });
