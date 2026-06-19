@@ -105,7 +105,11 @@ export default function DashboardPage() {
       <Flex
         h="100vh"
         bg="gray.50"
-        _dark={{ bg: "gray.900" }}
+        background="radial-gradient(circle at top right, rgba(59,130,246,0.12), transparent 500px), radial-gradient(circle at bottom left, rgba(16,185,129,0.12), transparent 500px), var(--chakra-colors-gray-50)"
+        _dark={{ 
+          bg: "gray.900",
+          background: "radial-gradient(circle at top right, rgba(59,130,246,0.15), transparent 500px), radial-gradient(circle at bottom left, rgba(16,185,129,0.15), transparent 500px), var(--chakra-colors-gray-900)"
+        }}
         direction={{ base: "column", lg: "row" }}
       >
         {/* Left Sidebar */}
@@ -141,17 +145,50 @@ export default function DashboardPage() {
           >
             {/* Greeting Section */}
             <VStack gap={{ base: 4, md: 6, lg: 8 }} alignItems="stretch">
-              <Box>
-                <Heading size={{ base: "xl", md: "2xl" }} mb={2}>
-                  {getGreeting()}, {userName.split(" ")[0]}! 👋
-                </Heading>
-                <Text
-                  fontSize={{ base: "md", md: "lg" }}
-                  color="gray.600"
-                  _dark={{ color: "gray.400" }}
-                >
-                  Welcome back to your learning dashboard
-                </Text>
+              <Box
+                position="relative"
+                p={{ base: 8, md: 12 }}
+                borderRadius="3xl"
+                overflow="hidden"
+                bg="blue.600"
+                _dark={{ bg: "blue.800" }}
+                color="white"
+                shadow="2xl"
+              >
+                <Box
+                  position="absolute"
+                  top="-50%"
+                  right="-10%"
+                  w="400px"
+                  h="400px"
+                  bg="purple.500"
+                  filter="blur(120px)"
+                  opacity={0.6}
+                  borderRadius="full"
+                  zIndex={0}
+                  pointerEvents="none"
+                />
+                <Box
+                  position="absolute"
+                  bottom="-50%"
+                  left="-10%"
+                  w="300px"
+                  h="300px"
+                  bg="teal.400"
+                  filter="blur(100px)"
+                  opacity={0.5}
+                  borderRadius="full"
+                  zIndex={0}
+                  pointerEvents="none"
+                />
+                <Box position="relative" zIndex={1}>
+                  <Heading size={{ base: "2xl", md: "4xl" }} mb={3} letterSpacing="tight">
+                    {getGreeting()}, {userName.split(" ")[0]}! 👋
+                  </Heading>
+                  <Text fontSize={{ base: "lg", md: "xl" }} color="blue.100" maxW="2xl" lineHeight="tall">
+                    Welcome back to your learning dashboard. Here's a quick overview of your latest IELTS performance and progress.
+                  </Text>
+                </Box>
               </Box>
 
               {/* IELTS Stats Cards */}
@@ -165,7 +202,28 @@ export default function DashboardPage() {
                 gap={{ base: 3, md: 4 }}
               >
                 {/* Best Band Score */}
-                <Card.Root borderRadius="2xl" overflow="hidden">
+                <Card.Root 
+                  borderRadius="3xl" 
+                  overflow="hidden"
+                  bg="rgba(255, 255, 255, 0.85)"
+                  backdropFilter="blur(20px)"
+                  border="1px solid"
+                  borderColor="rgba(0, 0, 0, 0.05)"
+                  boxShadow="0 8px 32px rgba(0, 0, 0, 0.04)"
+                  _dark={{
+                    bg: "rgba(30, 30, 35, 0.6)",
+                    borderColor: "whiteAlpha.200",
+                    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
+                  }}
+                  transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                  _hover={{
+                    transform: "translateY(-4px) scale(1.02)",
+                    boxShadow: "0 12px 40px rgba(0, 0, 0, 0.08)",
+                    _dark: {
+                      boxShadow: "0 12px 40px rgba(0, 0, 0, 0.6)",
+                    }
+                  }}
+                >
                   <Card.Body p={{ base: 4, md: 6 }}>
                     <VStack gap={2} alignItems="flex-start">
                       <HStack justify="space-between" w="full">

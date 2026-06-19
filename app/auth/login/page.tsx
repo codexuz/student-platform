@@ -10,6 +10,8 @@ import {
   Text,
   Tabs,
   Icon,
+  Grid,
+  Flex,
 } from "@chakra-ui/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -97,43 +99,120 @@ export default function LoginPage() {
   };
 
   return (
-    <Box
-      minH="100vh"
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-      bg="gray.50"
-      _dark={{ bg: "gray.900" }}
-      p={4}
-      position="relative"
-    >
-      <Box
-        w="full"
-        maxW="md"
-        bg="white"
-        _dark={{ bg: "gray.800" }}
-        rounded="lg"
-        shadow="lg"
-        p={8}
+    <Grid minH="100vh" templateColumns={{ base: "1fr", lg: "1fr 1fr" }}>
+      {/* Left Panel - Image Background */}
+      <Flex
+        display={{ base: "none", lg: "flex" }}
+        position="relative"
+        bgImage="url('/images/login-bg.png')"
+        bgSize="cover"
+        backgroundPosition="center"
+        align="center"
+        justify="center"
+        p={12}
       >
-        <Stack gap={6}>
-          <Stack gap={2} textAlign="center">
-            <Heading size="xl">Welcome Back</Heading>
-            <Text color="gray.600" _dark={{ color: "gray.400" }}>
-              Sign in to your account
-            </Text>
-          </Stack>
+        <Box
+          position="absolute"
+          inset={0}
+          bg="blackAlpha.500"
+          backdropFilter="blur(2px)"
+        />
+        
+        <Stack
+          position="relative"
+          zIndex={1}
+          color="white"
+          maxW="xl"
+          gap={6}
+          bg="whiteAlpha.100"
+          backdropFilter="blur(24px)"
+          p={10}
+          borderRadius="3xl"
+          border="1px solid"
+          borderColor="whiteAlpha.300"
+          boxShadow="0 20px 40px rgba(0, 0, 0, 0.4)"
+        >
+          <Heading size="4xl" fontWeight="bold" letterSpacing="tight" lineHeight="1.1">
+            Unlock Your<br /> IELTS Potential
+          </Heading>
+          <Text fontSize="xl" color="whiteAlpha.900" lineHeight="tall">
+            Join the ultimate platform to practice, analyze your progress, and achieve your target band score with AI-driven insights.
+          </Text>
+        </Stack>
+      </Flex>
 
-          <Tabs.Root
-            value={activeRole}
-            onValueChange={(e) => {
-              setActiveRole(e.value as UserRole);
-              setErrors({});
-            }}
-            variant="enclosed"
-            fitted
-          >
-            <Tabs.List>
+      {/* Right Panel - Login Form */}
+      <Flex
+        align="center"
+        justify="center"
+        bg="white"
+        _dark={{ bg: "gray.900" }}
+        p={{ base: 6, md: 12 }}
+        position="relative"
+        overflow="hidden"
+      >
+        {/* Subtle mesh background for the login side */}
+        <Box
+          position="absolute"
+          top="-20%"
+          right="-10%"
+          w="60%"
+          h="60%"
+          bg="blue.50"
+          _dark={{ bg: "blue.500", opacity: 0.15 }}
+          filter="blur(120px)"
+          opacity={0.6}
+          borderRadius="full"
+          zIndex={0}
+          pointerEvents="none"
+        />
+        <Box
+          position="absolute"
+          bottom="-10%"
+          left="-10%"
+          w="50%"
+          h="50%"
+          bg="green.50"
+          _dark={{ bg: "green.400", opacity: 0.15 }}
+          filter="blur(100px)"
+          opacity={0.5}
+          borderRadius="full"
+          zIndex={0}
+          pointerEvents="none"
+        />
+
+        <Box
+          w="full"
+          maxW="md"
+          position="relative"
+          zIndex={1}
+          bg="rgba(255, 255, 255, 0.85)"
+          backdropFilter="blur(20px)"
+          rounded="2xl"
+          shadow="2xl"
+          border="1px solid"
+          borderColor="rgba(0, 0, 0, 0.05)"
+          _dark={{ bg: "rgba(30, 30, 35, 0.6)", borderColor: "whiteAlpha.200" }}
+          p={{ base: 8, md: 10 }}
+        >
+          <Stack gap={8}>
+            <Stack gap={2} textAlign="center">
+              <Heading size="3xl" fontWeight="bold" letterSpacing="tight" _dark={{ color: "white" }}>Welcome</Heading>
+              <Text color="gray.500" _dark={{ color: "gray.400" }}>
+                Sign in to continue to your account
+              </Text>
+            </Stack>
+
+            <Tabs.Root
+              value={activeRole}
+              onValueChange={(e) => {
+                setActiveRole(e.value as UserRole);
+                setErrors({});
+              }}
+              variant="enclosed"
+              fitted
+            >
+              <Tabs.List>
               <Tabs.Trigger value="student">
                 <Icon as={LuGraduationCap} mr={2} />
                 Student
@@ -208,8 +287,9 @@ export default function LoginPage() {
                 <Button
                   variant="plain"
                   size="sm"
-                  color="blue.500"
-                  fontWeight="normal"
+                  color="blue.600"
+                  _dark={{ color: "blue.400" }}
+                  fontWeight="medium"
                   onClick={() => router.push("/auth/forgot-password")}
                   p={0}
                   h="auto"
@@ -225,6 +305,11 @@ export default function LoginPage() {
                 w="full"
                 loading={loading}
                 mt={2}
+                borderRadius="xl"
+                fontWeight="semibold"
+                shadow="md"
+                _hover={{ shadow: "lg", transform: "translateY(-1px)" }}
+                transition="all 0.2s"
               >
                 Sign In
               </Button>
@@ -232,6 +317,7 @@ export default function LoginPage() {
           </form>
         </Stack>
       </Box>
-    </Box>
+    </Flex>
+    </Grid>
   );
 }

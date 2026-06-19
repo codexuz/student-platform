@@ -154,11 +154,11 @@ function PracticeContent() {
       try {
         let res;
         if (activeCategory === "reading") {
-          res = await ieltsAPI.getReadingTests({ limit: 100, mode: "practice" });
+          res = await ieltsAPI.getReadingTests({ limit: 100 });
         } else if (activeCategory === "listening") {
-          res = await ieltsAPI.getListeningTests({ limit: 100, mode: "practice" });
+          res = await ieltsAPI.getListeningTests({ limit: 100 });
         } else if (activeCategory === "writing") {
-          res = await ieltsAPI.getWritingTests({ limit: 100, mode: "practice" });
+          res = await ieltsAPI.getWritingTests({ limit: 100 });
         }
         
         if (res) {
@@ -306,7 +306,15 @@ function PracticeContent() {
   };
 
   return (
-    <Box minH="100vh" bg="gray.50" _dark={{ bg: "gray.900" }}>
+    <Box 
+      minH="100vh" 
+      bg="gray.50" 
+      background="radial-gradient(circle at top right, rgba(59,130,246,0.12), transparent 500px), radial-gradient(circle at bottom left, rgba(16,185,129,0.12), transparent 500px), var(--chakra-colors-gray-50)"
+      _dark={{ 
+        bg: "gray.900",
+        background: "radial-gradient(circle at top right, rgba(59,130,246,0.15), transparent 500px), radial-gradient(circle at bottom left, rgba(16,185,129,0.15), transparent 500px), var(--chakra-colors-gray-900)"
+      }}
+    >
       <Sidebar />
       <Box ml={{ base: 0, lg: "240px" }} pb={{ base: "80px", lg: 0 }}>
         {/* Header Bar */}
@@ -326,12 +334,67 @@ function PracticeContent() {
 
         {/* Main Content */}
         <Box p={{ base: 4, md: 6 }} pb={{ base: 24, md: 12 }} maxW="1400px" mx="auto">
+          {/* Hero Banner */}
+          <Box
+            position="relative"
+            p={{ base: 8, md: 12 }}
+            borderRadius="3xl"
+            overflow="hidden"
+            bg="blue.600"
+            _dark={{ bg: "blue.800" }}
+            color="white"
+            shadow="2xl"
+            mb={8}
+          >
+            <Box
+              position="absolute"
+              top="-50%"
+              right="-10%"
+              w="400px"
+              h="400px"
+              bg="purple.500"
+              filter="blur(120px)"
+              opacity={0.6}
+              borderRadius="full"
+              zIndex={0}
+              pointerEvents="none"
+            />
+            <Box
+              position="absolute"
+              bottom="-50%"
+              left="-10%"
+              w="300px"
+              h="300px"
+              bg="teal.400"
+              filter="blur(100px)"
+              opacity={0.5}
+              borderRadius="full"
+              zIndex={0}
+              pointerEvents="none"
+            />
+            <Box position="relative" zIndex={1}>
+              <Heading size={{ base: "2xl", md: "4xl" }} mb={3} letterSpacing="tight">
+                Practice Center 🎯
+              </Heading>
+              <Text fontSize={{ base: "lg", md: "xl" }} color="blue.100" maxW="2xl" lineHeight="tall">
+                Sharpen your skills with our curated collection of IELTS practice materials. Choose a category below to get started!
+              </Text>
+            </Box>
+          </Box>
+
           {/* Category Tabs */}
           <HStack
-            gap={4}
-            mb={6}
-            pb={4}
-            borderBottomWidth="2px"
+            gap={2}
+            mb={8}
+            p={1.5}
+            bg="rgba(255, 255, 255, 0.85)"
+            backdropFilter="blur(20px)"
+            borderRadius="full"
+            w="fit-content"
+            shadow="sm"
+            border="1px solid"
+            borderColor="rgba(0, 0, 0, 0.05)"
+            _dark={{ bg: "rgba(30,30,35,0.6)", borderColor: "whiteAlpha.200" }}
             overflowX="auto"
             css={{
               "&::-webkit-scrollbar": { display: "none" },
@@ -346,21 +409,19 @@ function PracticeContent() {
                 <Button
                   key={category.id}
                   onClick={() => handleCategoryChange(category.id)}
-                  variant="ghost"
-                  colorPalette={isActive ? "brand" : "gray"}
-                  size="lg"
-                  borderBottomWidth={isActive ? "3px" : "0"}
-                  borderBottomColor={isActive ? "brand.500" : "transparent"}
-                  borderRadius="0"
-                  pb={2}
-                  minW="fit-content"
+                  variant={isActive ? "solid" : "ghost"}
+                  colorPalette={isActive ? "blue" : "gray"}
+                  size="md"
+                  borderRadius="full"
+                  px={6}
                   fontWeight={isActive ? "semibold" : "medium"}
-                  color={isActive ? "brand.600" : "gray.600"}
+                  color={isActive ? "white" : "gray.600"}
                   _dark={{
-                    color: isActive ? "brand.400" : "gray.400",
+                    color: isActive ? "white" : "gray.400",
                   }}
+                  transition="all 0.2s"
                 >
-                  <Icon fontSize="xl" mr={2}>
+                  <Icon fontSize="lg" mr={2}>
                     <IconComponent />
                   </Icon>
                   {category.label}
@@ -615,14 +676,8 @@ function PracticeContent() {
             </Flex>
           )}
 
-          {/* Practice Questions Header */}
-          <Flex justify="space-between" align="start" mb={4}>
-            <Box>
-              <Heading size="xl" mb={3}>
-                Practice Tests
-              </Heading>
-            </Box>
-          </Flex>
+          {/* Separator / Clean spacing */}
+          <Box mb={4} />
 
           {/* Questions Grid */}
           {loading ? (
@@ -685,23 +740,25 @@ function PracticeContent() {
                       overflow="hidden"
                       onClick={handleClick}
                       position="relative"
-                      bg="rgba(255, 255, 255, 0.7)"
-                      backdropFilter="blur(16px)"
+                      bg="rgba(255, 255, 255, 0.85)"
+                      backdropFilter="blur(20px)"
                       border="1px solid"
-                      borderColor="rgba(255, 255, 255, 0.4)"
-                      shadow="sm"
+                      borderColor="rgba(0, 0, 0, 0.06)"
+                      boxShadow="0 8px 32px rgba(0, 0, 0, 0.06)"
                       _dark={{
                         bg: "rgba(30, 30, 35, 0.5)",
                         borderColor: "rgba(255, 255, 255, 0.08)",
+                        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
                         color: "white"
                       }}
                       _hover={{
-                        transform: "translateY(-4px) scale(1.02)",
-                        shadow: "xl",
-                        borderColor: "rgba(255, 255, 255, 0.8)",
+                        transform: "translateY(-6px) scale(1.02)",
+                        boxShadow: "0 12px 40px rgba(0, 0, 0, 0.12)",
+                        borderColor: "rgba(0, 0, 0, 0.1)",
                         _dark: {
                           borderColor: "rgba(255, 255, 255, 0.2)",
                           bg: "rgba(40, 40, 45, 0.6)",
+                          boxShadow: "0 12px 40px rgba(0, 0, 0, 0.6)",
                         }
                       }}
                     >
@@ -711,7 +768,7 @@ function PracticeContent() {
                         justify="center" 
                         py={6}
                         position="relative"
-                        background={`linear-gradient(135deg, ${meta.color}15 0%, transparent 100%)`}
+                        background={`linear-gradient(135deg, ${meta.color}25 0%, ${meta.color}05 100%)`}
                         _dark={{
                           background: `linear-gradient(135deg, ${meta.color}25 0%, transparent 100%)`
                         }}
@@ -722,11 +779,11 @@ function PracticeContent() {
                           w="56px"
                           h="56px"
                           borderRadius="xl"
-                          bg="rgba(255, 255, 255, 0.9)"
+                          bg="white"
                           _dark={{ bg: "rgba(20, 20, 25, 0.8)" }}
                           shadow="sm"
                           border="1px solid"
-                          borderColor="rgba(255, 255, 255, 0.5)"
+                          borderColor="rgba(0, 0, 0, 0.05)"
                         >
                           <SkillIcon size={28} color={meta.color} />
                         </Flex>
