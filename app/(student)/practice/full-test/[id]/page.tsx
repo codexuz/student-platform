@@ -27,7 +27,6 @@ import {
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
-import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import { ieltsTestsAPI } from "@/lib/ielts-api";
 
 export default function FullTestPage() {
@@ -119,7 +118,6 @@ function FullTestContent({ testId }: { testId: string }) {
             </Button>
             <Heading size={{ base: "sm", md: "md" }}>{test.title}</Heading>
           </HStack>
-          <NotificationsDrawer />
         </Flex>
 
         <Box p={{ base: 4, md: 8 }} maxW="1200px" mx="auto">

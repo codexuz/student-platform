@@ -22,7 +22,6 @@ import { useRouter } from "next/navigation";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import { useAuth } from "@/contexts/AuthContext";
 import { moviesAPI, articlesAPI } from "@/lib/api";
 
@@ -154,7 +153,6 @@ export default function ResourcesPage() {
           >
             <Heading size={{ base: "sm", md: "md" }}>Resources</Heading>
             <HStack gap={{ base: 2, md: 4 }}>
-              <NotificationsDrawer />
             </HStack>
           </Flex>
 

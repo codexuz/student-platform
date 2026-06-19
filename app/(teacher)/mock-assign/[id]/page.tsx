@@ -35,7 +35,6 @@ import {
 import { useParams, useRouter } from "next/navigation";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
-import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
 import { studentsAPI } from "@/lib/teacher-api";
@@ -364,7 +363,6 @@ function GuestMockTestsContent() {
             <Heading size={{ base: "sm", md: "md" }}>Mock Tests</Heading>
           </HStack>
           <HStack gap={{ base: 2, md: 4 }}>
-            <NotificationsDrawer />
           </HStack>
         </Flex>
 

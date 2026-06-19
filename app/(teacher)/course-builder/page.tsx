@@ -3,7 +3,6 @@
 import { Box, Flex, Heading, HStack } from "@chakra-ui/react";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
-import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import CoursesList from "@/components/course-builder/CoursesList";
 
@@ -37,7 +36,6 @@ export default function CourseBuilderPage() {
           >
             <Heading size={{ base: "sm", md: "md" }}>Course Builder</Heading>
             <HStack gap={{ base: 2, md: 4 }}>
-              <NotificationsDrawer />
             </HStack>
           </Flex>
 

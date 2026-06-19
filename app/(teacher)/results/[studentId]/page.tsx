@@ -19,7 +19,6 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
-import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { ieltsAnswersAPI } from "@/lib/ielts-api";
 import { studentsAPI } from "@/lib/teacher-api";
@@ -182,7 +181,6 @@ export default function StudentResultsPage() {
               Student IELTS Results
             </Heading>
             <HStack gap={{ base: 2, md: 4 }}>
-              <NotificationsDrawer />
             </HStack>
           </Flex>
 

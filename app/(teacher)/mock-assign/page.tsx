@@ -36,7 +36,6 @@ import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
-import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { guestStudentsAPI } from "@/lib/teacher-api";
 import { toaster } from "@/components/ui/toaster";
@@ -223,7 +222,6 @@ function MockAssignContent() {
         >
           <Heading size={{ base: "sm", md: "md" }}>Mock Assign</Heading>
           <HStack gap={{ base: 2, md: 4 }}>
-            <NotificationsDrawer />
           </HStack>
         </Flex>
 

@@ -34,7 +34,6 @@ import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
-import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import { ieltsMockTestsAPI } from "@/lib/ielts-api";
 
 const PAGE_SIZE = 9;
@@ -169,7 +168,6 @@ function MockTestsContent() {
         >
           <Heading size={{ base: "sm", md: "md" }}>Mock Tests</Heading>
           <HStack gap={{ base: 2, md: 4 }}>
-            <NotificationsDrawer />
           </HStack>
         </Flex>
 

@@ -184,7 +184,7 @@ function FallbackList({
             flexWrap="wrap"
             gap={1}
           >
-            <Text as="span" fontWeight="bold" color="blue.600" mr={1}>
+            <Text as="span" fontWeight="bold" color="red.600" mr={1}>
               {qNum}.
             </Text>
             {renderCellWithBlank(

@@ -78,9 +78,10 @@ export default function MatchingFeatures({
               <Circle
                 size="28px"
                 bg="var(--test-hover-bg)"
-                color="blue.700"
+                color="red.600"
                 fontWeight="bold"
                 flexShrink={0}
+                mt="2px"
               >
                 {qNum}
               </Circle>

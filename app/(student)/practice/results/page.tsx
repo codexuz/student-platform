@@ -31,7 +31,6 @@ import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
-import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import { ieltsAnswersAPI } from "@/lib/ielts-api";
 
 const PAGE_SIZE = 10;
@@ -154,7 +153,6 @@ function ResultsListContent() {
             <Heading size={{ base: "sm", md: "md" }}>My Results</Heading>
           </HStack>
           <HStack gap={2}>
-            <NotificationsDrawer />
           </HStack>
         </Flex>
 

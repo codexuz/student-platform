@@ -26,13 +26,13 @@ const config = defineConfig({
     semanticTokens: {
       colors: {
         brand: {
-          solid: { value: "{colors.brand.500}" },
+          solid: { value: { base: "{colors.brand.500}", _dark: "{colors.brand.500}" } },
           contrast: { value: "white" },
-          fg: { value: "{colors.brand.700}" },
-          muted: { value: "{colors.brand.100}" },
-          subtle: { value: "{colors.brand.50}" },
-          emphasized: { value: "{colors.brand.300}" },
-          focusRing: { value: "{colors.brand.500}" },
+          fg: { value: { base: "{colors.brand.700}", _dark: "{colors.brand.200}" } },
+          muted: { value: { base: "{colors.brand.100}", _dark: "{colors.brand.800}" } },
+          subtle: { value: { base: "{colors.brand.50}", _dark: "{colors.brand.900}" } },
+          emphasized: { value: { base: "{colors.brand.300}", _dark: "{colors.brand.400}" } },
+          focusRing: { value: { base: "{colors.brand.500}", _dark: "{colors.brand.500}" } },
         },
       },
     },

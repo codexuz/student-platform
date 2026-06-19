@@ -33,7 +33,6 @@ import {
 import { useRouter, useParams } from "next/navigation";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
-import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { ieltsVocabularyAPI, ieltsVocabularyDecksAPI } from "@/lib/teacher-api";
 import { toaster } from "@/components/ui/toaster";
@@ -194,7 +193,6 @@ function VocabularyDetailContent() {
             </Heading>
           </HStack>
           <HStack gap={{ base: 2, md: 4 }}>
-            <NotificationsDrawer />
           </HStack>
         </Flex>
 

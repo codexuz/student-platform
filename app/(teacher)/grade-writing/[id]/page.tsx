@@ -20,7 +20,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
-import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { ieltsAnswersAPI } from "@/lib/ielts-api";
 
@@ -259,7 +258,6 @@ export default function GradeWritingDetailPage() {
           >
             <Heading size={{ base: "sm", md: "md" }}>Grade Writing</Heading>
             <HStack gap={{ base: 2, md: 4 }}>
-              <NotificationsDrawer />
             </HStack>
           </Flex>
 

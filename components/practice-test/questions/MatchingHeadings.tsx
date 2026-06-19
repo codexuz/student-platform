@@ -7,6 +7,7 @@ import {
   VStack,
   HStack,
   NativeSelect,
+  Circle,
 } from "@chakra-ui/react";
 import type { QuestionComponentProps } from "../types";
 import { getQuestionRange } from "../types";
@@ -81,19 +82,21 @@ export default function MatchingHeadings({
           const isWrong = showResults && selected && !isCorrect;
 
           return (
-            <HStack key={qNum} align="center" gap={3}>
-              <Text
+            <HStack key={qNum} align="start" gap={3}>
+              <Circle
+                size="28px"
+                bg="var(--test-hover-bg)"
+                color="red.600"
                 fontWeight="bold"
-                color="blue.600"
-                _dark={{ color: "blue.400" }}
                 flexShrink={0}
+                mt="2px"
               >
-                {qNum}.
-              </Text>
-              <Text flex={1}>
+                {qNum}
+              </Circle>
+              <Text flex={1} mt="3px">
                 {sub.questionText}
               </Text>
-              <NativeSelect.Root size="sm" width="100px" flexShrink={0}>
+              <NativeSelect.Root size="sm" width="100px" flexShrink={0} mt="1px">
                 <NativeSelect.Field
                   value={selected}
                   onChange={(e) => onAnswer(qNum, e.target.value)}

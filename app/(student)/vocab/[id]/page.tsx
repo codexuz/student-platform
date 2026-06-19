@@ -21,7 +21,6 @@ import { useRouter, useParams } from "next/navigation";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import { ieltsVocabStudentAPI } from "@/lib/api";
 import type {
   IeltsVocabulary,
@@ -98,7 +97,6 @@ export default function StudentVocabularyDetailPage() {
               </Heading>
             </HStack>
             <HStack gap={{ base: 2, md: 4 }}>
-              <NotificationsDrawer />
             </HStack>
           </Flex>
 

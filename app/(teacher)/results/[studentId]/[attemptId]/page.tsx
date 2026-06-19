@@ -29,7 +29,6 @@ import {
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
-import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import { ieltsAnswersAPI, ieltsWritingTasksAPI } from "@/lib/ielts-api";
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -586,7 +585,6 @@ function Shell({ children }: { children: React.ReactNode }) {
         >
           <Heading size={{ base: "sm", md: "md" }}>Attempt Result</Heading>
           <HStack gap={{ base: 2, md: 4 }}>
-            <NotificationsDrawer />
           </HStack>
         </Flex>
 

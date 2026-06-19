@@ -34,7 +34,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
-import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import { ieltsAPI } from "@/lib/api";
 
 const PAGE_SIZE = 12;
@@ -117,15 +116,69 @@ function PracticeContent() {
   const [activeCategory, setActiveCategory] = useState<string>(initialTab);
   const [items, setItems] = useState<PracticeItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
   const [totalCount, setTotalCount] = useState(0);
-  const [readingPart, setReadingPart] = useState<string>("");
-  const [listeningPart, setListeningPart] = useState<string>("");
-  const [writingTask, setWritingTask] = useState<string>("");
-  const [testCategory, setTestCategory] = useState<string>("");
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [debouncedSearch, setDebouncedSearch] = useState<string>("");
+  const [readingPart, setReadingPart] = useState<string>(searchParams.get("part") || "");
+  const [listeningPart, setListeningPart] = useState<string>(searchParams.get("part") || "");
+  const [writingTask, setWritingTask] = useState<string>(searchParams.get("task") || "");
+  const [testCategory, setTestCategory] = useState<string>(searchParams.get("category") || "");
+  const [testFilter, setTestFilter] = useState<string>(searchParams.get("test") || "");
+  const [searchQuery, setSearchQuery] = useState<string>(searchParams.get("search") || "");
+  const [debouncedSearch, setDebouncedSearch] = useState<string>(searchParams.get("search") || "");
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Parent tests for dropdown
+  const [parentTests, setParentTests] = useState<{ id: string; title: string }[]>([]);
+
+  // Sync state to URL on any filter change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (activeCategory !== "full-tests") params.set("tab", activeCategory);
+    if (page > 1) params.set("page", page.toString());
+    if (activeCategory === "reading" && readingPart) params.set("part", readingPart);
+    if (activeCategory === "listening" && listeningPart) params.set("part", listeningPart);
+    if (activeCategory === "writing" && writingTask) params.set("task", writingTask);
+    if (activeCategory === "full-tests" && testCategory) params.set("category", testCategory);
+    if (testFilter && activeCategory !== "full-tests") params.set("test", testFilter);
+    if (debouncedSearch) params.set("search", debouncedSearch);
+
+    const newSearch = params.toString();
+    if (newSearch !== searchParams.toString()) {
+      router.replace(`?${newSearch}`, { scroll: false });
+    }
+  }, [activeCategory, page, readingPart, listeningPart, writingTask, testCategory, testFilter, debouncedSearch, router, searchParams]);
+
+  // Fetch parent tests when tab changes
+  useEffect(() => {
+    const fetchParentTests = async () => {
+      try {
+        let res;
+        if (activeCategory === "reading") {
+          res = await ieltsAPI.getReadingTests({ limit: 100, mode: "practice" });
+        } else if (activeCategory === "listening") {
+          res = await ieltsAPI.getListeningTests({ limit: 100, mode: "practice" });
+        } else if (activeCategory === "writing") {
+          res = await ieltsAPI.getWritingTests({ limit: 100, mode: "practice" });
+        }
+        
+        if (res) {
+          const list = res.data || res.results || res || [];
+          setParentTests(list.map((t: any) => ({ id: String(t.id || t._id), title: t.title })));
+        } else {
+          setParentTests([]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch parent tests for dropdown", error);
+        setParentTests([]);
+      }
+    };
+
+    if (activeCategory !== "full-tests") {
+      fetchParentTests();
+    } else {
+      setParentTests([]);
+    }
+  }, [activeCategory]);
 
   /* debounce search input */
   useEffect(() => {
@@ -160,6 +213,7 @@ function PracticeContent() {
             limit: PAGE_SIZE,
             mode: "practice",
             ...(listeningPart && { part: listeningPart }),
+            ...(testFilter && { testId: testFilter }),
             ...(debouncedSearch && { search: debouncedSearch }),
           });
           break;
@@ -169,6 +223,7 @@ function PracticeContent() {
             limit: PAGE_SIZE,
             mode: "practice",
             ...(readingPart && { part: readingPart }),
+            ...(testFilter && { testId: testFilter }),
             ...(debouncedSearch && { search: debouncedSearch }),
           });
           break;
@@ -178,6 +233,7 @@ function PracticeContent() {
             limit: PAGE_SIZE,
             mode: "practice",
             ...(writingTask && { task: writingTask }),
+            ...(testFilter && { testId: testFilter }),
             ...(debouncedSearch && { search: debouncedSearch }),
           });
           break;
@@ -203,6 +259,7 @@ function PracticeContent() {
     listeningPart,
     writingTask,
     testCategory,
+    testFilter,
     debouncedSearch,
   ]);
 
@@ -219,12 +276,9 @@ function PracticeContent() {
     if (category !== "full-tests") {
       setTestCategory("");
     }
+    setTestFilter("");
     setSearchQuery("");
     setDebouncedSearch("");
-    // Update URL query param so back-navigation restores the active tab
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("tab", category);
-    router.replace(`/practice?${params.toString()}`, { scroll: false });
   };
 
   const handleTestCategoryChange = (
@@ -267,7 +321,6 @@ function PracticeContent() {
         >
           <Heading size={{ base: "sm", md: "md" }}>Practice</Heading>
           <HStack gap={{ base: 2, md: 4 }}>
-            <NotificationsDrawer />
           </HStack>
         </Flex>
 
@@ -401,6 +454,24 @@ function PracticeContent() {
 
               <NativeSelect.Root size="sm" width={{ base: "100%", md: "200px" }}>
                 <NativeSelect.Field
+                  value={testFilter}
+                  onChange={(e) => {
+                    setTestFilter(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="">All Tests</option>
+                  {parentTests.map((pt) => (
+                    <option key={pt.id} value={pt.id}>
+                      {pt.title}
+                    </option>
+                  ))}
+                </NativeSelect.Field>
+                <NativeSelect.Indicator />
+              </NativeSelect.Root>
+
+              <NativeSelect.Root size="sm" width={{ base: "100%", md: "200px" }}>
+                <NativeSelect.Field
                   value={listeningPart}
                   onChange={handleListeningPartChange}
                 >
@@ -449,6 +520,24 @@ function PracticeContent() {
 
               <NativeSelect.Root size="sm" width={{ base: "100%", md: "200px" }}>
                 <NativeSelect.Field
+                  value={testFilter}
+                  onChange={(e) => {
+                    setTestFilter(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="">All Tests</option>
+                  {parentTests.map((pt) => (
+                    <option key={pt.id} value={pt.id}>
+                      {pt.title}
+                    </option>
+                  ))}
+                </NativeSelect.Field>
+                <NativeSelect.Indicator />
+              </NativeSelect.Root>
+
+              <NativeSelect.Root size="sm" width={{ base: "100%", md: "200px" }}>
+                <NativeSelect.Field
                   value={readingPart}
                   onChange={handleReadingPartChange}
                 >
@@ -493,6 +582,24 @@ function PracticeContent() {
                   borderRadius="md"
                 />
               </Box>
+
+              <NativeSelect.Root size="sm" width={{ base: "100%", md: "200px" }}>
+                <NativeSelect.Field
+                  value={testFilter}
+                  onChange={(e) => {
+                    setTestFilter(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="">All Tests</option>
+                  {parentTests.map((pt) => (
+                    <option key={pt.id} value={pt.id}>
+                      {pt.title}
+                    </option>
+                  ))}
+                </NativeSelect.Field>
+                <NativeSelect.Indicator />
+              </NativeSelect.Root>
 
               <NativeSelect.Root size="sm" width={{ base: "100%", md: "200px" }}>
                 <NativeSelect.Field
@@ -573,39 +680,66 @@ function PracticeContent() {
                     <Card.Root
                       key={itemId}
                       cursor="pointer"
-                      transition="all 0.2s"
+                      transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
                       borderRadius="2xl"
                       overflow="hidden"
                       onClick={handleClick}
                       position="relative"
+                      bg="rgba(255, 255, 255, 0.7)"
+                      backdropFilter="blur(16px)"
+                      border="1px solid"
+                      borderColor="rgba(255, 255, 255, 0.4)"
+                      shadow="sm"
+                      _dark={{
+                        bg: "rgba(30, 30, 35, 0.5)",
+                        borderColor: "rgba(255, 255, 255, 0.08)",
+                        color: "white"
+                      }}
                       _hover={{
-                        transform: "translateY(-4px)",
-                        shadow: "lg",
+                        transform: "translateY(-4px) scale(1.02)",
+                        shadow: "xl",
+                        borderColor: "rgba(255, 255, 255, 0.8)",
+                        _dark: {
+                          borderColor: "rgba(255, 255, 255, 0.2)",
+                          bg: "rgba(40, 40, 45, 0.6)",
+                        }
                       }}
                     >
                       {/* Icon banner */}
-                      <Flex align="center" justify="center" bg={meta.bg} py={6}>
+                      <Flex 
+                        align="center" 
+                        justify="center" 
+                        py={6}
+                        position="relative"
+                        background={`linear-gradient(135deg, ${meta.color}15 0%, transparent 100%)`}
+                        _dark={{
+                          background: `linear-gradient(135deg, ${meta.color}25 0%, transparent 100%)`
+                        }}
+                      >
                         <Flex
                           align="center"
                           justify="center"
                           w="56px"
                           h="56px"
                           borderRadius="xl"
-                          bg="white"
+                          bg="rgba(255, 255, 255, 0.9)"
+                          _dark={{ bg: "rgba(20, 20, 25, 0.8)" }}
                           shadow="sm"
+                          border="1px solid"
+                          borderColor="rgba(255, 255, 255, 0.5)"
                         >
                           <SkillIcon size={28} color={meta.color} />
                         </Flex>
                       </Flex>
 
-                      <Card.Body pt={3}>
+                      <Card.Body pt={4}>
                         <VStack align="stretch" gap={3}>
-                          <Heading size="sm" lineClamp={2}>
+                          <Heading size="sm" lineClamp={2} _dark={{ color: "white" }}>
                             {item.title || item.name}
                           </Heading>
 
                           {item.prompt && (
-                            <Text fontSize="xs" color="gray.500" lineClamp={2}>
+                            <Text fontSize="xs" color="gray.500" _dark={{ color: "gray.400" }} lineClamp={2}>
                               {item.prompt.replace(/<[^>]*>/g, "")}
                             </Text>
                           )}

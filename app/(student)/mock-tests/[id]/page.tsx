@@ -28,7 +28,6 @@ import {
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
-import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import { ieltsMockTestsAPI, ieltsTestsAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
 
@@ -225,7 +224,6 @@ function MockTestDashboard() {
             </IconButton>
             <Heading size={{ base: "sm", md: "md" }}>Mock Test</Heading>
           </HStack>
-          <NotificationsDrawer />
         </Flex>
 
         {/* Content */}

@@ -30,7 +30,6 @@ import {
 } from "react-icons/lu";
 import { useState, useEffect, useMemo } from "react";
 import Sidebar from "@/components/dashboard/Sidebar";
-import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
@@ -176,7 +175,6 @@ export default function LeaderboardPage() {
                     >
                         <Heading size={{ base: "sm", md: "md" }}>Leaderboard</Heading>
                         <HStack gap={{ base: 2, md: 4 }}>
-                            <NotificationsDrawer />
                         </HStack>
                     </Flex>
 

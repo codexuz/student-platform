@@ -45,20 +45,12 @@ const studentMenuItems = [
   //   href: "/mock-tests",
   //   section: "MAIN",
   // },
-  { icon: BookOpen, label: "Courses", href: "/courses", section: "MAIN" },
-  { icon: BookA, label: "Vocabulary", href: "/vocab", section: "MAIN" },
   { icon: Bookmark, label: "Resources", href: "/resources", section: "MAIN" },
   { icon: Trophy, label: "Leaderboard", href: "/leaderboard", section: "MAIN" },
 ];
 
 const teacherMenuItems = [
   { icon: Home, label: "Dashboard", href: "/dashboard", section: "MAIN" },
-  {
-    icon: BookOpen,
-    label: "Courses",
-    href: "/course-builder",
-    section: "MAIN",
-  },
   { icon: Users, label: "Groups", href: "/groups", section: "MAIN" },
   {
     icon: ClipboardList,
@@ -76,12 +68,6 @@ const teacherMenuItems = [
     icon: UserPlus,
     label: "Mock Assign",
     href: "/mock-assign",
-    section: "MAIN",
-  },
-  {
-    icon: BookA,
-    label: "Vocabulary",
-    href: "/vocabulary",
     section: "MAIN",
   },
 ];

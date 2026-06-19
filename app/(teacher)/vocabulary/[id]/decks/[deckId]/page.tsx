@@ -39,7 +39,6 @@ import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import { useRouter, useParams } from "next/navigation";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
-import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import {
   ieltsVocabularyDecksAPI,
@@ -334,7 +333,6 @@ function DeckDetailContent() {
             </Heading>
           </HStack>
           <HStack gap={{ base: 2, md: 4 }}>
-            <NotificationsDrawer />
           </HStack>
         </Flex>
 

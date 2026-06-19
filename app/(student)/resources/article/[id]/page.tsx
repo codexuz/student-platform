@@ -21,7 +21,6 @@ import { useParams, useRouter } from "next/navigation";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import { useAuth } from "@/contexts/AuthContext";
 import { articlesAPI } from "@/lib/api";
 
@@ -184,7 +183,6 @@ export default function ArticleDetailPage() {
           >
             <Heading size={{ base: "sm", md: "md" }}>Article</Heading>
             <HStack gap={{ base: 2, md: 4 }}>
-              <NotificationsDrawer />
               <HStack gap={2} display={{ base: "none", sm: "flex" }}>
                 <Box
                   w={{ base: 8, md: 10 }}

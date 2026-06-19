@@ -29,7 +29,6 @@ import { useRouter, useParams } from "next/navigation";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
 import { ieltsVocabStudentAPI } from "@/lib/api";
 import { toaster } from "@/components/ui/toaster";
 import type {
@@ -168,7 +167,6 @@ export default function StudentDeckPlayPage() {
                   </Text>
                 </Button>
               )}
-              <NotificationsDrawer />
             </HStack>
           </Flex>
 
