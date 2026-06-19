@@ -14,7 +14,7 @@ const ReadingPassage = memo(function ReadingPassage({
   content,
   title,
 }: ReadingPassageProps) {
-  const { colors } = useTestTheme();
+  const { colors, fontScale } = useTestTheme();
 
   return (
     <Box h="100%" display="flex" flexDirection="column">
@@ -25,6 +25,7 @@ const ReadingPassage = memo(function ReadingPassage({
         px={{ base: 4, md: 6 }}
         py={4}
         bg={colors.panelBg}
+        fontSize={`calc(1rem * ${fontScale})`}
         css={{
           "&::-webkit-scrollbar": { width: "6px" },
           "&::-webkit-scrollbar-track": { background: "transparent" },
@@ -61,6 +62,14 @@ const ReadingPassage = memo(function ReadingPassage({
               "& h3": { fontSize: "1em" },
               "& strong, & b": { fontWeight: "bold" },
               "& em, & i": { fontStyle: "italic" },
+              "& select": {
+                backgroundColor: colors.inputBg,
+                color: colors.inputText,
+              },
+              "& option": {
+                backgroundColor: colors.inputBg,
+                color: colors.inputText,
+              },
               "& ul, & ol": {
                 paddingLeft: "1.5rem",
                 marginBottom: "1rem",

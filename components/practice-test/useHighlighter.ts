@@ -12,6 +12,8 @@ export interface HighlightEntry {
   endContainerPath: number[];
   endOffset: number;
   text: string;
+  color: string;
+  comment?: string;
 }
 
 export interface PopupState {
@@ -129,7 +131,7 @@ export function useHighlighter() {
       // Mark was removed by a React re-render — restore it
       const range = findTextRange(root, entry.text);
       if (range) {
-        wrapRange(range, entry.id);
+        wrapRange(range, entry.id, entry.color, !!entry.comment);
       }
     }
   }); // intentionally no deps — runs after every render
@@ -143,7 +145,7 @@ export function useHighlighter() {
 
   // ── Wrap a Range in <mark> elements ────────────────────────────────────
 
-  const wrapRange = useCallback((range: Range, id: string) => {
+  const wrapRange = useCallback((range: Range, id: string, color: string, hasComment: boolean) => {
     // Collect text nodes within the range
     const textNodes: Text[] = [];
     const walker = document.createTreeWalker(
@@ -174,9 +176,15 @@ export function useHighlighter() {
       const mark = document.createElement("mark");
       mark.setAttribute(HIGHLIGHT_ATTR, id);
       mark.className = HIGHLIGHT_CLASS;
-      mark.style.backgroundColor = "#fef08a"; // yellow-200
+      mark.style.backgroundColor = color;
+      mark.style.color = "#000000"; // Force black text for contrast against highlighter colors
       mark.style.borderRadius = "2px";
       mark.style.cursor = "pointer";
+      
+      if (hasComment) {
+        mark.style.borderBottom = "2px solid #000";
+        mark.style.paddingBottom = "1px";
+      }
 
       const highlightedText = textNode.splitText(start);
       highlightedText.splitText(end - start);
@@ -189,7 +197,7 @@ export function useHighlighter() {
 
   // ── Add highlight ──────────────────────────────────────────────────────
 
-  const addHighlight = useCallback(() => {
+  const addHighlight = useCallback((color: string) => {
     // Use the saved range from when the popup was shown
     const range = savedRangeRef.current;
     if (!range || range.collapsed) {
@@ -212,9 +220,11 @@ export function useHighlighter() {
       endContainerPath: nodeToPath(range.endContainer, root),
       endOffset: range.endOffset,
       text: range.toString(),
+      color,
+      comment: "", // Initialize with empty comment
     };
 
-    wrapRange(range, id);
+    wrapRange(range, id, color, false);
 
     // Clear browser selection
     const sel = window.getSelection();
@@ -222,7 +232,31 @@ export function useHighlighter() {
 
     setHighlights((prev) => [...prev, entry]);
     closePopup();
+    return id;
   }, [closePopup, wrapRange]);
+
+  // ── Update comment ──────────────────────────────────────────────────────
+
+  const updateComment = useCallback((id: string, comment: string) => {
+    setHighlights((prev) =>
+      prev.map((h) => (h.id === id ? { ...h, comment } : h)),
+    );
+    
+    // Update existing DOM marks
+    const root = containerRef.current;
+    if (root) {
+      const marks = root.querySelectorAll(`mark[${HIGHLIGHT_ATTR}="${id}"]`);
+      marks.forEach((mark) => {
+        if (comment) {
+          (mark as HTMLElement).style.borderBottom = "2px solid #000";
+          (mark as HTMLElement).style.paddingBottom = "1px";
+        } else {
+          (mark as HTMLElement).style.borderBottom = "";
+          (mark as HTMLElement).style.paddingBottom = "";
+        }
+      });
+    }
+  }, []);
 
   // ── Remove highlight ──────────────────────────────────────────────────
 
@@ -302,6 +336,7 @@ export function useHighlighter() {
     highlights,
     popup,
     addHighlight,
+    updateComment,
     removeHighlight,
     closePopup,
     handleMouseUp,

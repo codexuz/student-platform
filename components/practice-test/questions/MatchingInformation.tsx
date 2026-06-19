@@ -30,10 +30,7 @@ export default function MatchingInformation({
 
       {question.instruction && (
         <Box
-          fontSize="sm"
           mb={4}
-          color="gray.700"
-          _dark={{ color: "gray.300" }}
           dangerouslySetInnerHTML={{ __html: question.instruction }}
           css={{
             "& p": { marginBottom: "0.25rem" },
@@ -48,16 +45,16 @@ export default function MatchingInformation({
             <Table.Row>
               <Table.ColumnHeader
                 width="50%"
-                bg="gray.50"
-                _dark={{ bg: "gray.700" }}
+                bg="var(--test-hover-bg)"
+                color="inherit"
               />
               {columnLabels.map((label) => (
                 <Table.ColumnHeader
                   key={label}
                   textAlign="center"
                   fontWeight="bold"
-                  bg="gray.50"
-                  _dark={{ bg: "gray.700" }}
+                  bg="var(--test-hover-bg)"
+                  color="inherit"
                   px={3}
                 >
                   {label}
@@ -84,7 +81,7 @@ export default function MatchingInformation({
                       >
                         {qNum}.
                       </Text>
-                      <Text fontSize="sm">{sub.questionText}</Text>
+                      <Text>{sub.questionText}</Text>
                     </Box>
                   </Table.Cell>
 
@@ -127,7 +124,7 @@ export default function MatchingInformation({
                           _hover={disabled ? {} : { borderColor: "blue.400" }}
                           transition="all 0.15s"
                         >
-                          {isSelected && <Circle size="8px" bg="white" />}
+                          {isSelected && <Circle size="8px" bg="var(--test-panel-bg, white)" />}
                         </Circle>
                       </Table.Cell>
                     );

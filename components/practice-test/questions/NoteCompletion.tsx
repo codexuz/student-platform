@@ -107,10 +107,7 @@ export default function NoteCompletion({
       {/* Instruction (rendered as HTML) */}
       {question.instruction && (
         <Box
-          fontSize="sm"
           mb={4}
-          color="gray.700"
-          _dark={{ color: "gray.300" }}
           dangerouslySetInnerHTML={{ __html: question.instruction }}
           css={{
             "& p": { marginBottom: "0.25rem" },
@@ -202,10 +199,7 @@ export default function NoteCompletion({
         {linesWithSegments.map(({ parts, qNums }, lineIdx) => (
           <Box
             key={lineIdx}
-            fontSize="sm"
             lineHeight="2.4"
-            color="gray.800"
-            _dark={{ color: "gray.200" }}
           >
             {parts.map((textPart, partIdx) => (
               <span key={partIdx}>
@@ -271,38 +265,13 @@ function BlankInput({
           : "gray.300"
       }
       borderRadius="md"
-      bg={
-        showResults
-          ? isCorrect
-            ? "green.50"
-            : isWrong
-              ? "red.50"
-              : "white"
-          : "white"
-      }
-      _dark={{
-        bg: showResults
-          ? isCorrect
-            ? "green.900"
-            : isWrong
-              ? "red.900"
-              : "gray.700"
-          : "gray.700",
-        borderColor: showResults
-          ? isCorrect
-            ? "green.400"
-            : isWrong
-              ? "red.400"
-              : "gray.600"
-          : "gray.600",
-      }}
+      bg={showResults ? isCorrect ? "var(--test-correct-bg)" : isWrong ? "var(--test-wrong-bg)" : "var(--test-input-bg)" : "var(--test-input-bg)"}
       placeholder={String(questionNumber)}
       value={answer}
       onChange={(e) => onAnswer(questionNumber, e.target.value)}
       disabled={disabled}
       fontWeight="medium"
       verticalAlign="middle"
-      fontSize="sm"
     />
   );
 }

@@ -95,10 +95,7 @@ export default function DiagramLabelling({
       {/* Instruction */}
       {question.instruction && (
         <Box
-          fontSize="sm"
           mb={4}
-          color="gray.700"
-          _dark={{ color: "gray.300" }}
           dangerouslySetInnerHTML={{ __html: question.instruction }}
           css={{
             "& p": { marginBottom: "0.25rem" },
@@ -132,7 +129,7 @@ export default function DiagramLabelling({
               borderWidth="1px"
               borderColor="gray.200"
               _dark={{ borderColor: "gray.600" }}
-              bg="white"
+              bg="var(--test-input-bg)"
             >
               <Image
                 src={imageSrc}
@@ -169,7 +166,6 @@ export default function DiagramLabelling({
                 height="40px"
                 borderRadius="full"
                 bg="gray.300"
-                _dark={{ bg: "gray.500" }}
                 _hover={{ bg: "blue.400", _dark: { bg: "blue.400" } }}
                 transition="background 0.15s"
               />
@@ -201,10 +197,8 @@ export default function DiagramLabelling({
                 <HStack key={qNum} align="start" gap={3}>
                   <Circle
                     size="28px"
-                    bg="blue.50"
+                    bg="var(--test-hover-bg)"
                     color="blue.700"
-                    _dark={{ bg: "blue.900", color: "blue.300" }}
-                    fontSize="sm"
                     fontWeight="bold"
                     flexShrink={0}
                     mt="2px"
@@ -214,7 +208,7 @@ export default function DiagramLabelling({
                   <Box flex={1}>
                     {hasBlank ? (
                       /* Inline input replacing the blank */
-                      <Text fontSize="sm" lineHeight="tall">
+                      <Text lineHeight="tall">
                         {parts.map((part, i) => (
                           <span key={i}>
                             {part}
@@ -240,18 +234,6 @@ export default function DiagramLabelling({
                                       ? "red.50"
                                       : "white"
                                 }
-                                _dark={{
-                                  bg: isCorrect
-                                    ? "green.900"
-                                    : isWrong
-                                      ? "red.900"
-                                      : "gray.700",
-                                  borderColor: isCorrect
-                                    ? "green.400"
-                                    : isWrong
-                                      ? "red.400"
-                                      : "gray.600",
-                                }}
                                 value={answer}
                                 onChange={(e) => onAnswer(qNum, e.target.value)}
                                 disabled={disabled}
@@ -266,7 +248,6 @@ export default function DiagramLabelling({
                       <>
                         {gapText && (
                           <Box
-                            fontSize="sm"
                             mb={2}
                             dangerouslySetInnerHTML={{ __html: gapText }}
                             css={{
@@ -292,18 +273,6 @@ export default function DiagramLabelling({
                                 ? "red.50"
                                 : "white"
                           }
-                          _dark={{
-                            bg: isCorrect
-                              ? "green.900"
-                              : isWrong
-                                ? "red.900"
-                                : "gray.700",
-                            borderColor: isCorrect
-                              ? "green.400"
-                              : isWrong
-                                ? "red.400"
-                                : "gray.600",
-                          }}
                           value={answer}
                           onChange={(e) => onAnswer(qNum, e.target.value)}
                           disabled={disabled}
@@ -314,7 +283,7 @@ export default function DiagramLabelling({
 
                     {/* Show correct answer when results visible */}
                     {showResults && isWrong && (
-                      <Text fontSize="xs" color="green.600" mt={1}>
+                      <Text fontSize="0.75em" color="green.600" mt={1}>
                         Correct: {sub.correctAnswer}
                       </Text>
                     )}

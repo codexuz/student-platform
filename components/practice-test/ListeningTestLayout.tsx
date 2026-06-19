@@ -7,6 +7,7 @@ import PartNavigation from "./PartNavigation";
 import QuestionPanel from "./QuestionPanel";
 import HighlightablePanel from "./HighlightablePanel";
 import AudioPlayOverlay from "./AudioPlayOverlay";
+import CommentsDrawer from "./CommentsDrawer";
 import { TestThemeProvider, useTestTheme } from "./TestThemeContext";
 import type { PartData, AnswerMap, TestSessionState } from "./types";
 import { getAllQuestionNumbers } from "./types";
@@ -70,6 +71,15 @@ function ListeningTestLayoutInner({
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [showOverlay, setShowOverlay] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const [globalNotesOpen, setGlobalNotesOpen] = useState(false);
+  const [globalNotes, setGlobalNotes] = useState("");
+
+  useEffect(() => {
+    const handleOpenNotes = () => setGlobalNotesOpen(true);
+    window.addEventListener("open-global-notes", handleOpenNotes);
+    return () => window.removeEventListener("open-global-notes", handleOpenNotes);
+  }, []);
 
   // Clean up audio on unmount
   useEffect(() => {
@@ -356,18 +366,20 @@ function ListeningTestLayoutInner({
         )}
       </Box>
 
-      {/* Full-width question panel (no split view for listening) */}
-      <Box flex={1} overflow="hidden">
-        <HighlightablePanel>
-          <QuestionPanel
-            questions={currentPart.questions}
-            answers={state.answers}
-            onAnswer={handleAnswer}
-            disabled={!state.isStarted || state.isSubmitted}
-            showResults={state.isSubmitted}
-            highlightedQuestion={state.currentQuestionNumber}
-          />
-        </HighlightablePanel>
+      {/* Centered question panel (no split view for listening) */}
+      <Box flex={1} overflow="hidden" bg={colors.bg} display="flex" justifyContent="center" py={{ base: 4, md: 8 }}>
+        <Box w="100%" maxW="80%" h="100%">
+          <HighlightablePanel>
+            <QuestionPanel
+              questions={currentPart.questions}
+              answers={state.answers}
+              onAnswer={handleAnswer}
+              disabled={!state.isStarted || state.isSubmitted}
+              showResults={state.isSubmitted}
+              highlightedQuestion={state.currentQuestionNumber}
+            />
+          </HighlightablePanel>
+        </Box>
       </Box>
 
       {/* Bottom navigation */}
@@ -382,6 +394,13 @@ function ListeningTestLayoutInner({
         onNext={handleNext}
         onSubmit={handleSubmit}
         isStarted={state.isStarted}
+      />
+
+      <CommentsDrawer
+        isOpen={globalNotesOpen}
+        onClose={() => setGlobalNotesOpen(false)}
+        comment={globalNotes}
+        onSave={setGlobalNotes}
       />
     </Flex>
   );

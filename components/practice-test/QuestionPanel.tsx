@@ -17,7 +17,7 @@ export default function QuestionPanel({
   showResults = false,
   // highlightedQuestion reserved for future scroll-to highlighting
 }: QuestionPanelProps) {
-  const { colors } = useTestTheme();
+  const { colors, fontScale } = useTestTheme();
 
   return (
     <Box
@@ -27,7 +27,23 @@ export default function QuestionPanel({
       py={4}
       bg={colors.panelBg}
       color={colors.text}
+      fontSize={`calc(1rem * ${fontScale})`}
+      style={{
+        "--test-input-bg": colors.inputBg,
+        "--test-hover-bg": colors.hoverBg,
+        "--test-border": colors.border,
+        "--test-accent": colors.accentColor,
+        "--test-correct-bg": colors.bg === "#111111" ? "var(--chakra-colors-green-900)" : "var(--chakra-colors-green-50)",
+        "--test-wrong-bg": colors.bg === "#111111" ? "var(--chakra-colors-red-900)" : "var(--chakra-colors-red-50)",
+        "--test-correct-border": colors.bg === "#111111" ? "var(--chakra-colors-green-400)" : "var(--chakra-colors-green-500)",
+        "--test-wrong-border": colors.bg === "#111111" ? "var(--chakra-colors-red-400)" : "var(--chakra-colors-red-500)",
+        "--test-panel-bg": colors.panelBg,
+      } as React.CSSProperties}
       css={{
+        "& select, & option": {
+          backgroundColor: colors.inputBg,
+          color: colors.inputText,
+        },
         "&::-webkit-scrollbar": { width: "6px" },
         "&::-webkit-scrollbar-track": { background: "transparent" },
         "&::-webkit-scrollbar-thumb": {

@@ -37,10 +37,7 @@ export default function MatchingHeadings({
 
       {question.instruction && (
         <Box
-          fontSize="sm"
           mb={4}
-          color="gray.700"
-          _dark={{ color: "gray.300" }}
           dangerouslySetInnerHTML={{ __html: question.instruction }}
           css={{
             "& p": { marginBottom: "0.25rem" },
@@ -54,12 +51,11 @@ export default function MatchingHeadings({
         <Box
           mb={4}
           p={3}
-          bg="gray.50"
-          _dark={{ bg: "gray.700" }}
+          bg="var(--test-hover-bg)"
           borderRadius="md"
         >
           <Text
-            fontSize="xs"
+            fontSize="0.75em"
             fontWeight="bold"
             mb={2}
             textTransform="uppercase"
@@ -69,7 +65,7 @@ export default function MatchingHeadings({
           </Text>
           <VStack align="stretch" gap={1}>
             {headings.map(([key, text]) => (
-              <Text key={key} fontSize="sm">
+              <Text key={key}>
                 <strong>{key}</strong> &nbsp; {text}
               </Text>
             ))}
@@ -94,7 +90,7 @@ export default function MatchingHeadings({
               >
                 {qNum}.
               </Text>
-              <Text fontSize="sm" flex={1}>
+              <Text flex={1}>
                 {sub.questionText}
               </Text>
               <NativeSelect.Root size="sm" width="100px" flexShrink={0}>

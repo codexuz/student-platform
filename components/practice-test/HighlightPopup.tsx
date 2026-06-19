@@ -1,15 +1,23 @@
 "use client";
 
 import { Box, HStack, Text, IconButton } from "@chakra-ui/react";
-import { Highlighter, Trash2 } from "lucide-react";
+import { Trash2, MessageSquarePlus } from "lucide-react";
 import type { PopupState } from "./useHighlighter";
 
 interface HighlightPopupProps {
   popup: PopupState;
-  onHighlight: () => void;
+  onHighlight: (color: string) => void;
   onDelete: (id: string) => void;
+  onAddComment: (id: string) => void;
   onClose: () => void;
 }
+
+const HIGHLIGHT_COLORS = [
+  { value: "#fef08a", label: "Yellow" },
+  { value: "#bbf7d0", label: "Green" },
+  { value: "#fbcfe8", label: "Pink" },
+  { value: "#bfdbfe", label: "Blue" },
+];
 
 /**
  * Floating popup that appears on text selection (Highlight action)
@@ -19,6 +27,7 @@ export default function HighlightPopup({
   popup,
   onHighlight,
   onDelete,
+  onAddComment,
   onClose,
 }: HighlightPopupProps) {
   if (!popup.visible) return null;
@@ -51,54 +60,78 @@ export default function HighlightPopup({
         onClick={(e) => e.stopPropagation()}
       >
         {popup.highlightId ? (
-          /* Delete existing highlight */
-          <HStack
-            gap={2}
-            px={2}
-            py={1.5}
-            cursor="pointer"
-            borderRadius="md"
-            _hover={{ bg: "gray.50", _dark: { bg: "gray.600" } }}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onDelete(popup.highlightId!);
-            }}
-          >
-            <Trash2 size={16} />
-            <Text fontSize="sm" fontWeight="medium" whiteSpace="nowrap">
-              Delete Highlight
-            </Text>
-          </HStack>
-        ) : (
-          /* New highlight action */
-          <HStack
-            gap={0}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onHighlight();
-            }}
-            cursor="pointer"
-          >
+          /* Existing highlight actions */
+          <HStack gap={1} px={1}>
             <IconButton
-              aria-label="Highlight"
+              aria-label="Add/Edit Comment"
               variant="ghost"
               size="sm"
               borderRadius="md"
+              title="Add/Edit Comment"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onAddComment(popup.highlightId!);
+              }}
             >
-              <Highlighter size={16} />
+              <MessageSquarePlus size={16} />
             </IconButton>
-            <Text
-              fontSize="sm"
-              fontWeight="medium"
-              px={2}
-              py={1}
+            <IconButton
+              aria-label="Delete Highlight"
+              variant="ghost"
+              size="sm"
               borderRadius="md"
-              _hover={{ bg: "gray.50", _dark: { bg: "gray.600" } }}
+              title="Delete Highlight"
+              color="red.500"
+              _hover={{ bg: "red.50", _dark: { bg: "red.900" } }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onDelete(popup.highlightId!);
+              }}
             >
-              Highlight
-            </Text>
+              <Trash2 size={16} />
+            </IconButton>
+          </HStack>
+        ) : (
+          /* New highlight action (Color Picker) */
+          <HStack gap={2} px={2} py={1}>
+            {HIGHLIGHT_COLORS.map((c) => (
+              <Box
+                key={c.value}
+                w="24px"
+                h="24px"
+                borderRadius="full"
+                bg={c.value}
+                cursor="pointer"
+                borderWidth="1px"
+                borderColor="gray.300"
+                _hover={{ transform: "scale(1.1)" }}
+                transition="transform 0.1s"
+                title={c.label}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onHighlight(c.value);
+                }}
+              />
+            ))}
+            <Box w="1px" h="16px" bg="gray.300" />
+            <IconButton
+              aria-label="Add Comment"
+              variant="ghost"
+              size="sm"
+              borderRadius="md"
+              title="Add Comment"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // We default to yellow color and immediately trigger comment flow
+                onAddComment("new-highlight-comment");
+              }}
+            >
+              <MessageSquarePlus size={16} />
+            </IconButton>
           </HStack>
         )}
       </Box>

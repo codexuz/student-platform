@@ -90,10 +90,7 @@ export default function MultipleAnswer({
 
       {question.instruction && (
         <Box
-          fontSize="sm"
           mb={3}
-          color="gray.700"
-          _dark={{ color: "gray.300" }}
           dangerouslySetInnerHTML={{ __html: question.instruction }}
           css={{
             "& p": { marginBottom: "0.25rem" },
@@ -104,7 +101,6 @@ export default function MultipleAnswer({
 
       {questionText && (
         <Box
-          fontSize="sm"
           mb={3}
           lineHeight="tall"
           fontWeight="medium"
@@ -129,35 +125,29 @@ export default function MultipleAnswer({
             let checkBorder: string;
             let checkBg: string;
             let rowBg: string;
-            let rowBgDark: string;
 
             if (showResults) {
               if (optCorrect) {
-                checkBorder = "#16a34a";
-                checkBg = isSelected ? "#16a34a" : "transparent";
-                rowBg = "#dcfce7";
-                rowBgDark = "green.900";
+                checkBorder = "var(--test-correct-border)";
+                checkBg = isSelected ? "var(--test-correct-border)" : "transparent";
+                rowBg = "var(--test-correct-bg)";
               } else if (isSelected) {
-                checkBorder = "#b91c1c";
-                checkBg = "#b91c1c";
-                rowBg = "#fee2e2";
-                rowBgDark = "red.900";
+                checkBorder = "var(--test-wrong-border)";
+                checkBg = "var(--test-wrong-border)";
+                rowBg = "var(--test-wrong-bg)";
               } else {
-                checkBorder = "#9ca3af";
+                checkBorder = "var(--test-border)";
                 checkBg = "transparent";
                 rowBg = "transparent";
-                rowBgDark = "transparent";
               }
             } else if (isSelected) {
-              checkBorder = "#b91c1c";
-              checkBg = "#b91c1c";
-              rowBg = "#fee2e2";
-              rowBgDark = "red.900";
+              checkBorder = "var(--test-accent)";
+              checkBg = "var(--test-accent)";
+              rowBg = "var(--test-hover-bg)";
             } else {
-              checkBorder = "#9ca3af";
+              checkBorder = "var(--test-border)";
               checkBg = "transparent";
               rowBg = "transparent";
-              rowBgDark = "transparent";
             }
 
             return (
@@ -171,20 +161,14 @@ export default function MultipleAnswer({
                 borderRadius="md"
                 bg={rowBg}
                 opacity={isOptionDisabled && !showResults ? 0.5 : 1}
-                _dark={{ bg: rowBgDark, borderColor: "gray.700" }}
                 _hover={
                   isOptionDisabled
                     ? {}
-                    : {
-                        bg: isSelected ? rowBg : "#f3f4f6",
-                        _dark: {
-                          bg: isSelected ? rowBgDark : "gray.700",
-                        },
-                      }
+                    : { bg: isSelected ? rowBg : "var(--test-hover-bg)" }
                 }
                 transition="background 0.15s, opacity 0.15s"
                 borderBottomWidth="1px"
-                borderColor="gray.100"
+                borderColor="var(--test-border)"
               >
                 {/* checkbox */}
                 <Box
@@ -201,12 +185,12 @@ export default function MultipleAnswer({
                   flexShrink={0}
                 >
                   {isSelected && (
-                    <Check size={13} color="white" strokeWidth={3} />
+                    <Check size={13} color="var(--test-panel-bg, white)" strokeWidth={3} />
                   )}
                 </Box>
 
                 {/* label */}
-                <Text fontSize="sm" lineHeight="tall">
+                <Text lineHeight="tall">
                   {opt.optionKey} {opt.optionText}
                 </Text>
               </HStack>

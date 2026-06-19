@@ -28,10 +28,13 @@ import { Chart, useChart } from "@chakra-ui/charts";
 import {
   Area,
   AreaChart,
+  LineChart,
+  Line,
   CartesianGrid,
   Legend,
   Tooltip,
   XAxis,
+  YAxis,
 } from "recharts";
 import Sidebar from "@/components/dashboard/Sidebar";
 import NotificationsDrawer from "@/components/dashboard/NotificationsDrawer";
@@ -107,33 +110,12 @@ export default function DashboardPage() {
     fetchData();
   }, [user]);
 
-  const writingGraphScore = stats?.writing.averageScores?.overall
-    ? Math.round(stats.writing.averageScores.overall * 10)
-    : 0;
-
-  const sectionData = stats
-    ? [
-        {
-          section: "Listening",
-          reading: Math.round(stats.reading.accuracy),
-          listening: Math.round(stats.listening.accuracy),
-          writing: writingGraphScore,
-        },
-        {
-          section: "Reading",
-          reading: Math.round(stats.reading.accuracy),
-          listening: Math.round(stats.listening.accuracy),
-          writing: writingGraphScore,
-        },
-        {
-          section: "Writing",
-          reading: Math.round(stats.reading.accuracy),
-          listening: Math.round(stats.listening.accuracy),
-          writing: writingGraphScore,
-        },
-      ]
+  const chartData = stats?.recentScores
+    ? stats.recentScores.map((score, index) => ({
+        test: `Test ${index + 1}`,
+        score: score,
+      }))
     : [];
-
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Good Morning";
@@ -477,7 +459,7 @@ export default function DashboardPage() {
                   </Card.Body>
                 </Card.Root>
               ) : (
-                <SectionAreaChart data={sectionData} />
+                <RecentScoresChart data={chartData} />
               )}
             </VStack>
           </Container>
@@ -490,20 +472,16 @@ export default function DashboardPage() {
   );
 }
 
-interface SectionChartData {
-  section: string;
-  reading: number;
-  listening: number;
-  writing: number;
+interface RecentScoreData {
+  test: string;
+  score: number;
 }
 
-function SectionAreaChart({ data }: { data: SectionChartData[] }) {
+function RecentScoresChart({ data }: { data: RecentScoreData[] }) {
   const chart = useChart({
     data,
     series: [
-      { name: "reading", color: "green.solid" },
-      { name: "listening", color: "purple.solid" },
-      { name: "writing", color: "teal.solid" },
+      { name: "score", color: "blue.solid" },
     ],
   });
 
@@ -511,7 +489,7 @@ function SectionAreaChart({ data }: { data: SectionChartData[] }) {
     <Card.Root borderRadius="2xl" overflow="hidden">
       <Card.Body p={{ base: 4, md: 6 }}>
         <Heading size={{ base: "md", md: "lg" }} mb={1}>
-          Section Accuracy
+          Recent Performance
         </Heading>
         <Text
           fontSize={{ base: "xs", md: "sm" }}
@@ -519,10 +497,10 @@ function SectionAreaChart({ data }: { data: SectionChartData[] }) {
           _dark={{ color: "gray.400" }}
           mb={{ base: 4, md: 6 }}
         >
-          Your performance across IELTS skill areas
+          Your band scores from recent tests
         </Text>
         <Chart.Root maxH="sm" chart={chart}>
-          <AreaChart data={chart.data}>
+          <LineChart data={chart.data}>
             <CartesianGrid
               stroke={chart.color("border.muted")}
               vertical={false}
@@ -530,26 +508,29 @@ function SectionAreaChart({ data }: { data: SectionChartData[] }) {
             <XAxis
               axisLine={false}
               tickLine={false}
-              dataKey={chart.key("section")}
+              dataKey={chart.key("test")}
+            />
+            <YAxis 
+              axisLine={false}
+              tickLine={false}
+              domain={[0, 9]}
+              ticks={[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
             />
             <Tooltip
               cursor={false}
               animationDuration={100}
               content={<Chart.Tooltip />}
             />
-            <Legend content={<Chart.Legend />} />
-            {chart.series.map((item) => (
-              <Area
-                key={item.name}
-                isAnimationActive={false}
-                dataKey={chart.key(item.name)}
-                fill={chart.color(item.color)}
-                fillOpacity={0.2}
-                stroke={chart.color(item.color)}
-                stackId="a"
-              />
-            ))}
-          </AreaChart>
+            <Line
+              type="monotone"
+              isAnimationActive={false}
+              dataKey={chart.key("score")}
+              stroke={chart.color("blue.solid")}
+              strokeWidth={3}
+              dot={{ r: 4, fill: chart.color("blue.solid") }}
+              activeDot={{ r: 6 }}
+            />
+          </LineChart>
         </Chart.Root>
       </Card.Body>
     </Card.Root>

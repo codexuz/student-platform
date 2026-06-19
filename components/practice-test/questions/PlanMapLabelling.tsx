@@ -94,10 +94,7 @@ export default function PlanMapLabelling({
       {/* Instruction */}
       {question.instruction && (
         <Box
-          fontSize="sm"
           mb={4}
-          color="gray.700"
-          _dark={{ color: "gray.300" }}
           dangerouslySetInnerHTML={{ __html: question.instruction }}
           css={{
             "& p": { marginBottom: "0.25rem" },
@@ -131,7 +128,7 @@ export default function PlanMapLabelling({
               borderWidth="1px"
               borderColor="gray.200"
               _dark={{ borderColor: "gray.600" }}
-              bg="white"
+              bg="var(--test-input-bg)"
             >
               <Image
                 src={imageSrc}
@@ -168,7 +165,6 @@ export default function PlanMapLabelling({
                 height="40px"
                 borderRadius="full"
                 bg="gray.300"
-                _dark={{ bg: "gray.500" }}
                 _hover={{ bg: "blue.400", _dark: { bg: "blue.400" } }}
                 transition="background 0.15s"
               />
@@ -181,7 +177,6 @@ export default function PlanMapLabelling({
           {/* Remaining text (if any besides the image) */}
           {remainingText && (
             <Box
-              fontSize="sm"
               mb={4}
               dangerouslySetInnerHTML={{ __html: remainingText }}
               css={{
@@ -197,13 +192,12 @@ export default function PlanMapLabelling({
               <Box
                 mb={4}
                 p={3}
-                bg="gray.50"
-                _dark={{ bg: "gray.700" }}
+                bg="var(--test-hover-bg)"
                 borderRadius="md"
               >
                 <VStack align="stretch" gap={1}>
                   {sortedOptions.map((opt) => (
-                    <Text key={opt.optionKey} fontSize="sm">
+                    <Text key={opt.optionKey}>
                       <strong>{opt.optionKey}</strong>
                       {opt.optionText ? ` — ${opt.optionText}` : ""}
                     </Text>
@@ -234,22 +228,13 @@ export default function PlanMapLabelling({
                   bg={
                     isCorrect ? "green.50" : isWrong ? "red.50" : "transparent"
                   }
-                  _dark={{
-                    bg: isCorrect
-                      ? "green.900/30"
-                      : isWrong
-                        ? "red.900/30"
-                        : "transparent",
-                  }}
                   transition="background 0.15s"
                 >
                   {/* Question number badge */}
                   <Circle
                     size="28px"
-                    bg="blue.50"
+                    bg="var(--test-hover-bg)"
                     color="blue.700"
-                    _dark={{ bg: "blue.900", color: "blue.300" }}
-                    fontSize="sm"
                     fontWeight="bold"
                     flexShrink={0}
                   >
@@ -257,7 +242,7 @@ export default function PlanMapLabelling({
                   </Circle>
 
                   {/* Label text */}
-                  <Text fontSize="sm" fontWeight="medium">
+                  <Text fontWeight="medium">
                     {sub.questionText}
                   </Text>
 
@@ -292,7 +277,7 @@ export default function PlanMapLabelling({
 
                   {/* Result feedback */}
                   {showResults && selected && (
-                    <Text fontSize="xs" fontWeight="bold" flexShrink={0}>
+                    <Text fontSize="0.75em" fontWeight="bold" flexShrink={0}>
                       {isCorrect ? (
                         <Box
                           as="span"

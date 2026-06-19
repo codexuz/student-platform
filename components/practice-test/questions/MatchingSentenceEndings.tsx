@@ -39,10 +39,7 @@ export default function MatchingSentenceEndings({
 
       {question.instruction && (
         <Box
-          fontSize="sm"
           mb={4}
-          color="gray.700"
-          _dark={{ color: "gray.300" }}
           dangerouslySetInnerHTML={{ __html: question.instruction }}
           css={{
             "& p": { marginBottom: "0.25rem" },
@@ -56,12 +53,11 @@ export default function MatchingSentenceEndings({
         <Box
           mb={4}
           p={3}
-          bg="gray.50"
-          _dark={{ bg: "gray.700" }}
+          bg="var(--test-hover-bg)"
           borderRadius="md"
         >
           <Text
-            fontSize="xs"
+            fontSize="0.75em"
             fontWeight="bold"
             mb={2}
             textTransform="uppercase"
@@ -71,7 +67,7 @@ export default function MatchingSentenceEndings({
           </Text>
           <VStack align="stretch" gap={1}>
             {sortedOptions.map((opt) => (
-              <Text key={opt.optionKey} fontSize="sm">
+              <Text key={opt.optionKey}>
                 <strong>{opt.optionKey}</strong> &nbsp; {opt.optionText}
               </Text>
             ))}
@@ -90,17 +86,15 @@ export default function MatchingSentenceEndings({
             <HStack key={qNum} align="start" gap={3}>
               <Circle
                 size="28px"
-                bg="blue.50"
+                bg="var(--test-hover-bg)"
                 color="blue.700"
-                _dark={{ bg: "blue.900", color: "blue.300" }}
-                fontSize="sm"
                 fontWeight="bold"
                 flexShrink={0}
                 mt="2px"
               >
                 {qNum}
               </Circle>
-              <Text fontSize="sm" flex={1} lineHeight="tall">
+              <Text flex={1} lineHeight="tall">
                 {sub.questionText}
               </Text>
               <NativeSelect.Root size="sm" width="80px" flexShrink={0}>

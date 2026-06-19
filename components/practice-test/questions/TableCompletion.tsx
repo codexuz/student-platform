@@ -27,10 +27,7 @@ export default function TableCompletion({
 
       {question.instruction && (
         <Box
-          fontSize="sm"
           mb={4}
-          color="gray.700"
-          _dark={{ color: "gray.300" }}
           dangerouslySetInnerHTML={{ __html: question.instruction }}
           css={{
             "& p": { marginBottom: "0.25rem" },
@@ -96,8 +93,9 @@ function TableFromData({
             {tableData.headers.map((h, i) => (
               <Table.ColumnHeader
                 key={i}
-                bg="gray.50"
-                _dark={{ bg: "gray.700" }}
+                bg="var(--test-hover-bg)"
+                color="inherit"
+                fontWeight="bold"
               >
                 {h}
               </Table.ColumnHeader>
@@ -139,7 +137,7 @@ function TableFromData({
 
                 return (
                   <Table.Cell key={ci}>
-                    <Text fontSize="sm">{cell}</Text>
+                    <Text>{cell}</Text>
                   </Table.Cell>
                 );
               })}
@@ -185,7 +183,6 @@ function FallbackList({
             alignItems="baseline"
             flexWrap="wrap"
             gap={1}
-            fontSize="sm"
           >
             <Text as="span" fontWeight="bold" color="blue.600" mr={1}>
               {qNum}.
@@ -225,12 +222,8 @@ function renderCellWithBlank(
       display="inline-block"
       mx={1}
       textAlign="center"
-      borderColor={isCorrect ? "green.500" : isWrong ? "red.500" : "gray.300"}
-      bg={isCorrect ? "green.50" : isWrong ? "red.50" : "white"}
-      _dark={{
-        bg: isCorrect ? "green.900" : isWrong ? "red.900" : "gray.700",
-        borderColor: isCorrect ? "green.400" : isWrong ? "red.400" : "gray.600",
-      }}
+      borderColor={isCorrect ? "var(--test-correct-border)" : isWrong ? "var(--test-wrong-border)" : "var(--test-border)"}
+      bg={isCorrect ? "var(--test-correct-bg)" : isWrong ? "var(--test-wrong-bg)" : "var(--test-input-bg)"}
       placeholder={String(qNum)}
       value={answer}
       onChange={(e) => onAnswer(qNum, e.target.value)}
@@ -244,11 +237,11 @@ function renderCellWithBlank(
     const after = text.slice(match.index + match[0].length);
     return (
       <>
-        <Text as="span" fontSize="sm">
+        <Text as="span">
           {before}
         </Text>
         {input}
-        <Text as="span" fontSize="sm">
+        <Text as="span">
           {after}
         </Text>
       </>
@@ -257,7 +250,7 @@ function renderCellWithBlank(
 
   return (
     <>
-      <Text as="span" fontSize="sm">
+      <Text as="span">
         {text}{" "}
       </Text>
       {input}

@@ -39,10 +39,7 @@ export default function MatchingFeatures({
 
       {question.instruction && (
         <Box
-          fontSize="sm"
           mb={4}
-          color="gray.700"
-          _dark={{ color: "gray.300" }}
           dangerouslySetInnerHTML={{ __html: question.instruction }}
           css={{
             "& p": { marginBottom: "0.25rem" },
@@ -56,13 +53,12 @@ export default function MatchingFeatures({
         <Box
           mb={4}
           p={3}
-          bg="gray.50"
-          _dark={{ bg: "gray.700" }}
+          bg="var(--test-hover-bg)"
           borderRadius="md"
         >
           <VStack align="stretch" gap={1}>
             {sortedOptions.map((opt) => (
-              <Text key={opt.optionKey} fontSize="sm">
+              <Text key={opt.optionKey}>
                 <strong>{opt.optionKey}</strong> &nbsp; {opt.optionText}
               </Text>
             ))}
@@ -81,16 +77,14 @@ export default function MatchingFeatures({
             <HStack key={qNum} align="center" gap={3}>
               <Circle
                 size="28px"
-                bg="blue.50"
+                bg="var(--test-hover-bg)"
                 color="blue.700"
-                _dark={{ bg: "blue.900", color: "blue.300" }}
-                fontSize="sm"
                 fontWeight="bold"
                 flexShrink={0}
               >
                 {qNum}
               </Circle>
-              <Text fontSize="sm">{sub.questionText}</Text>
+              <Text>{sub.questionText}</Text>
               <NativeSelect.Root size="sm" width="80px" flexShrink={0}>
                 <NativeSelect.Field
                   value={selected}

@@ -102,7 +102,6 @@ export default function SummaryCompletionDragDrop({
 
     return (
       <Box
-        fontSize="sm"
         lineHeight="2"
         mb={6}
         css={{
@@ -134,7 +133,7 @@ export default function SummaryCompletionDragDrop({
                     placeholder={String(qNum)}
                   />
                   {showResults && isWrong && (
-                    <Text as="span" fontSize="xs" color="green.600" ml={1}>
+                    <Text as="span" fontSize="0.75em" color="green.600" ml={1}>
                       ({correctKey}. {displayValue(correctKey)})
                     </Text>
                   )}
@@ -155,10 +154,7 @@ export default function SummaryCompletionDragDrop({
 
       {question.instruction && (
         <Box
-          fontSize="sm"
           mb={4}
-          color="gray.700"
-          _dark={{ color: "gray.300" }}
           dangerouslySetInnerHTML={{ __html: question.instruction }}
           css={{
             "& p": { marginBottom: "0.25rem" },
@@ -192,7 +188,6 @@ export default function SummaryCompletionDragDrop({
                   align="center"
                   flexWrap="wrap"
                   gap={1}
-                  fontSize="sm"
                   lineHeight="2"
                 >
                   <Text as="span">{text}</Text>
@@ -207,7 +202,7 @@ export default function SummaryCompletionDragDrop({
                     placeholder={String(qNum)}
                   />
                   {showResults && isWrong && (
-                    <Text as="span" fontSize="xs" color="green.600" ml={1}>
+                    <Text as="span" fontSize="0.75em" color="green.600" ml={1}>
                       Correct: {correctKey}. {displayValue(correctKey)}
                     </Text>
                   )}
@@ -250,10 +245,9 @@ export default function SummaryCompletionDragDrop({
             <Box
               px={4}
               py={2}
-              bg="blue.500"
+              bg="var(--test-accent)"
               color="white"
               borderRadius="md"
-              fontSize="sm"
               fontWeight="medium"
               shadow="lg"
               cursor="grabbing"
@@ -296,14 +290,9 @@ function DraggableWord({
       borderWidth="1px"
       borderColor="gray.300"
       borderRadius="md"
-      bg={isPlaced ? "gray.100" : "white"}
-      _dark={{
-        borderColor: "gray.600",
-        bg: isPlaced ? "gray.700" : "gray.800",
-      }}
+      bg={isPlaced ? "var(--test-border)" : "var(--test-input-bg)"}
       opacity={isPlaced || isDragging ? 0.4 : 1}
       cursor={disabled || isPlaced ? "default" : "grab"}
-      fontSize="sm"
       textAlign="center"
       userSelect="none"
       transition="all 0.15s"
@@ -373,35 +362,14 @@ function DroppableGap({
                 ? "blue.50"
                 : "transparent"
       }
-      _dark={{
-        bg: isOver
-          ? "blue.900"
-          : isCorrect
-            ? "green.900"
-            : isWrong
-              ? "red.900"
-              : value
-                ? "blue.900"
-                : "transparent",
-        borderColor: isOver
-          ? "blue.400"
-          : isCorrect
-            ? "green.400"
-            : isWrong
-              ? "red.400"
-              : value
-                ? "blue.400"
-                : "gray.600",
-      }}
       cursor={disabled ? "default" : value ? "pointer" : "default"}
       onClick={onClick}
       transition="all 0.15s"
-      fontSize="sm"
     >
       {value ? (
         displayValue
       ) : (
-        <Text color="gray.400" fontSize="sm">
+        <Text color="gray.400">
           {placeholder}
         </Text>
       )}

@@ -15,10 +15,10 @@ import {
 import {
   ArrowLeft,
   Maximize2,
-  Bell,
   Menu,
   Send,
   AlertTriangle,
+  MessageSquareText,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { TestHeaderProps } from "./types";
@@ -176,11 +176,16 @@ export default function TestHeader({
           <IconButton
             variant="ghost"
             size="sm"
-            aria-label="Notifications"
+            aria-label="Notes"
             color={colors.text}
             _hover={{ bg: colors.hoverBg }}
+            onClick={(e: React.MouseEvent) => {
+              // Custom event to open a generic notes drawer or global comments
+              const event = new CustomEvent("open-global-notes");
+              window.dispatchEvent(event);
+            }}
           >
-            <Bell size={18} />
+            <MessageSquareText size={18} />
           </IconButton>
           <IconButton
             variant="ghost"

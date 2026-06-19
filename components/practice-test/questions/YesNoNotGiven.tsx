@@ -27,10 +27,7 @@ export default function YesNoNotGiven({
 
       {question.instruction && (
         <Text
-          fontSize="sm"
           mb={4}
-          color="gray.700"
-          _dark={{ color: "gray.300" }}
         >
           Do the following statements agree with the views of the writer? Choose{" "}
           <strong>YES</strong> if the statement agrees with the views of the
@@ -51,10 +48,8 @@ export default function YesNoNotGiven({
               <HStack align="start" mb={3} gap={3}>
                 <Circle
                   size="28px"
-                  bg="red.50"
+                  bg="var(--test-hover-bg)"
                   color="red.600"
-                  _dark={{ bg: "red.900", color: "red.300" }}
-                  fontSize="sm"
                   fontWeight="bold"
                   flexShrink={0}
                   mt="2px"
@@ -62,7 +57,6 @@ export default function YesNoNotGiven({
                   {qNum}
                 </Circle>
                 <Box
-                  fontSize="sm"
                   lineHeight="tall"
                   dangerouslySetInnerHTML={{ __html: sub.questionText ?? "" }}
                   css={{
@@ -93,17 +87,10 @@ export default function YesNoNotGiven({
                             ? "red.50"
                             : "transparent"
                       }
-                      _dark={{
-                        bg: optCorrect
-                          ? "green.900"
-                          : optWrong
-                            ? "red.900"
-                            : "transparent",
-                      }}
                       _hover={
                         disabled
                           ? {}
-                          : { bg: "gray.50", _dark: { bg: "gray.700" } }
+                          : { bg: "var(--test-hover-bg)" }
                       }
                       transition="background 0.15s"
                     >
@@ -130,10 +117,9 @@ export default function YesNoNotGiven({
                         }
                         transition="all 0.15s"
                       >
-                        {isSelected && <Circle size="8px" bg="white" />}
+                        {isSelected && <Circle size="8px" bg="var(--test-panel-bg, white)" />}
                       </Circle>
                       <Text
-                        fontSize="sm"
                         fontWeight={isSelected ? "medium" : "normal"}
                       >
                         {opt}

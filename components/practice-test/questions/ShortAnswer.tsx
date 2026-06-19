@@ -39,10 +39,7 @@ export default function ShortAnswer({
 
       {question.instruction && (
         <Box
-          fontSize="sm"
           mb={4}
-          color="gray.700"
-          _dark={{ color: "gray.300" }}
           dangerouslySetInnerHTML={{ __html: question.instruction }}
           css={{
             "& p": { marginBottom: "0.25rem" },
@@ -65,10 +62,8 @@ export default function ShortAnswer({
             <HStack key={qNum} align="start" gap={3}>
               <Circle
                 size="28px"
-                bg="blue.50"
+                bg="var(--test-hover-bg)"
                 color="blue.700"
-                _dark={{ bg: "blue.900", color: "blue.300" }}
-                fontSize="sm"
                 fontWeight="bold"
                 flexShrink={0}
                 mt="2px"
@@ -78,7 +73,6 @@ export default function ShortAnswer({
               <Box flex={1}>
                 {sub.questionText && (
                   <Box
-                    fontSize="sm"
                     mb={2}
                     dangerouslySetInnerHTML={{ __html: sub.questionText }}
                     css={{
@@ -93,19 +87,7 @@ export default function ShortAnswer({
                   borderColor={
                     isCorrect ? "green.500" : isWrong ? "red.500" : "gray.300"
                   }
-                  bg={isCorrect ? "green.50" : isWrong ? "red.50" : "white"}
-                  _dark={{
-                    bg: isCorrect
-                      ? "green.900"
-                      : isWrong
-                        ? "red.900"
-                        : "gray.700",
-                    borderColor: isCorrect
-                      ? "green.400"
-                      : isWrong
-                        ? "red.400"
-                        : "gray.600",
-                  }}
+                  bg={isCorrect ? "var(--test-correct-bg)" : isWrong ? "var(--test-wrong-bg)" : "var(--test-input-bg)"}
                   value={answer}
                   onChange={(e) => onAnswer(qNum, e.target.value)}
                   disabled={disabled}

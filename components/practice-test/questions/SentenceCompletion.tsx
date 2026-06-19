@@ -26,10 +26,7 @@ export default function SentenceCompletion({
 
       {question.instruction && (
         <Box
-          fontSize="sm"
           mb={4}
-          color="gray.700"
-          _dark={{ color: "gray.300" }}
           dangerouslySetInnerHTML={{ __html: question.instruction }}
           css={{
             "& p": { marginBottom: "0.25rem" },
@@ -55,7 +52,6 @@ export default function SentenceCompletion({
               align="baseline"
               flexWrap="wrap"
               gap={0}
-              fontSize="sm"
               lineHeight="2"
             >
               {renderSentenceWithBlank(
@@ -95,13 +91,9 @@ function renderSentenceWithBlank(
       mx={1}
       textAlign="center"
       borderWidth="1px"
-      borderColor={isCorrect ? "green.500" : isWrong ? "red.500" : "gray.300"}
+      borderColor={isCorrect ? "var(--test-correct-border)" : isWrong ? "var(--test-wrong-border)" : "var(--test-border)"}
       borderRadius="md"
-      bg={isCorrect ? "green.50" : isWrong ? "red.50" : "white"}
-      _dark={{
-        bg: isCorrect ? "green.900" : isWrong ? "red.900" : "gray.700",
-        borderColor: isCorrect ? "green.400" : isWrong ? "red.400" : "gray.600",
-      }}
+      bg={isCorrect ? "var(--test-correct-bg)" : isWrong ? "var(--test-wrong-bg)" : "var(--test-input-bg)"}
       placeholder={String(questionNumber)}
       value={answer}
       onChange={(e) => onAnswer(questionNumber, e.target.value)}

@@ -34,10 +34,7 @@ export default function MultipleChoice({
 
       {question.instruction && (
         <Box
-          fontSize="sm"
           mb={4}
-          color="gray.700"
-          _dark={{ color: "gray.300" }}
           dangerouslySetInnerHTML={{ __html: question.instruction }}
           css={{
             "& p": { marginBottom: "0.25rem" },
@@ -114,10 +111,8 @@ function SingleQuestion({
       <HStack align="start" mb={3} gap={3}>
         <Circle
           size="28px"
-          bg="blue.50"
+          bg="var(--test-hover-bg)"
           color="blue.700"
-          _dark={{ bg: "blue.900", color: "blue.300" }}
-          fontSize="sm"
           fontWeight="bold"
           flexShrink={0}
           mt="2px"
@@ -125,7 +120,6 @@ function SingleQuestion({
           {questionNumber}
         </Circle>
         <Box
-          fontSize="sm"
           lineHeight="tall"
           dangerouslySetInnerHTML={{ __html: questionText }}
           css={{
@@ -151,16 +145,9 @@ function SingleQuestion({
               onClick={() => !disabled && onAnswer(questionNumber, optValue)}
               p={2}
               borderRadius="md"
-              bg={optCorrect ? "green.50" : optWrong ? "red.50" : "transparent"}
-              _dark={{
-                bg: optCorrect
-                  ? "green.900"
-                  : optWrong
-                    ? "red.900"
-                    : "transparent",
-              }}
+              bg={optCorrect ? "var(--test-correct-bg)" : optWrong ? "var(--test-wrong-bg)" : "var(--test-input-bg)"}
               _hover={
-                disabled ? {} : { bg: "gray.50", _dark: { bg: "gray.700" } }
+                disabled ? {} : { bg: "var(--test-hover-bg)" }
               }
               transition="background 0.15s"
             >
@@ -189,9 +176,9 @@ function SingleQuestion({
                 }
                 transition="all 0.15s"
               >
-                {isSelected && <Circle size="8px" bg="white" />}
+                {isSelected && <Circle size="8px" bg="var(--test-panel-bg, white)" />}
               </Circle>
-              <Text fontSize="sm" fontWeight={isSelected ? "medium" : "normal"}>
+              <Text fontWeight={isSelected ? "medium" : "normal"}>
                 {opt.optionText}
               </Text>
             </HStack>

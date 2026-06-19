@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   Box,
   Flex,
@@ -15,6 +15,7 @@ import {
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import TestHeader from "./TestHeader";
 import HighlightablePanel from "./HighlightablePanel";
+import CommentsDrawer from "./CommentsDrawer";
 import { TestThemeProvider, useTestTheme } from "./TestThemeContext";
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -76,6 +77,15 @@ function WritingTestLayoutInner({
   const [isTimerRunning, setIsTimerRunning] = useState(autoStart);
   const [isStarted, setIsStarted] = useState(autoStart);
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const [globalNotesOpen, setGlobalNotesOpen] = useState(false);
+  const [globalNotes, setGlobalNotes] = useState("");
+
+  useEffect(() => {
+    const handleOpenNotes = () => setGlobalNotesOpen(true);
+    window.addEventListener("open-global-notes", handleOpenNotes);
+    return () => window.removeEventListener("open-global-notes", handleOpenNotes);
+  }, []);
 
   // ─── Handlers ───────────────────────────────────────────────────────────
 
@@ -336,6 +346,12 @@ function WritingTestLayoutInner({
             </Box>
           </Box>
         </Splitter.Panel>
+      <CommentsDrawer
+        isOpen={globalNotesOpen}
+        onClose={() => setGlobalNotesOpen(false)}
+        comment={globalNotes}
+        onSave={setGlobalNotes}
+      />
       </Splitter.RootProvider>
 
       {/* Bottom navigation */}

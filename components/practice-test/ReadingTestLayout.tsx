@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Box, Flex, Text, Splitter, useSplitter } from "@chakra-ui/react";
 import TestHeader from "./TestHeader";
 import PartNavigation from "./PartNavigation";
 import ReadingPassage from "./ReadingPassage";
 import QuestionPanel from "./QuestionPanel";
 import HighlightablePanel from "./HighlightablePanel";
+import CommentsDrawer from "./CommentsDrawer";
 import { TestThemeProvider, useTestTheme } from "./TestThemeContext";
 import type { PartData, AnswerMap, TestSessionState } from "./types";
 import { getAllQuestionNumbers } from "./types";
@@ -59,6 +60,15 @@ function ReadingTestLayoutInner({
     isStarted: autoStart,
     isSubmitted: false,
   });
+
+  const [globalNotesOpen, setGlobalNotesOpen] = useState(false);
+  const [globalNotes, setGlobalNotes] = useState("");
+
+  useEffect(() => {
+    const handleOpenNotes = () => setGlobalNotesOpen(true);
+    window.addEventListener("open-global-notes", handleOpenNotes);
+    return () => window.removeEventListener("open-global-notes", handleOpenNotes);
+  }, []);
 
   // ─── Handlers ───────────────────────────────────────────────────────────
 
@@ -314,6 +324,13 @@ function ReadingTestLayoutInner({
         onNext={handleNext}
         onSubmit={handleSubmit}
         isStarted={state.isStarted}
+      />
+
+      <CommentsDrawer
+        isOpen={globalNotesOpen}
+        onClose={() => setGlobalNotesOpen(false)}
+        comment={globalNotes}
+        onSave={setGlobalNotes}
       />
     </Flex>
   );
