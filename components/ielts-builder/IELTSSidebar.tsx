@@ -18,6 +18,7 @@ import {
   Volume2,
   PenTool,
   ListChecks,
+  Mic,
   ArrowLeft,
   ChevronRight,
 } from "lucide-react";
@@ -274,6 +275,40 @@ export default function IELTSSidebar({ counts = {} }: IELTSSidebarProps) {
             label: "Full Tests",
             pageId: "tests",
           })}
+
+          {/* Speaking — standalone item (self-contained routes) */}
+          {(() => {
+            const active = pathname.includes("/speakings");
+            return (
+              <HStack
+                px={3}
+                py={2}
+                rounded="lg"
+                cursor="pointer"
+                bg={active ? "#eef2ff" : "transparent"}
+                color={active ? "#4f46e5" : "gray.600"}
+                fontWeight={active ? "600" : "500"}
+                _dark={{
+                  bg: active ? "rgba(79, 70, 229, 0.15)" : "transparent",
+                  color: active ? "#818cf8" : "gray.400",
+                }}
+                _hover={{
+                  bg: active ? "#eef2ff" : "gray.100",
+                  color: active ? "#4f46e5" : "gray.800",
+                  _dark: {
+                    bg: active ? "rgba(79, 70, 229, 0.2)" : "gray.700",
+                    color: active ? "#818cf8" : "gray.200",
+                  },
+                }}
+                transition="all 0.1s"
+                onClick={() => router.push("/ielts-test-builder/speakings")}
+                fontSize="13px"
+              >
+                <Icon as={Mic} fontSize="md" />
+                <Text flex="1">Speaking</Text>
+              </HStack>
+            );
+          })()}
 
           {/* Collapsible sections */}
           {sections.map((section) => {
