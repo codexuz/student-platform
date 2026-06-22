@@ -13,7 +13,7 @@ import {
   IconButton,
   Spinner,
 } from "@chakra-ui/react";
-import { Plus, Trash2, ChevronDown, Pencil } from "lucide-react";
+import { Plus, Trash2, ChevronDown, Pencil, Sparkles } from "lucide-react";
 import { ieltsQuestionsAPI } from "@/lib/ielts-api";
 import { toaster } from "@/components/ui/toaster";
 import type {
@@ -70,6 +70,7 @@ export default function QuestionsManager({
     null,
   );
   const [creatingQuestion, setCreatingQuestion] = useState(false);
+  const [explainingId, setExplainingId] = useState<string | null>(null);
 
   const backLabel =
     partType === "reading" ? "Reading Parts" : "Listening Parts";
@@ -165,6 +166,25 @@ export default function QuestionsManager({
       fetchQuestions();
     } catch {
       toaster.error({ title: "Error deleting question" });
+    }
+  };
+
+  const handleAiExplain = async (questionId: string) => {
+    setExplainingId(questionId);
+    try {
+      await ieltsQuestionsAPI.aiExplain(questionId);
+      toaster.success({
+        title: "AI explanation generated",
+        description: "Explanation & passage references filled from the passage.",
+      });
+      await fetchQuestions();
+    } catch (e) {
+      toaster.error({
+        title: "Error generating AI explanation",
+        description: (e as Error).message,
+      });
+    } finally {
+      setExplainingId(null);
     }
   };
 
@@ -327,6 +347,19 @@ export default function QuestionsManager({
                         </Text>
                       </HStack>
                       <HStack onClick={(e) => e.stopPropagation()}>
+                        {partType === "reading" && question.id && (
+                          <IconButton
+                            size="xs"
+                            variant="ghost"
+                            colorPalette="purple"
+                            onClick={() => handleAiExplain(question.id!)}
+                            loading={explainingId === question.id}
+                            aria-label="Generate AI explanation"
+                            title="AI: fill explanation & from passage from the reading passage"
+                          >
+                            <Sparkles size={14} />
+                          </IconButton>
+                        )}
                         <IconButton
                           size="xs"
                           variant="ghost"
@@ -427,6 +460,69 @@ export default function QuestionsManager({
                           </Box>
                         )}
 
+                        {/* Explanation & From Passage (AI-generated) */}
+                        {(question.explanation || question.fromPassage) && (
+                          <Box mb={3}>
+                            {question.explanation && (
+                              <Box mb={question.fromPassage ? 2 : 0}>
+                                <Text
+                                  fontSize="xs"
+                                  fontWeight="700"
+                                  color="gray.500"
+                                  textTransform="uppercase"
+                                  letterSpacing="0.3px"
+                                  mb={1}
+                                >
+                                  Explanation
+                                </Text>
+                                <Box
+                                  fontSize="sm"
+                                  color="gray.700"
+                                  _dark={{ color: "gray.300", bg: "gray.700" }}
+                                  lineHeight="1.6"
+                                  px={3}
+                                  py={2}
+                                  bg="purple.50"
+                                  rounded="md"
+                                  borderLeftWidth="3px"
+                                  borderLeftColor="purple.400"
+                                >
+                                  {question.explanation}
+                                </Box>
+                              </Box>
+                            )}
+                            {question.fromPassage && (
+                              <Box>
+                                <Text
+                                  fontSize="xs"
+                                  fontWeight="700"
+                                  color="gray.500"
+                                  textTransform="uppercase"
+                                  letterSpacing="0.3px"
+                                  mb={1}
+                                >
+                                  From Passage
+                                </Text>
+                                <Box
+                                  fontSize="sm"
+                                  color="gray.700"
+                                  _dark={{ color: "gray.300", bg: "gray.700" }}
+                                  lineHeight="1.6"
+                                  px={3}
+                                  py={2}
+                                  bg="amber.50"
+                                  rounded="md"
+                                  borderLeftWidth="3px"
+                                  borderLeftColor="amber.400"
+                                  fontStyle="italic"
+                                >
+                                  &ldquo;{question.fromPassage}&rdquo;
+                                </Box>
+                              </Box>
+                            )}
+                          </Box>
+                        )}
+
                         {/* Sub-Questions */}
                         {subs.length > 0 && (
                           <Box mb={2}>
@@ -442,59 +538,98 @@ export default function QuestionsManager({
                             </Text>
                             <VStack gap={1.5} alignItems="stretch">
                               {subs.map((sq: IELTSSubQuestion, si: number) => (
-                                <Flex
+                                <Box
                                   key={sq.id || si}
-                                  fontSize="sm"
-                                  gap={3}
                                   px={3}
                                   py={2}
                                   bg="gray.50"
                                   _dark={{ bg: "gray.700" }}
                                   rounded="md"
-                                  alignItems="center"
                                   borderWidth="1px"
                                   borderColor="gray.100"
                                 >
-                                  <Text
-                                    fontWeight="700"
-                                    color="gray.500"
-                                    fontSize="xs"
-                                    flexShrink={0}
-                                    w="28px"
-                                    textAlign="center"
-                                  >
-                                    #{sq.questionNumber || si + 1}
-                                  </Text>
-                                  <Text
-                                    flex="1"
-                                    color="gray.700"
-                                    _dark={{ color: "gray.300" }}
-                                    fontSize="sm"
-                                  >
-                                    {sq.questionText || "—"}
-                                  </Text>
-                                  {sq.correctAnswer && (
-                                    <Badge
-                                      colorPalette={
-                                        sq.correctAnswer === "TRUE" ||
-                                        sq.correctAnswer === "YES"
-                                          ? "green"
-                                          : sq.correctAnswer === "FALSE" ||
-                                              sq.correctAnswer === "NO"
-                                            ? "red"
-                                            : sq.correctAnswer === "NOT GIVEN"
-                                              ? "orange"
-                                              : "teal"
-                                      }
-                                      variant="subtle"
-                                      fontSize="11px"
-                                      fontWeight="600"
-                                      px={2}
+                                  <Flex fontSize="sm" gap={3} alignItems="center">
+                                    <Text
+                                      fontWeight="700"
+                                      color="gray.500"
+                                      fontSize="xs"
+                                      flexShrink={0}
+                                      w="28px"
+                                      textAlign="center"
                                     >
-                                      {sq.correctAnswer}
-                                    </Badge>
+                                      #{sq.questionNumber || si + 1}
+                                    </Text>
+                                    <Text
+                                      flex="1"
+                                      color="gray.700"
+                                      _dark={{ color: "gray.300" }}
+                                      fontSize="sm"
+                                    >
+                                      {sq.questionText || "—"}
+                                    </Text>
+                                    {sq.correctAnswer && (
+                                      <Badge
+                                        colorPalette={
+                                          sq.correctAnswer === "TRUE" ||
+                                          sq.correctAnswer === "YES"
+                                            ? "green"
+                                            : sq.correctAnswer === "FALSE" ||
+                                                sq.correctAnswer === "NO"
+                                              ? "red"
+                                              : sq.correctAnswer === "NOT GIVEN"
+                                                ? "orange"
+                                                : "teal"
+                                        }
+                                        variant="subtle"
+                                        fontSize="11px"
+                                        fontWeight="600"
+                                        px={2}
+                                      >
+                                        {sq.correctAnswer}
+                                      </Badge>
+                                    )}
+                                  </Flex>
+                                  {(sq.explanation || sq.fromPassage) && (
+                                    <VStack
+                                      gap={1}
+                                      alignItems="stretch"
+                                      mt={1.5}
+                                      pl="40px"
+                                    >
+                                      {sq.explanation && (
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.600"
+                                          _dark={{ color: "gray.400" }}
+                                          lineHeight="1.5"
+                                        >
+                                          <Text as="span" fontWeight="700">
+                                            Explanation:{" "}
+                                          </Text>
+                                          {sq.explanation}
+                                        </Text>
+                                      )}
+                                      {sq.fromPassage && (
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.600"
+                                          _dark={{ color: "gray.400" }}
+                                          lineHeight="1.5"
+                                          fontStyle="italic"
+                                        >
+                                          <Text
+                                            as="span"
+                                            fontWeight="700"
+                                            fontStyle="normal"
+                                          >
+                                            From passage:{" "}
+                                          </Text>
+                                          &ldquo;{sq.fromPassage}&rdquo;
+                                        </Text>
+                                      )}
+                                    </VStack>
                                   )}
-                                </Flex>
+                                </Box>
                               ))}
                             </VStack>
                           </Box>
