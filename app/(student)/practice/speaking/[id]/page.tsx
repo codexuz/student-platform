@@ -27,6 +27,7 @@ import {
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { ieltsSpeakingAPI } from "@/lib/ielts-api";
 import { useSpeakingExam, type ExamPhase } from "@/hooks/useSpeakingExam";
+import { usePreventPageLeave } from "@/hooks/usePreventPageLeave";
 import SpeakingFeedbackCard from "@/components/speaking/SpeakingFeedbackCard";
 
 const phaseMeta: Record<ExamPhase, { label: string; color: string }> = {
@@ -63,6 +64,9 @@ function ExamContent() {
   const [started, setStarted] = useState(false);
 
   const exam = useSpeakingExam(speakingId);
+
+  // Warn before reload / closing the tab while the live exam is in progress.
+  usePreventPageLeave(started && exam.phase !== "ended" && exam.phase !== "error");
 
   useEffect(() => {
     ieltsSpeakingAPI

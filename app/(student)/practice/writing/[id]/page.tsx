@@ -9,6 +9,7 @@ import WritingTestLayout from "@/components/practice-test/WritingTestLayout";
 import type { WritingPartData } from "@/components/practice-test/WritingTestLayout";
 import { ieltsAPI } from "@/lib/api";
 import { useIeltsAttempt } from "@/hooks/useIeltsAttempt";
+import { usePreventPageLeave } from "@/hooks/usePreventPageLeave";
 
 /**
  * Single writing task practice page.
@@ -35,6 +36,9 @@ function WritingTaskPracticeContent() {
 
   const { attempt, createAttempt, saveWritingAnswers, submitAttempt } =
     useIeltsAttempt({ scope: "TASK", entityId: id });
+
+  // Warn before reload / closing the tab while the test is in progress.
+  usePreventPageLeave(!loading && !error && parts.length > 0);
 
   useEffect(() => {
     if (!id) return;

@@ -14,6 +14,7 @@ import {
   buildPartMappings,
   type PartQuestionMapping,
 } from "@/hooks/useIeltsAttempt";
+import { usePreventPageLeave } from "@/hooks/usePreventPageLeave";
 
 /**
  * Practice page for a single listening part.
@@ -41,6 +42,9 @@ function ListeningPracticeContent() {
 
   const { attempt, createAttempt, saveListeningAnswers, submitAttempt } =
     useIeltsAttempt({ scope: "PART", entityId: id });
+
+  // Warn before reload / closing the tab while the test is in progress.
+  usePreventPageLeave(!loading && !error && parts.length > 0);
 
   useEffect(() => {
     if (!id) return;
