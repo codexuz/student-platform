@@ -34,6 +34,7 @@ export interface BandFeedback {
     lexical_resource: number;
     grammatical_range_accuracy: number;
     pronunciation: number;
+    topic_relevance: number;
   };
   summary: string;
   strengths: string[];
@@ -107,6 +108,10 @@ export function useSpeakingExam(speakingId: string) {
   const socketRef = useRef<Socket | null>(null);
   const sessionIdRef = useRef<string | null>(null);
   const mutedRef = useRef(false);
+  // True while the examiner is speaking. We stop streaming the mic during this
+  // window so the bot is never fed audio until it has finished its turn (the
+  // backend also drops it, this just avoids sending it in the first place).
+  const examinerSpeakingRef = useRef(false);
 
   // Audio plumbing
   const inputCtxRef = useRef<AudioContext | null>(null);
@@ -193,7 +198,7 @@ export function useSpeakingExam(speakingId: string) {
     const processor = ctx.createScriptProcessor(4096, 1, 1);
     processorRef.current = processor;
     processor.onaudioprocess = (e) => {
-      if (mutedRef.current) return;
+      if (mutedRef.current || examinerSpeakingRef.current) return;
       const socket = socketRef.current;
       const sessionId = sessionIdRef.current;
       if (!socket || !sessionId) return;
@@ -260,6 +265,7 @@ export function useSpeakingExam(speakingId: string) {
     });
 
     socket.on("speaking:audio", (d: { audio: string }) => {
+      examinerSpeakingRef.current = true;
       patch({ examinerSpeaking: true });
       playChunk(d.audio);
     });
@@ -278,6 +284,7 @@ export function useSpeakingExam(speakingId: string) {
     });
 
     socket.on("speaking:response-done", () => {
+      examinerSpeakingRef.current = false;
       setState((prev) => {
         const text = prev.aiPartial.trim();
         return {
@@ -292,7 +299,10 @@ export function useSpeakingExam(speakingId: string) {
     });
 
     socket.on("speaking:speech-started", () => {
-      // Barge-in: drop any queued examiner audio for snappy turn-taking.
+      // The candidate has started their turn (only fires once the examiner has
+      // finished, since the mic is gated while the examiner speaks). Drop any
+      // residual examiner audio tail so playback doesn't overlap the candidate.
+      examinerSpeakingRef.current = false;
       stopPlayback();
       patch({ examinerSpeaking: false });
     });
@@ -318,6 +328,7 @@ export function useSpeakingExam(speakingId: string) {
 
     socket.on("speaking:ended", (d: { reason?: string }) => {
       clearTimer();
+      examinerSpeakingRef.current = false;
       patch({ phase: "ended", timer: null, examinerSpeaking: false });
       teardownAudio();
       void d;

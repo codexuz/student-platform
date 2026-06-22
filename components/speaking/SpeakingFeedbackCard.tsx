@@ -18,6 +18,7 @@ const criteriaLabels: Record<keyof BandFeedback["criteria"], string> = {
   lexical_resource: "Lexical Resource",
   grammatical_range_accuracy: "Grammar",
   pronunciation: "Pronunciation",
+  topic_relevance: "Topic Relevance",
 };
 
 function bandColor(band: number): string {
@@ -88,7 +89,7 @@ export default function SpeakingFeedbackCard({
 
       <Box px={6} py={5}>
         {/* Criteria */}
-        <SimpleGrid columns={{ base: 2, md: 4 }} gap={4} mb={5}>
+        <SimpleGrid columns={{ base: 2, md: 3, lg: 5 }} gap={4} mb={5}>
           {(
             Object.keys(criteriaLabels) as (keyof BandFeedback["criteria"])[]
           ).map((key) => {
