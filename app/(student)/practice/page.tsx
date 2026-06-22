@@ -26,7 +26,6 @@ import {
   BookOpen,
   PenTool,
   ClipboardList,
-  Mic,
   Search,
 } from "lucide-react";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
@@ -97,7 +96,6 @@ const categories = [
   { id: "listening", label: "Listening", icon: Headphones },
   { id: "reading", label: "Reading", icon: BookOpen },
   { id: "writing", label: "Writing", icon: PenTool },
-  { id: "speaking", label: "Speaking", icon: Mic },
 ];
 
 export default function PracticePage() {
@@ -270,11 +268,6 @@ function PracticeContent() {
   }, [fetchData]);
 
   const handleCategoryChange = (category: string) => {
-    // Speaking is a real-time AI exam on its own route, not an in-page grid.
-    if (category === "speaking") {
-      router.push("/practice/speaking");
-      return;
-    }
     setActiveCategory(category);
     setPage(1);
     if (category !== "reading") setReadingPart("");

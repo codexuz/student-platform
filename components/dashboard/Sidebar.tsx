@@ -25,6 +25,7 @@ import {
   UserPlus,
   BookA,
   Trophy,
+  Mic,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -33,6 +34,12 @@ import { useAuth } from "@/contexts/AuthContext";
 const studentMenuItems = [
   { icon: Home, label: "Home", href: "/home", section: "MAIN" },
   { icon: Target, label: "Practice", href: "/practice", section: "MAIN" },
+  {
+    icon: Mic,
+    label: "Speaking",
+    href: "/practice/speaking",
+    section: "MAIN",
+  },
   {
     icon: BarChart3,
     label: "My Results",
