@@ -221,7 +221,7 @@ function ResultsContent() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => router.push("/practice/results")}
+              onClick={() => router.back()}
             >
               <ArrowLeft size={16} />
               Back

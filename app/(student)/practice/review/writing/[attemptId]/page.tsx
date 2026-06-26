@@ -157,7 +157,7 @@ function WritingReviewContent() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push("/practice/results")}
+            onClick={() => router.back()}
             px={2}
           >
             <ArrowLeft size={16} />

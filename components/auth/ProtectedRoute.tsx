@@ -18,7 +18,8 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!loading && !isAuthenticated && !publicRoutes.includes(pathname)) {
-      router.push("/auth/login");
+      const target = pathname + window.location.search;
+      router.push(`/auth/login?redirect=${encodeURIComponent(target)}`);
     }
   }, [isAuthenticated, loading, pathname, router]);
 

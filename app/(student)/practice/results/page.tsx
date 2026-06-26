@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Box,
   Flex,
@@ -90,11 +90,25 @@ export default function ResultsListPage() {
 
 function ResultsListContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [attempts, setAttempts] = useState<AttemptItem[]>([]);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [scopeFilter, setScopeFilter] = useState<string>("");
+  const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
+  const [scopeFilter, setScopeFilter] = useState<string>(
+    searchParams.get("scope") || "",
+  );
+
+  // Keep pagination/filter in the URL so returning from an attempt restores it
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (page > 1) params.set("page", page.toString());
+    if (scopeFilter) params.set("scope", scopeFilter);
+    const newSearch = params.toString();
+    if (newSearch !== searchParams.toString()) {
+      router.replace(`?${newSearch}`, { scroll: false });
+    }
+  }, [page, scopeFilter, router, searchParams]);
 
   const fetchAttempts = useCallback(async () => {
     setLoading(true);

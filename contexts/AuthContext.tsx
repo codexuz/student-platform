@@ -56,6 +56,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     "/auth/forgot-password",
   ];
 
+  // Send unauthenticated users to login, remembering where they were headed.
+  const redirectToLogin = () => {
+    const target = window.location.pathname + window.location.search;
+    router.push(`/auth/login?redirect=${encodeURIComponent(target)}`);
+  };
+
+  // Only allow same-origin internal paths to prevent open-redirects.
+  const safeRedirect = (path: string | null, fallback: string) => {
+    if (path && path.startsWith("/") && !path.startsWith("//")) return path;
+    return fallback;
+  };
+
   const checkAuth = async () => {
     try {
       const storedToken = await storage.getItem("userToken");
@@ -76,11 +88,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await logout();
         }
       } else if (!publicRoutes.includes(pathname)) {
-        router.push("/auth/login");
+        redirectToLogin();
       }
     } catch (error) {
       if (!publicRoutes.includes(pathname)) {
-        router.push("/auth/login");
+        redirectToLogin();
       }
     } finally {
       setLoading(false);
@@ -108,7 +120,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           teacher: "/dashboard",
           student: "/home",
         };
-        router.push(redirectMap[loginRole] || "/home");
+        const fallback = redirectMap[loginRole] || "/home";
+        const requested = new URLSearchParams(window.location.search).get(
+          "redirect",
+        );
+        router.push(safeRedirect(requested, fallback));
         return { success: true };
       }
 

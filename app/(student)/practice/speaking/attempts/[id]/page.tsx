@@ -76,7 +76,7 @@ function AttemptDetailContent() {
             aria-label="Back"
             variant="ghost"
             size="sm"
-            onClick={() => router.push("/practice/speaking/attempts")}
+            onClick={() => router.back()}
           >
             <ArrowLeft size={18} />
           </IconButton>

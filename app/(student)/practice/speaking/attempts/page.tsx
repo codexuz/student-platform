@@ -18,7 +18,7 @@ import {
 } from "@chakra-ui/react";
 import { Mic, ArrowLeft, ChevronRight } from "lucide-react";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Sidebar from "@/components/dashboard/Sidebar";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
@@ -59,10 +59,21 @@ export default function SpeakingAttemptsPage() {
 
 function AttemptsList() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [items, setItems] = useState<Attempt[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
   const [total, setTotal] = useState(0);
+
+  // Keep pagination in the URL so returning from an attempt restores it
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (page > 1) params.set("page", page.toString());
+    const newSearch = params.toString();
+    if (newSearch !== searchParams.toString()) {
+      router.replace(`?${newSearch}`, { scroll: false });
+    }
+  }, [page, router, searchParams]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);

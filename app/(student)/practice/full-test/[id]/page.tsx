@@ -85,7 +85,7 @@ function FullTestContent({ testId }: { testId: string }) {
         <Box ml={{ base: 0, lg: "240px" }} p={8}>
           <VStack gap={4} align="center" mt={20}>
             <Heading size="lg">Test not found</Heading>
-            <Button onClick={() => router.push("/practice")} variant="outline">
+            <Button onClick={() => router.back()} variant="outline">
               Back to Practice
             </Button>
           </VStack>
@@ -112,7 +112,7 @@ function FullTestContent({ testId }: { testId: string }) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => router.push("/practice")}
+              onClick={() => router.back()}
             >
               <ArrowLeft size={20} />
             </Button>

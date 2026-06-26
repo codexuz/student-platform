@@ -259,7 +259,7 @@ function ReadingReviewContent() {
   return (
     <Flex direction="column" h="100vh" bg="white" _dark={{ bg: "gray.900" }}>
       <ReviewHeader
-        onBack={() => router.push(`/practice/results`)}
+        onBack={() => router.back()}
         showCorrectAnswers={showCorrectAnswers}
         onToggleCorrect={(v) => setShowCorrectAnswers(v)}
         onToggleFullscreen={handleToggleFullscreen}
